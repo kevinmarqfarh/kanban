@@ -111,6 +111,8 @@ export interface Recipe {
   steps: string
   labels: string[]
   createdAt: string
+  // Compressed JPEG data URL shown on the recipe card. Optional.
+  image?: string
 }
 
 export type NoteFont = 'system' | 'serif' | 'mono'

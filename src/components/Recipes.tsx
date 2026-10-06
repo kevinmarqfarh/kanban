@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from 'react'
-import { ArrowUpRight, Check, CookingPot, Pencil, Plus, Trash2 } from 'lucide-react'
+import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import { ArrowUpRight, Check, CookingPot, ImagePlus, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import type { Recipe } from '../lib/types'
 import { newId } from '../lib/helpers'
-import { predefinedRecipeLabels, recipeLabelKey, recipeLabelOptions, safeRecipeUrl, validateRecipeUrl } from '../lib/others'
+import { isRecipeImage, predefinedRecipeLabels, recipeLabelKey, recipeLabelOptions, safeRecipeUrl, validateRecipeUrl } from '../lib/others'
+import { prepareRecipeImage } from '../lib/recipeImage'
 import { Modal } from './Modal'
 import { TagAdder } from './TagAdder'
 
@@ -19,7 +20,19 @@ function RecipeEditor({ recipe, recipes, onSave, onClose }: {
     id: newId(), title: '', url: '', steps: '', labels: [], createdAt: new Date().toISOString(),
   })
   const [error, setError] = useState<string | null>(null)
+  const [imageBusy, setImageBusy] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
   const options = recipeLabelOptions(recipes, draft.labels)
+  async function chooseImage(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    setImageBusy(true); setError(null)
+    try { const image = await prepareRecipeImage(file); setDraft(current => ({ ...current, image })) }
+    catch (failure) { setError(failure instanceof Error ? failure.message : 'Bilden kunde inte läsas.') }
+    finally { setImageBusy(false) }
+  }
+  function removeImage() { setDraft(current => { const { image: _image, ...rest } = current; return rest }) }
   const selected = (label: string) => draft.labels.some(value => recipeLabelKey(value) === recipeLabelKey(label))
   function toggleLabel(label: string) {
     setDraft({ ...draft, labels: selected(label) ? draft.labels.filter(value => recipeLabelKey(value) !== recipeLabelKey(label)) : [...draft.labels, label] })
@@ -42,7 +55,12 @@ function RecipeEditor({ recipe, recipes, onSave, onClose }: {
     else onClose()
   }
   return <Modal title={recipe ? 'Redigera recept' : 'Nytt recept'} onClose={onClose} error={error} footer={<><button className="button secondary" type="button" onClick={onClose}>Avbryt</button><button className="button primary" type="submit" form="recipe-form"><Check size={16} />Spara recept</button></>}>
-    <form id="recipe-form" onSubmit={save}><label className="field">Titel<input className="input" required autoFocus maxLength={160} value={draft.title} onChange={event => setDraft({ ...draft, title: event.target.value })} /></label><label className="field">Länk <span className="field-help">Valfri</span><input className="input" type="url" inputMode="url" aria-label="Länk" placeholder="https://" value={draft.url} onChange={event => setDraft({ ...draft, url: event.target.value })} /></label><label className="field">Steg<textarea className="textarea" rows={6} value={draft.steps} onChange={event => setDraft({ ...draft, steps: event.target.value })} /></label>
+    <form id="recipe-form" onSubmit={save}><label className="field">Titel<input className="input" required autoFocus maxLength={160} value={draft.title} onChange={event => setDraft({ ...draft, title: event.target.value })} /></label>
+      <div className="field recipe-image-field"><span className="field-label">Bild <span className="field-help">Valfri · visas på receptkortet</span></span>
+        <input ref={fileRef} className="sr-only" type="file" accept="image/*" aria-label="Välj bild till receptet" tabIndex={-1} onChange={event => { void chooseImage(event) }} />
+        {draft.image && isRecipeImage(draft.image) ? <div className="recipe-image-preview"><img src={draft.image} alt="Vald bild för receptet" /><div className="recipe-image-actions"><button className="button secondary small" type="button" disabled={imageBusy} onClick={() => fileRef.current?.click()}><RefreshCw size={14} />Byt bild</button><button className="button secondary small danger" type="button" onClick={removeImage}><Trash2 size={14} />Ta bort bild</button></div></div>
+          : <button className="recipe-image-add" type="button" disabled={imageBusy} onClick={() => fileRef.current?.click()}><ImagePlus size={22} strokeWidth={1.5} /><span>{imageBusy ? 'Förbereder bilden…' : 'Lägg till bild'}</span><small>Från kamerarullen eller kameran</small></button>}
+      </div><label className="field">Länk <span className="field-help">Valfri</span><input className="input" type="url" inputMode="url" aria-label="Länk" placeholder="https://" value={draft.url} onChange={event => setDraft({ ...draft, url: event.target.value })} /></label><label className="field">Steg<textarea className="textarea" rows={6} value={draft.steps} onChange={event => setDraft({ ...draft, steps: event.target.value })} /></label>
       <fieldset className="tag-field"><legend>Etiketter</legend><div className="tag-options">{options.map(label => <button className={`tag-chip${selected(label) ? ' active' : ''}`} type="button" aria-pressed={selected(label)} key={recipeLabelKey(label)} onClick={() => toggleLabel(label)}>{displayLabel(label)}</button>)}<TagAdder label="Lägg till etikett" placeholder="Ny etikett" onAdd={addLabel} /></div></fieldset>
     </form>
   </Modal>
@@ -68,10 +86,11 @@ export function Recipes({ recipes, onSave, onDelete, initialId }: {
   }
   return <div className="others-content"><div className="others-list-toolbar"><span>{activeFilter ? `${ordered.length} av ${recipes.length} recept` : `${recipes.length} recept`}</span><button className="button primary" type="button" onClick={() => setEditing(null)}><Plus size={16} />Nytt recept</button></div>
     {used.length > 0 && <div className="filter-chips" role="group" aria-label="Filtrera recept efter etikett"><button className={`filter-chip${activeFilter ? '' : ' active'}`} type="button" aria-pressed={!activeFilter} onClick={() => setFilter(null)}>Alla<span className="filter-count">{recipes.length}</span></button>{used.map(label => { const count = recipes.filter(recipe => recipe.labels.some(value => recipeLabelKey(value) === recipeLabelKey(label))).length; return <button className={`filter-chip${activeFilter === recipeLabelKey(label) ? ' active' : ''}`} type="button" key={recipeLabelKey(label)} aria-pressed={activeFilter === recipeLabelKey(label)} onClick={() => setFilter(activeFilter === recipeLabelKey(label) ? null : recipeLabelKey(label))}>{displayLabel(label)}<span className="filter-count">{count}</span></button> })}</div>}
-    <div className="others-record-list">{ordered.map(recipe => <button className="others-record-row recipe-list-row" type="button" key={recipe.id} data-recipe-id={recipe.id} aria-label={`Öppna recept ${recipe.title}`} onClick={() => open(recipe)}><span className="others-record-icon"><CookingPot size={19} strokeWidth={1.5} /></span><span className="others-record-copy"><strong>{recipe.title}</strong>{recipe.labels.length > 0 && <span className="recipe-list-labels">{recipe.labels.map(label => <span className="label-chip" key={label}>{displayLabel(label)}</span>)}</span>}</span><ArrowUpRight size={16} /></button>)}</div>
+    <div className="others-record-list">{ordered.map(recipe => <button className="others-record-row recipe-list-row" type="button" key={recipe.id} data-recipe-id={recipe.id} aria-label={`Öppna recept ${recipe.title}`} onClick={() => open(recipe)}>{recipe.image && isRecipeImage(recipe.image) ? <img className="recipe-thumb" src={recipe.image} alt="" loading="lazy" decoding="async" /> : <span className="others-record-icon"><CookingPot size={19} strokeWidth={1.5} /></span>}<span className="others-record-copy"><strong>{recipe.title}</strong>{recipe.labels.length > 0 && <span className="recipe-list-labels">{recipe.labels.map(label => <span className="label-chip" key={label}>{displayLabel(label)}</span>)}</span>}</span><ArrowUpRight size={16} /></button>)}</div>
     {recipes.length === 0 && <p className="others-empty">Inga recept ännu.</p>}
     {recipes.length > 0 && ordered.length === 0 && <p className="others-empty">Inga recept med den etiketten.</p>}
     {selected && editing === undefined && <Modal title={selected.title} onClose={() => setSelected(null)} error={error} footer={<><button className="icon-button danger" type="button" aria-label="Ta bort recept" onClick={() => setConfirmDelete(true)}><Trash2 size={18} /></button><button className="button secondary" type="button" onClick={() => setSelected(null)}>Stäng</button><button className="button primary" type="button" onClick={() => { setEditing(selected); setSelected(null) }}><Pencil size={15} />Redigera</button></>}>
+      {selected.image && isRecipeImage(selected.image) && <img className="recipe-hero" src={selected.image} alt={`Bild till ${selected.title}`} />}
       {selected.labels.length > 0 && <div className="recipe-detail-labels">{selected.labels.map(label => <span className="label-chip" key={label}>{displayLabel(label)}</span>)}</div>}
       {link && <a className="button secondary recipe-link" href={link} target="_blank" rel="noopener noreferrer">Öppna länk<ArrowUpRight size={16} /></a>}
       {selected.steps ? <div className="recipe-steps">{selected.steps}</div> : <p className="others-help">Inga steg tillagda.</p>}

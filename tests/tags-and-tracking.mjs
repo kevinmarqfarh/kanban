@@ -23,7 +23,7 @@ const {
   isValidBirthdayTag, normalizeBirthdays, resolveBirthdayTag, sortBirthdaysByUpcoming, UNTAGGED_GROUP,
 } = birthdays
 const {
-  exerciseSuggestions, exerciseSummary, findExercise, nutritionCompletionId, nutritionDayStatus, recentExercises, recipeLabelOptions,
+  exerciseSuggestions, exerciseSummary, isRecipeImage, findExercise, nutritionCompletionId, nutritionDayStatus, recentExercises, recipeLabelOptions,
   workoutLoadUnits, workoutRawText,
 } = others
 
@@ -155,4 +155,14 @@ assert.deepEqual(recipeLabelOptions([{ labels: ['frukost', 'Snabbt'] }, { labels
   ['frukost', 'snacks', 'middag', 'Asiatiskt', 'Snabbt', 'Vegetariskt'], 'Presets stay first; own labels are distinct and sorted.')
 assert.deepEqual(recipeLabelOptions([]), ['frukost', 'snacks', 'middag'])
 
-console.log('Tags and tracking passed: birthday tags, grouping, manual order, countdown, one-time migration and merges; nutrition green/orange days; Nivå and recent exercises; recipe label options.')
+/* ---------- Recipe images ---------- */
+const jpeg = 'data:image/jpeg;base64,' + 'A'.repeat(1000)
+assert.equal(isRecipeImage(jpeg), true)
+assert.equal(isRecipeImage('data:image/png;base64,iVBORw0KGgo='), true)
+for (const value of ['', 'https://example.org/bild.jpg', 'data:image/svg+xml;base64,PHN2Zz4=', 'data:text/html;base64,PGgxPg==', 'data:image/jpeg;base64,<script>', 'data:image/jpeg;base64,' + 'A'.repeat(700_001), 42]) assert.equal(isRecipeImage(value), false, `Rejected: ${String(value).slice(0, 40)}`)
+const recipe = { id: 'r', title: 'Pasta', url: '', steps: '', labels: [], createdAt: stamp }
+assert.ok(isWorkspace({ ...base, recipes: [recipe] }), 'Recipes without an image stay valid.')
+assert.ok(isWorkspace({ ...base, recipes: [{ ...recipe, image: jpeg }] }))
+assert.equal(isWorkspace({ ...base, recipes: [{ ...recipe, image: 'javascript:alert(1)' }] }), false)
+
+console.log('Tags and tracking passed: recipe images, birthday tags, grouping, manual order, countdown, one-time migration and merges; nutrition green/orange days; Nivå and recent exercises; recipe label options.')

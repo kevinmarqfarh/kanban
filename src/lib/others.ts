@@ -97,6 +97,13 @@ export function safeRecipeUrl(value: string): string | null {
 }
 export const safeRecipeURL = safeRecipeUrl
 
+export const RECIPE_IMAGE_MAX_LENGTH = 700_000
+
+/** Only small inline JPEG/PNG/WebP images that the app itself produced are accepted. */
+export function isRecipeImage(value: unknown): value is string {
+  return typeof value === 'string' && value.length <= RECIPE_IMAGE_MAX_LENGTH && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/.test(value)
+}
+
 export const predefinedRecipeLabels = ['frukost', 'snacks', 'middag']
 export const recipeLabelKey = (label: string) => label.trim().toLocaleLowerCase('sv')
 

@@ -1,6 +1,6 @@
 import type { Workspace } from './types'
 import { birthdayNotificationId, isValidBirthDate, isValidBirthdayTag, normalizeBirthdays } from './birthdays'
-import { isNonnegativeDecimal, isNonnegativeInteger, nutritionCompletionId, validateRecipeUrl } from './others'
+import { isNonnegativeDecimal, isNonnegativeInteger, isRecipeImage, nutritionCompletionId, validateRecipeUrl } from './others'
 
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
 const strings = (value: unknown): value is string[] => Array.isArray(value) && value.every(item => typeof item === 'string')
@@ -48,7 +48,8 @@ export function isWorkspace(value: unknown): value is Workspace {
   if (!optional('nutritionCompletions', entry => object(entry) && filled(entry.habitId) && date(entry.date)
     && entry.id === nutritionCompletionId(entry.habitId, entry.date) && typeof entry.completed === 'boolean')) return false
   if (!optional('recipes', entry => object(entry) && filled(entry.id) && filled(entry.title) && typeof entry.url === 'string'
-    && validateRecipeUrl(entry.url) && typeof entry.steps === 'string' && strings(entry.labels) && timestamp(entry.createdAt))) return false
+    && validateRecipeUrl(entry.url) && typeof entry.steps === 'string' && strings(entry.labels) && timestamp(entry.createdAt)
+    && (entry.image === undefined || isRecipeImage(entry.image)))) return false
   if (!optional('notes', entry => object(entry) && filled(entry.id) && filled(entry.title) && entry.title.length <= 160
     && typeof entry.content === 'string' && entry.content.length <= 200_000
     && typeof entry.font === 'string' && ['system', 'serif', 'mono'].includes(entry.font)

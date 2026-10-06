@@ -556,6 +556,85 @@ async function mouseDrag(page, fromName, target, position = 'top') {
     }, phone);
   });
 
+  await check('Recipe photos: a large photo is compressed, shown on the card and in the recipe, and can be changed or removed', async () => {
+    await withPage({ recipes }, async page => {
+      await openOthers(page, 'Recept'); await page.getByRole('button', { name: 'Nytt recept', exact: true }).click(); await waitDialog(page);
+      const photo = Buffer.from((await page.evaluate(() => { const canvas = document.createElement('canvas'); canvas.width = 3000; canvas.height = 2000; const context = canvas.getContext('2d'); const gradient = context.createLinearGradient(0, 0, 3000, 2000); gradient.addColorStop(0, '#d9822b'); gradient.addColorStop(1, '#3f6b3a'); context.fillStyle = gradient; context.fillRect(0, 0, 3000, 2000); for (let i = 0; i < 400; i++) { context.fillStyle = `hsl(${i * 37 % 360} 60% 50%)`; context.beginPath(); context.arc((i * 263) % 3000, (i * 151) % 2000, 30 + i % 40, 0, Math.PI * 2); context.fill(); } return canvas.toDataURL('image/png'); })).split(',')[1], 'base64');
+      assert.ok(photo.length > 700_000, 'The source photo is larger than what may be stored.');
+      await dialog(page).getByLabel('Titel', { exact: true }).fill('Pasta med pesto');
+      await dialog(page).getByLabel('Välj bild till receptet').setInputFiles({ name: 'pasta.png', mimeType: 'image/png', buffer: photo });
+      await dialog(page).getByRole('img', { name: 'Vald bild för receptet' }).waitFor();
+      await dialog(page).getByRole('button', { name: 'Spara recept', exact: true }).click(); await dialog(page).waitFor({ state: 'hidden' });
+      const saved = (await cache(page)).recipes.find(entry => entry.title === 'Pasta med pesto');
+      assert.match(saved.image, /^data:image\/jpeg;base64,/); assert.ok(saved.image.length <= 700_000, `Stored image is ${saved.image.length} characters.`);
+      const size = await page.evaluate(src => new Promise(resolve => { const image = new Image(); image.onload = () => resolve([image.naturalWidth, image.naturalHeight]); image.src = src; }), saved.image);
+      assert.deepEqual(size, [1200, 800], 'The longest side is scaled to 1200 px, keeping the proportions.');
+      const thumb = page.locator(`[data-recipe-id="${saved.id}"] .recipe-thumb`); await thumb.waitFor();
+      assert.equal(await page.locator('[data-recipe-id="oats"] .recipe-thumb').count(), 0, 'Recipes without a photo keep the icon.');
+      await page.reload(); await openOthers(page, 'Recept');
+      await page.locator(`[data-recipe-id="${saved.id}"]`).click(); await waitDialog(page);
+      await dialog(page).getByRole('img', { name: 'Bild till Pasta med pesto' }).waitFor(); await screenshot(page, 'recipe-photo-detail.png');
+      await dialog(page).getByRole('button', { name: 'Redigera', exact: true }).click(); await waitDialog(page);
+      await dialog(page).getByLabel('Välj bild till receptet').setInputFiles({ name: 'anteckning.txt', mimeType: 'text/plain', buffer: Buffer.from('inte en bild') });
+      await dialog(page).getByRole('alert').filter({ hasText: /Välj en bildfil/ }).waitFor();
+      await dialog(page).getByRole('button', { name: 'Ta bort bild', exact: true }).click();
+      await dialog(page).getByRole('button', { name: 'Lägg till bild' }).waitFor();
+      await dialog(page).getByRole('button', { name: 'Spara recept', exact: true }).click(); await dialog(page).waitFor({ state: 'hidden' });
+      assert.equal((await cache(page)).recipes.find(entry => entry.id === saved.id).image, undefined, 'Removing the photo removes it from storage.');
+    });
+    await withPage({ recipes: [{ ...recipes[0], image: await (async () => 'data:image/jpeg;base64,' + Buffer.from('fake').toString('base64'))() }] }, async page => {
+      await openOthers(page, 'Recept'); await noOverflow(page); await screenshot(page, 'iphone-recipe-photo-list.png');
+    }, phone);
+  });
+
+  for (const width of [320, 375, 440]) await check(`New kanban card form lines up on a ${width}px phone: Deadline and Tid never overlap`, async () => {
+    await withPage({}, async page => {
+      await nav(page, 'Planner'); await page.getByRole('button', { name: 'Ny uppgift' }).click(); await waitDialog(page);
+      await noOverflow(page); await noDialogOverflow(page);
+      const boxes = await dialog(page).locator('#task-form .input, #task-form .select').evaluateAll(elements => elements.map(element => { const box = element.getBoundingClientRect(); return { type: element.type, top: box.top, left: box.left, right: box.right, height: box.height } }));
+      const date = boxes.find(box => box.type === 'date'), time = boxes.find(box => box.type === 'time'), title = boxes[0];
+      const sheet = await dialog(page).locator('.modal-content').evaluate(element => element.getBoundingClientRect().right);
+      assert.ok(date.right <= time.left || time.top >= date.top + date.height, 'Deadline and Tid do not overlap.');
+      assert.ok(time.right <= sheet, 'Tid stays inside the sheet.');
+      assert.ok(boxes.every(box => Math.abs(box.height - title.height) < 1.5), `Every field has the same height (${boxes.map(box => Math.round(box.height)).join(',')}).`);
+      await screenshot(page, `${width}-task-form.png`);
+    }, { ...phone, viewport: { width, height: 860 } });
+  });
+
+  await check('Every column except Finalized can be deleted from its editor; cards are moved first', async () => {
+    const columns = [{ id: 'todo', title: 'Att göra', color: 'gray' }, { id: 'doing', title: 'Pågår', color: 'blue' }, { id: 'done', title: 'Klart', color: 'green' }, { id: 'finalized', title: 'Finalized', color: 'green' }];
+    const card = (id, columnId) => ({ id, title: `Kort ${id}`, description: '', columnId, labels: [], checklist: [], deadline: null, comments: [], projectId: null, createdAt: stamp });
+    await withPage({ columns, tasks: [card('a', 'doing'), card('b', 'doing'), card('c', 'todo')] }, async page => {
+      await nav(page, 'Planner');
+      await page.getByRole('button', { name: 'Redigera kolumn Pågår', exact: true }).click(); await waitDialog(page);
+      const remove = dialog(page).getByRole('button', { name: 'Ta bort kolumn', exact: true });
+      assert.equal(await remove.isEnabled(), true, 'A column with cards still offers delete.');
+      await remove.click();
+      assert.match(await dialog(page).getByRole('group', { name: 'Ta bort kolumnen' }).textContent(), /Kolumnen har 2 kort/);
+      assert.deepEqual(await dialog(page).getByLabel('Flytta korten till').locator('option').allTextContents(), ['Att göra', 'Klart']);
+      await dialog(page).getByLabel('Flytta korten till').selectOption('done');
+      await dialog(page).getByRole('button', { name: 'Flytta och ta bort', exact: true }).click(); await dialog(page).waitFor({ state: 'hidden' });
+      const saved = await cache(page);
+      assert.deepEqual(saved.columns.map(column => column.id), ['todo', 'done', 'finalized']);
+      assert.deepEqual(saved.tasks.map(task => `${task.id}:${task.columnId}`), ['a:done', 'b:done', 'c:todo'], 'No card is lost.');
+      assert.match(await page.locator('.toast').textContent(), /flyttades till Klart/);
+      await page.getByRole('button', { name: 'Redigera kolumn Klart', exact: true }).click(); await waitDialog(page);
+      await dialog(page).getByRole('button', { name: 'Ta bort kolumn', exact: true }).waitFor();
+      await dialog(page).getByRole('button', { name: 'Avbryt', exact: true }).click(); await dialog(page).waitFor({ state: 'hidden' });
+      await page.getByRole('button', { name: 'Redigera kolumn Finalized', exact: true }).click(); await waitDialog(page);
+      assert.equal(await dialog(page).getByRole('button', { name: 'Ta bort kolumn', exact: true }).count(), 0);
+      assert.match(await dialog(page).locator('.field-help').textContent(), /fast kolumn/);
+    });
+    await withPage({ columns, tasks: [] }, async page => {
+      await nav(page, 'Planner'); await page.getByRole('button', { name: 'Redigera kolumn Att göra', exact: true }).tap(); await waitDialog(page);
+      await dialog(page).getByRole('button', { name: 'Ta bort kolumn', exact: true }).tap();
+      assert.equal(await dialog(page).getByLabel('Flytta korten till').count(), 0, 'An empty column needs no target.');
+      await noDialogOverflow(page); await screenshot(page, 'iphone-column-delete.png');
+      await dialog(page).getByRole('button', { name: 'Ta bort', exact: true }).tap(); await dialog(page).waitFor({ state: 'hidden' });
+      assert.deepEqual((await cache(page)).columns.map(column => column.id), ['doing', 'done', 'finalized']);
+    }, phone);
+  });
+
   await check('No uncaught browser exceptions occur in the revised flows', async () => assert.deepEqual(errors, []));
   fs.writeFileSync(path.join(out, 'results.json'), JSON.stringify({ baseURL, engine, today, results, errors }, null, 2));
   await browser.close();

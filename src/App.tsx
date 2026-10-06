@@ -27,14 +27,30 @@ type Editor = { type: 'task'; task?: Task; columnId?: string }
   | { type: 'project'; project?: Project } | { type: 'project-detail'; projectId: string }
   | { type: 'column'; column?: Column } | { type: 'birthdays' } | { type: 'profile' } | null
 
-function ColumnEditor({ column, count, onSave, onDelete, onClose }: { column?: Column; count: number; onSave: (column: Column) => string | null; onDelete?: () => string | null; onClose: () => void }) {
+function ColumnEditor({ column, count, columns, onSave, onDelete, onClose }: {
+  column?: Column; count: number; columns: Column[]; onSave: (column: Column) => string | null;
+  onDelete?: (moveTo: string | null) => string | null; onClose: () => void;
+}) {
   const [title, setTitle] = useState(column?.title ?? '')
   const [id] = useState(() => column?.id ?? newId())
   const [error, setError] = useState<string | null>(null)
+  const [confirming, setConfirming] = useState(false)
+  const targets = columns.filter(item => item.id !== column?.id && item.id !== 'finalized')
+  const [moveTo, setMoveTo] = useState(() => targets[0]?.id ?? '')
+  const blocked = column?.id === 'finalized' ? 'Finalized är en fast kolumn för avslutade kort och kan inte tas bort.'
+    : column && columns.length <= 2 ? 'Tavlan behöver minst två kolumner.' : null
   return <Modal title={column ? 'Redigera kolumn' : 'Ny kolumn'} error={error} onClose={onClose} footer={<>
-    {onDelete && <button className="icon-button danger" aria-label="Ta bort kolumn" disabled={count > 0} title={count ? 'Flytta uppgifterna först' : 'Ta bort tom kolumn'} onClick={() => setError(onDelete())}><Trash2 size={18} /></button>}
-    <button className="button secondary" onClick={onClose}>Avbryt</button><button className="button primary" type="submit" form="column-form"><Check size={16} />{column ? 'Spara kolumn' : 'Lägg till kolumn'}</button>
-  </>}><form id="column-form" onSubmit={event => { event.preventDefault(); if (title.trim()) setError(onSave({ ...column, id, title: title.trim(), color: column?.color ?? 'gray' })) }}><label className="field">Kolumnnamn<input className="input" autoFocus required maxLength={40} value={title} onChange={event => setTitle(event.target.value)} placeholder="T.ex. På vänt" /></label>{column && count > 0 && <p className="field-help">Flytta kolumnens {count} uppgifter innan du tar bort den.</p>}</form></Modal>
+    {column && onDelete && !confirming && <button className="button secondary danger column-delete" type="button" onClick={() => { setConfirming(true); setError(null) }}><Trash2 size={16} />Ta bort kolumn</button>}
+    <button className="button secondary" type="button" onClick={onClose}>Avbryt</button><button className="button primary" type="submit" form="column-form"><Check size={16} />{column ? 'Spara kolumn' : 'Lägg till kolumn'}</button>
+  </>}><form id="column-form" onSubmit={event => { event.preventDefault(); if (title.trim()) setError(onSave({ ...column, id, title: title.trim(), color: column?.color ?? 'gray' })) }}>
+    <label className="field">Kolumnnamn<input className="input" autoFocus required maxLength={40} value={title} onChange={event => setTitle(event.target.value)} placeholder="T.ex. På vänt" /></label>
+    {column && blocked && <p className="field-help">{blocked}</p>}
+    {column && onDelete && confirming && <div className="form-message delete-confirm column-delete-confirm" role="group" aria-label="Ta bort kolumnen">
+      <p>{count ? `Kolumnen har ${count} ${count === 1 ? 'kort' : 'kort'}. Välj vart de ska flyttas innan kolumnen tas bort.` : `Ta bort kolumnen ${column.title}?`}</p>
+      {count > 0 && <label className="field">Flytta korten till<select className="select" value={moveTo} onChange={event => setMoveTo(event.target.value)}>{targets.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>}
+      <div className="column-delete-actions"><button className="button secondary" type="button" onClick={() => setConfirming(false)}>Behåll</button><button className="button primary danger" type="button" onClick={() => setError(onDelete(count ? moveTo : null))}>{count ? 'Flytta och ta bort' : 'Ta bort'}</button></div>
+    </div>}
+  </form></Modal>
 }
 
 export default function App() {
@@ -330,11 +346,13 @@ export default function App() {
       if (!current.projects.some(project => project.id === editor.projectId)) throw new Error('Projektet har tagits bort i en annan flik.')
       return { ...current, projects: current.projects.map(project => project.id === editor.projectId ? { ...project, tasks: project.tasks?.filter(task => task.id !== id) } : project) }
     }, 'Projektuppgiften är borttagen', closeTask)} />}
-    {editor?.type === 'column' && <ColumnEditor column={editor.column} count={workspace.tasks.filter(task => task.columnId === editor.column?.id).length} onClose={() => setEditor(null)} onDelete={editor.column && editor.column.id !== 'done' && editor.column.id !== 'finalized' && workspace.columns.length > 2 ? () => persistChange(current => {
-      if (current.columns.length <= 2) throw new Error('Behåll minst två kolumner.')
-      if (current.tasks.some(task => task.columnId === editor.column?.id)) throw new Error('Kolumnen innehåller uppgifter. Flytta dem först.')
-      return { ...current, columns: current.columns.filter(column => column.id !== editor.column?.id) }
-    }, 'Kolumnen är borttagen', () => setEditor(null)) : undefined} onSave={saveColumn} />}
+    {editor?.type === 'column' && <ColumnEditor column={editor.column} columns={workspace.columns} count={workspace.tasks.filter(task => task.columnId === editor.column?.id).length} onClose={() => setEditor(null)} onDelete={editor.column && editor.column.id !== 'finalized' && workspace.columns.length > 2 ? moveTo => persistChange(current => {
+      const removed = editor.column!.id
+      if (current.columns.length <= 2) throw new Error('Tavlan behöver minst två kolumner.')
+      const cards = current.tasks.filter(task => task.columnId === removed)
+      if (cards.length && (!moveTo || moveTo === removed || !current.columns.some(column => column.id === moveTo))) throw new Error('Välj en kolumn att flytta korten till.')
+      return { ...current, columns: current.columns.filter(column => column.id !== removed), tasks: cards.length ? current.tasks.map(task => task.columnId === removed ? { ...task, columnId: moveTo! } : task) : current.tasks }
+    }, moveTo ? `Kolumnen är borttagen. Korten flyttades till ${workspace.columns.find(column => column.id === moveTo)?.title}.` : 'Kolumnen är borttagen', () => setEditor(null)) : undefined} onSave={saveColumn} />}
     {editor?.type === 'project' && <ProjectEditor project={editor.project} onClose={() => setEditor(null)} onSave={saveProject} />}
     {project && <ProjectDetail project={project} workspace={workspace} onClose={() => setEditor(null)} onEdit={() => setEditor({ type: 'project', project })} onAddTask={() => setEditor({ type: 'project-task', projectId: project.id })} onOpenTask={(task, focusSubtaskId) => setEditor({ type: 'project-task', task, projectId: project.id, focusSubtaskId })} onToggleSubtask={(taskId, itemId) => persistChange(current => {
       const task = current.projects.find(existing => existing.id === project.id)?.tasks?.find(task => task.id === taskId)

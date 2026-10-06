@@ -13,7 +13,7 @@ npm run dev
 
 ## Det som fungerar
 
-- Skapa, redigera och ta bort uppgifter och egna kolumner.
+- Skapa, redigera och ta bort uppgifter och kolumner. *Ta bort kolumn* finns i kolumnens redigering för alla kolumner utom Finalized; har kolumnen kort väljer du först vart de ska flyttas.
 - Dra kort mellan kolumner med mus eller genom att hålla i kortets handtag på mobilen. Status uppdateras direkt. Tangentbord: fokusera handtaget, tryck mellanslag, använd pilarna och släpp med mellanslag. Status kan också ändras i uppgiften.
 - Uppgifter med titel, beskrivning, status, etiketter, checklista, deadline och kommentarer.
 - Projects med egna huvuduppgifter, deluppgifter och status. Kanban och Projects är separata funktioner; ändringar eller borttagning i den ena påverkar inte den andra. Tidigare delade uppgifter bevaras som fristående kopior i båda funktionerna.
@@ -35,7 +35,7 @@ Födelsedagspåminnelser visas som notiser på **Home**, med namn, ålder och f�
 
 **Kost:** återkommande rader med titel, mängd och enhet. Markera per datum; en grön linje bekräftar avklarat. Veckovyn visar måndag–söndag, dagnummer och ISO-veckonummer, med datumval för historik. Dagar där alla vanor är klara blir gröna och dagar där något saknas blir orange (både i Kost och på Home). Framtida dagar och dagar innan vanorna fanns förblir neutrala. Dagens markeringar och veckans översikt finns även på Home.
 
-**Recept:** spara titel, egna steg, valfri http-/https-länk och etiketter för frukost, snacks, middag eller egna kategorier. Nya etiketter skrivs direkt i rutan *Lägg till etikett* bredvid de färdiga; befintliga etiketter återanvänds oavsett versaler. Listan kan filtreras per etikett. Länken sparas som källa; innehåll hämtas inte automatiskt från webbplatsen.
+**Recept:** spara titel, egna steg, valfri http-/https-länk och etiketter för frukost, snacks, middag eller egna kategorier. Nya etiketter skrivs direkt i rutan *Lägg till etikett* bredvid de färdiga; befintliga etiketter återanvänds oavsett versaler. Listan kan filtreras per etikett. Länken sparas som källa; innehåll hämtas inte automatiskt från webbplatsen. Lägg till en bild (kamerarulle eller kamera) som visas på receptkortet och i receptet; bilden förminskas på enheten till högst 1200 px och sparas som en liten JPEG tillsammans med receptet, så att den följer med i synk och säkerhetskopia.
 
 Säkerhetskopian omfattar även alla Others-poster, kostens daghistorik, födelsedagsnotiser och debriefingar.
 

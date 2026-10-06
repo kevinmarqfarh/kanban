@@ -50,7 +50,7 @@
   .workout-measures { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 /* iOS gives date inputs an intrinsic width and height; pin both so Datum never overlaps Titel. */
-.workout-meta .input { box-sizing: border-box; width: 100%; height: 48px; }
+.workout-meta .input { box-sizing: border-box; width: 100%; }
 .workout-date { display: block; min-width: 0; max-width: 100%; -webkit-appearance: none; appearance: none; text-align: left; }
 .workout-date::-webkit-date-and-time-value { text-align: left; margin: 0; }
 .exercise-field { position: relative; flex: 1; min-width: 0; }
@@ -97,6 +97,17 @@
 .nutrition-habit-row.completed strong { text-decoration: line-through; text-decoration-color: #71917a; }
 .recipe-list-row { min-height: 80px; gap: 13px; }
 .recipe-list-row > svg { color: var(--ink-muted); }
+.recipe-thumb { width: 64px; height: 64px; flex-shrink: 0; border-radius: 14px; object-fit: cover; background: var(--surface-muted); }
+.recipe-hero { display: block; width: 100%; aspect-ratio: 4 / 3; max-height: 340px; border-radius: 16px; object-fit: cover; background: var(--surface-muted); }
+.recipe-image-field { gap: 8px; }
+.recipe-image-add { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 120px; padding: 16px; border: 1px dashed var(--line-strong); border-radius: 16px; background: var(--bg); color: var(--ink-secondary); font-size: 13px; font-weight: 500; }
+.recipe-image-add small { color: var(--ink-muted); font-size: 11px; font-weight: 400; }
+.recipe-image-add:hover { border-color: var(--ink-muted); color: var(--ink); }
+.recipe-image-add:disabled { opacity: 0.6; cursor: progress; }
+.recipe-image-preview { display: flex; flex-direction: column; gap: 9px; }
+.recipe-image-preview img { width: 100%; aspect-ratio: 4 / 3; max-height: 260px; border-radius: 14px; object-fit: cover; }
+.recipe-image-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.recipe-image-actions .button { min-height: 44px; }
 .recipe-list-labels, .recipe-detail-labels { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
 .recipe-label-options { display: flex; flex-wrap: wrap; gap: 7px; }
 .recipe-label-option { min-height: 44px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 11px; background: var(--bg); color: var(--ink-secondary); font-size: 12px; }

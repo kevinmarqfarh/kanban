@@ -203,7 +203,7 @@ const noSuccessToast = async page => assert.doesNotMatch((await page.locator('.t
       await dialog(page).getByRole('button', { name: /Spara/ }).click();
       assert.ok((await cache(page)).columns.some(column => column.title === 'Pausat'));
       await page.getByRole('button', { name: 'Redigera kolumn Pausat', exact: true }).click();
-      await dialog(page).getByRole('button', { name: 'Ta bort kolumn', exact: true }).click();
+      await dialog(page).getByRole('button', { name: 'Ta bort kolumn', exact: true }).click(); await dialog(page).getByRole('button', { name: 'Ta bort', exact: true }).click(); await dialog(page).waitFor({ state: 'hidden' });
       await page.reload(); await nav(page, 'Planner');
       assert.deepEqual((await cache(page)).columns, [...fixture.workspace.columns, { id: 'finalized', title: 'Finalized', color: 'green' }]);
       assert.deepEqual((await cache(page)).tasks, fixture.workspace.tasks.map(task => ({ ...task, projectId: null })));

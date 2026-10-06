@@ -44,3 +44,30 @@ html, body { overflow-x: hidden; }
   .note-toolbar { flex-wrap: wrap; }
   .note-toolbar > label { flex-basis: 110px; }
 }
+
+/* Date and time fields: iOS Safari gives them their own intrinsic width/height (and collapses them when
+   empty), so they spill into the neighbouring field. Pin them to the same box as every other input. */
+.input:is([type='date'], [type='time']) {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  height: 49px;
+  text-align: left;
+}
+.input:is([type='date'], [type='time'])::-webkit-date-and-time-value { min-height: 1.5em; margin: 0; text-align: left; }
+.input:is([type='date'], [type='time'])::-webkit-datetime-edit { padding: 0; }
+.input:is([type='date'], [type='time']):disabled { opacity: 0.55; }
+.field-row > .field { min-width: 0; }
+/* Empty checklist/comment lists add no extra gap above their input rows. */
+.checklist:empty, .comments:empty { display: none; }
+@media (min-width: 761px) {
+  .input:is([type='date'], [type='time']) { height: 45px; }
+}
+@media (max-width: 760px) {
+  /* Selects match the 49px text fields on phones. */
+  .modal-panel .select { min-height: 49px; }
+}
