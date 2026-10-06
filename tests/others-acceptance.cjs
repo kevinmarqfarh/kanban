@@ -92,13 +92,13 @@ const screenshot = async (page, name) => { await page.evaluate(() => document.fo
   const load = async context => { const page = await context.newPage(); page.setDefaultTimeout(10000); page.on('pageerror', error => errors.push(error.message)); await page.goto(baseURL); await page.getByTestId('home-overview').waitFor(); return page; };
   const withPage = async (extra, fn) => { const context = await fresh(extra); try { const page = await load(context); await fn(page); } finally { await context.close(); } };
 
-  await check('Home is default, the footer has four exact views, and settings live behind the upper-left gear', async () => {
+  await check('Home is default, the footer has four exact views, and settings, sync status and theme live behind the upper-right gear', async () => {
     await withPage({}, async page => {
       assert.equal(await page.locator('.bottom-nav button').count(), 4);
       for (const name of ['Home', 'Planner', 'Projects', 'Others']) assert.equal(await page.locator('.bottom-nav').getByRole('button', { name, exact: true }).count(), 1);
       assert.equal(await page.locator('.bottom-nav').getByRole('button', { name: 'Home', exact: true }).getAttribute('aria-current'), 'page');
       assert.equal(await page.locator('.bottom-nav').getByRole('button', { name: /Profile/ }).count(), 0);
-      const gear = page.getByRole('button', { name: 'Öppna inställningar', exact: true }); const box = await gear.boundingBox(); assert.ok(box.x < 756 && box.y < 90);
+      const gear = page.getByRole('button', { name: 'Öppna inställningar', exact: true }); const box = await gear.boundingBox(); assert.ok(box.x > 756 && box.y < 90, 'The gear sits in the upper-right corner.'); assert.equal(await page.locator('.topbar .sync-indicator').count(), 0, 'Sync status lives in settings only.'); assert.equal(await page.getByRole('button', { name: /Byt till (mörkt|ljust) tema/ }).count(), 0, 'Theme is chosen in settings only.');
       await gear.focus(); await page.keyboard.press('Enter'); await waitDialog(page); await dialog(page).getByRole('heading', { name: 'Inställningar', exact: true }).waitFor(); await page.keyboard.press('Escape');
       assert.equal(await gear.evaluate(element => element === document.activeElement), true);
       await nav(page, 'Others'); for (const name of ['Födelsedagar', 'Träning', 'Kost', 'Recept']) await page.getByRole('button', { name: new RegExp('^' + name + '(?:\\s|$)') }).waitFor();

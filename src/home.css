@@ -82,3 +82,4 @@
   .home-panel-heading h2 { font-size: 14px; }
   .home-habit-copy { flex-wrap: wrap; gap: 3px; }
 }
+.profile-sync { min-height: 0; margin: -2px 0 12px; font-size: 11px; }

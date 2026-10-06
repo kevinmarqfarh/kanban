@@ -125,10 +125,10 @@ export function workoutRawText(workout: Workout): string {
   return [heading, ...rows].join('\n')
 }
 
-export const workoutLoadUnits: { value: WorkoutRow['loadUnit']; label: string; field: string }[] = [
-  { value: 'kg', label: 'Kg', field: 'Vikt (kg)' },
-  { value: 'time', label: 'Min', field: 'Tid (min)' },
-  { value: 'level', label: 'Nivå', field: 'Nivå' },
+export const workoutLoadUnits: { value: WorkoutRow['loadUnit']; label: string; field: string; heading: string; suffix: string }[] = [
+  { value: 'kg', label: 'Kg', field: 'Vikt (kg)', heading: 'Vikt', suffix: 'kg' },
+  { value: 'time', label: 'Min', field: 'Tid (min)', heading: 'Tid', suffix: 'min' },
+  { value: 'level', label: 'Nivå', field: 'Nivå', heading: 'Nivå', suffix: 'nivå' },
 ]
 
 export interface ExerciseHistory {

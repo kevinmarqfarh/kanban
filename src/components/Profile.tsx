@@ -4,8 +4,8 @@ import { useWorkspace } from '../hooks/useWorkspace'
 import { supabaseConfigured } from '../lib/supabase'
 
 export type ThemePreference = 'light' | 'dark' | 'system'
-export function Profile({ data, theme, onTheme, onExport }: {
-  data: ReturnType<typeof useWorkspace>; theme: ThemePreference; onTheme: (theme: ThemePreference) => void; onExport: () => void;
+export function Profile({ data, theme, onTheme, onExport, syncText }: {
+  data: ReturnType<typeof useWorkspace>; theme: ThemePreference; onTheme: (theme: ThemePreference) => void; onExport: () => void; syncText: string;
 }) {
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin')
   const [email, setEmail] = useState('')
@@ -30,7 +30,7 @@ export function Profile({ data, theme, onTheme, onExport }: {
   return <div className="profile-layout profile-revised">
     <section className="profile-card profile-account">
       <div className="profile-section-heading">{data.user ? <Cloud size={18} /> : <HardDrive size={18} />}<h2>Lagring</h2></div>
-      <div className="profile-storage"><strong>{data.user ? 'Molnsynk' : 'Sparas lokalt'}</strong>{data.user && <span>{data.user.email}</span>}<p>{data.user ? 'Innehållet synkas mellan dina enheter.' : supabaseConfigured ? 'Logga in för att synka mellan dina enheter.' : 'Innehållet sparas i den här webbläsaren.'}</p></div>
+      <p className="sync-indicator profile-sync" data-status={data.syncStatus}>{data.user ? <Cloud size={13} /> : <HardDrive size={13} />}<span>{syncText}</span></p><div className="profile-storage"><strong>{data.user ? 'Molnsynk' : 'Sparas lokalt'}</strong>{data.user && <span>{data.user.email}</span>}<p>{data.user ? 'Innehållet synkas mellan dina enheter.' : supabaseConfigured ? 'Logga in för att synka mellan dina enheter.' : 'Innehållet sparas i den här webbläsaren.'}</p></div>
       {data.user ? <>
         {!data.workspace.tasks.length && !data.workspace.projects.length && !birthdays.length && !data.workspace.workouts?.length && !data.workspace.nutritionHabits?.length && !data.workspace.nutritionCompletions?.length && !data.workspace.recipes?.length && !data.workspace.notes?.length && !data.workspace.birthdayNotifications?.length && <button className="button secondary" onClick={() => { const result = data.importLocalWorkspace(); setMessage({ text: result.error ?? result.message!, error: !!result.error }) }}>Kopiera lokal tavla<ArrowRight size={16} /></button>}
         <button className="button secondary" disabled={busy || data.loading || data.syncStatus === 'syncing'} onClick={signOut}><LogOut size={16} />Logga ut</button>

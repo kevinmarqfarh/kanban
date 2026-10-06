@@ -355,7 +355,7 @@ const backToOverview = async page => {
     assert.ok((await stateFor(phone, yesterday.date)).dismissedAt);
     await phone.reload();
     await overview(phone).waitFor();
-    await phone.getByRole('button', { name: 'Byt till mörkt tema', exact: true }).tap();
+    { await phone.getByRole('button', { name: 'Öppna inställningar', exact: true }).click(); await phone.getByRole('dialog').getByRole('button', { name: 'Mörkt', exact: true }).click(); await phone.getByRole('dialog').getByRole('button', { name: 'Stäng', exact: true }).last().click(); await phone.getByRole('dialog').waitFor({ state: 'hidden' }); }
     assert.equal(await phone.evaluate(() => document.documentElement.dataset.theme), 'dark');
     await screenshot(phone, 'mobile-summary-dark.png');
     await historyRow(phone, yesterday.date).tap();

@@ -35,23 +35,24 @@
 .workout-row .input { background-color: var(--surface-solid); }
 .workout-last { display: flex; align-items: center; gap: 5px; margin: 8px 0 0 35px; color: var(--ink-muted); font-size: 10px; line-height: 1.5; }
 .workout-last svg { flex-shrink: 0; }
-.workout-measures { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
-.workout-measure { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.workout-measure > label { color: var(--ink-secondary); font-size: 11px; font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.workout-value-pair { display: flex; align-items: stretch; min-width: 0; min-height: 46px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-solid); overflow: hidden; transition: border-color 160ms, box-shadow 160ms; }
+.workout-measures { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+.workout-measure { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+/* The unit choice is the column heading (Set/Minuter, Vikt/Tid/Nivå) so the value field gets the full width. */
+.workout-measure-unit, .workout-measure-label { display: flex; align-items: center; width: 100%; min-width: 0; min-height: 44px; margin: 0; padding: 0 20px 0 2px; border: 0; border-radius: 8px; outline: 0; background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 4px center; color: var(--ink-secondary); font-size: 12px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; appearance: none; -webkit-appearance: none; cursor: pointer; }
+.workout-measure-label { background: none; cursor: default; }
+.workout-measure-unit:focus-visible { background-color: var(--accent-soft); }
+.workout-value-pair { position: relative; display: flex; align-items: center; min-width: 0; height: 48px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-solid); overflow: hidden; cursor: text; transition: border-color 160ms, box-shadow 160ms; }
 .workout-value-pair:focus-within { border-color: var(--ink-muted); box-shadow: 0 0 0 3px var(--accent-soft); }
-.workout-value-pair input { flex: 1 1 auto; width: 0; min-width: 0; padding: 0 4px 0 11px; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 15px; font-variant-numeric: tabular-nums; }
-.workout-value-pair input::placeholder { color: var(--ink-muted); opacity: 0.55; }
-.workout-value-pair select { flex: 0 0 auto; max-width: 62%; padding: 0 22px 0 9px; border: 0; border-left: 1px solid var(--line); border-radius: 0; outline: 0; background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center; color: var(--ink-secondary); font-size: 13px; appearance: none; -webkit-appearance: none; cursor: pointer; }
-.workout-value-pair select:focus-visible { background-color: var(--accent-soft); }
-.workout-unit { display: inline-flex; align-items: center; padding: 0 11px 0 9px; border-left: 1px solid var(--line); color: var(--ink-muted); font-size: 11px; font-weight: 550; letter-spacing: 0.3px; }
-@container (max-width: 430px) {
+.workout-value-pair input { flex: 1 1 auto; width: 0; min-width: 0; height: 100%; padding: 0 2px 0 11px; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 16px; font-variant-numeric: tabular-nums; }
+.workout-value-pair input::placeholder { color: var(--ink-muted); opacity: 0.5; }
+.workout-unit { flex-shrink: 0; padding: 0 10px 0 2px; color: var(--ink-muted); font-size: 12px; pointer-events: none; }
+@container (max-width: 230px) {
   .workout-measures { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .workout-bpm { grid-column: span 1; }
 }
-@container (max-width: 210px) {
-  .workout-measures { grid-template-columns: 1fr; }
-}
+/* iOS gives date inputs an intrinsic width and height; pin both so Datum never overlaps Titel. */
+.workout-meta .input { box-sizing: border-box; width: 100%; height: 48px; }
+.workout-date { display: block; min-width: 0; max-width: 100%; -webkit-appearance: none; appearance: none; text-align: left; }
+.workout-date::-webkit-date-and-time-value { text-align: left; margin: 0; }
 .exercise-field { position: relative; flex: 1; min-width: 0; }
 .exercise-field > .input { width: 100%; }
 .exercise-suggestions { position: absolute; z-index: 25; top: calc(100% + 6px); left: 0; right: 0; max-height: 292px; padding: 6px; overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--line-strong); border-radius: 14px; background: var(--surface-solid); box-shadow: var(--shadow-popover); }
@@ -112,10 +113,9 @@
   .others-record-copy > span { font-size: 10px; }
   .others-content .input, .others-content .select, .others-content .textarea, .workout-form .input, .workout-form .select, .others-copy-fallback .textarea { font-size: 16px; }
   .workout-row { padding: 11px 11px 13px; }
-  .workout-value-pair { min-height: 48px; }
-  .workout-value-pair input { font-size: 16px; }
-  .workout-value-pair select { font-size: 16px; padding-left: 8px; }
-  .workout-meta .input[type='date'] { padding-inline: 10px; }
+  .workout-meta .input { padding-inline: 12px; }
+  body .workout-measure-unit { font-size: 16px; font-weight: 550; }
+  .workout-measure-label { font-size: 15px; font-weight: 550; }
   .nutrition-calendar { padding: 15px; }
   .nutrition-week-heading { gap: 5px; }
   .nutrition-week-heading > strong { font-size: 12px; }

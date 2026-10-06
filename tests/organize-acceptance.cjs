@@ -447,7 +447,7 @@ async function mouseDrag(page, fromName, target, position = 'top') {
       assert.equal(await dialog(page).locator('#workout-form').count(), 1, 'Enter in the name moves on instead of saving.');
       assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label')), 'Mängd övning 2');
       await dialog(page).getByLabel('Belastningsenhet övning 2', { exact: true }).selectOption('level');
-      assert.equal(await dialog(page).locator('label[for^="load-"]').nth(1).textContent(), 'Nivå');
+      assert.equal(await dialog(page).getByLabel('Belastningsenhet övning 2', { exact: true }).evaluate(select => select.selectedOptions[0].textContent), 'Nivå'); assert.equal(await dialog(page).locator('.workout-row').nth(1).locator('.workout-unit').nth(1).textContent(), 'nivå');
       await dialog(page).getByLabel('Belastning övning 2', { exact: true }).fill('7');
       await dialog(page).getByLabel('Mängd övning 2', { exact: true }).fill('15'); await dialog(page).getByLabel('Mängdenhet övning 2', { exact: true }).selectOption('min');
       await dialog(page).getByRole('button', { name: 'Spara pass', exact: true }).click(); await dialog(page).waitFor({ state: 'hidden' });
@@ -486,12 +486,15 @@ async function mouseDrag(page, fromName, target, position = 'top') {
       await noOverflow(page); await noDialogOverflow(page);
       const sizes = await dialog(page).locator('input:not([type="checkbox"])').evaluateAll(elements => elements.map(element => parseFloat(getComputedStyle(element).fontSize)));
       assert.ok(sizes.every(size => size >= 16), `Inputs keep 16px text so iOS does not zoom (${sizes.join(',')}).`);
-      const controls = await dialog(page).locator('.workout-value-pair, .workout-row-delete, .exercise-field input').evaluateAll(elements => elements.map(element => element.getBoundingClientRect().height));
+      const controls = await dialog(page).locator('.workout-value-pair, .workout-row-delete, .exercise-field input, .workout-measure-unit, .workout-meta .input').evaluateAll(elements => elements.map(element => element.getBoundingClientRect().height));
       assert.ok(controls.every(height => height >= 44), `Touch targets are at least 44px (${controls.join(',')}).`);
       const pairs = await dialog(page).locator('.workout-value-pair').evaluateAll(elements => elements.map(element => element.scrollWidth <= element.clientWidth + 1));
       assert.ok(pairs.every(Boolean), 'Value and unit fit inside each field.');
       const columns = await dialog(page).locator('.workout-measures').first().evaluate(element => getComputedStyle(element).gridTemplateColumns.split(' ').length);
-      assert.equal(columns, 2, 'Phones use two measure columns.');
+      assert.equal(columns, 3, 'All three values fit side by side on phones.');
+      const meta = await dialog(page).locator('.workout-meta .input').evaluateAll(inputs => inputs.map(input => input.getBoundingClientRect()));
+      assert.ok(meta.every(box => Math.abs(box.height - meta[0].height) < 1), 'Datum and Titel are the same height.');
+      if (meta[1].top === meta[0].top) assert.ok(meta[0].right <= meta[1].left, 'Datum never overlaps Titel.');
       await dialog(page).getByRole('combobox', { name: 'Övning 2', exact: true }).click(); await noDialogOverflow(page);
       await screenshot(page, `${width}-training-form.png`);
     }, { ...phone, viewport: { width, height: 820 } });

@@ -370,7 +370,7 @@ const noSuccessToast = async page => assert.doesNotMatch((await page.locator('.t
         await capture(page, `${width}-task-form-light.png`);
         await dialog(page).getByRole('button', { name: 'Stäng', exact: true }).click();
         await nav(page, 'Home');
-        await page.getByRole('button', { name: 'Byt till mörkt tema', exact: true }).click();
+        { await page.getByRole('button', { name: 'Öppna inställningar', exact: true }).click(); await page.getByRole('dialog').getByRole('button', { name: 'Mörkt', exact: true }).click(); await page.getByRole('dialog').getByRole('button', { name: 'Stäng', exact: true }).last().click(); await page.getByRole('dialog').waitFor({ state: 'hidden' }); }
         await noOverflow(page);
         await capture(page, `${width}-summary-dark.png`);
       } finally { await context.close(); }
