@@ -132,3 +132,106 @@ export function applyBirthdayReminders(workspace: Workspace, now: Date = new Dat
   if (!changed && !addedNotifications.length && !notificationChanged) return workspace
   return { ...workspace, birthdays: updatedBirthdays, birthdayNotifications: [...notifications, ...addedNotifications] }
 }
+
+/* ---------- Tags, grouping, manual order and countdown ---------- */
+
+export const BIRTHDAY_TAGS = ['Familj', 'Vänner', 'Jobb'] as const
+export const BIRTHDAY_TAG_MAX_LENGTH = 40
+export const UNTAGGED_GROUP = 'untagged'
+export const UNTAGGED_LABEL = 'Utan tagg'
+
+const tagIdentity = (tag: string) => tag.toLocaleLowerCase('sv')
+
+export function cleanBirthdayTag(value: string): string {
+  return value.replace(/\s+/g, ' ').trim().slice(0, BIRTHDAY_TAG_MAX_LENGTH).trim()
+}
+
+export function isValidBirthdayTag(value: unknown): boolean {
+  return value === undefined || value === null
+    || (typeof value === 'string' && !!value.trim() && value.length <= BIRTHDAY_TAG_MAX_LENGTH)
+}
+
+/** Typed text joins an existing tag regardless of case, so "familj" lands in Familj. */
+export function resolveBirthdayTag(value: string | null | undefined, existing: readonly (string | null | undefined)[] = []): string | null {
+  const clean = cleanBirthdayTag(value ?? '')
+  if (!clean) return null
+  const identity = tagIdentity(clean)
+  return [...BIRTHDAY_TAGS, ...existing].find((tag): tag is string => !!tag && tagIdentity(tag) === identity) ?? clean
+}
+
+export function birthdayGroupKey(tag: string | null | undefined): string {
+  return tag?.trim() ? `tag:${tagIdentity(tag.trim())}` : UNTAGGED_GROUP
+}
+
+/** Presets first, then the person's own tags alphabetically. */
+export function birthdayTagOptions(birthdays: readonly Birthday[], extra: readonly (string | null | undefined)[] = []): string[] {
+  const custom = new Map<string, string>()
+  for (const tag of [...birthdays.map(birthday => birthday.tag), ...extra]) {
+    const resolved = resolveBirthdayTag(tag)
+    if (resolved && !BIRTHDAY_TAGS.some(preset => tagIdentity(preset) === tagIdentity(resolved)) && !custom.has(tagIdentity(resolved))) custom.set(tagIdentity(resolved), resolved)
+  }
+  return [...BIRTHDAY_TAGS, ...[...custom.values()].sort((a, b) => a.localeCompare(b, 'sv'))]
+}
+
+export interface BirthdayGroup {
+  key: string
+  tag: string | null
+  label: string
+  birthdays: Birthday[]
+}
+
+/** Group by tag while keeping the stored (manual) order inside every group. */
+export function groupBirthdays(birthdays: readonly Birthday[], includeEmptyPresets = false): BirthdayGroup[] {
+  const groups = new Map<string, BirthdayGroup>()
+  for (const birthday of birthdays) {
+    const tag = resolveBirthdayTag(birthday.tag)
+    const key = birthdayGroupKey(tag)
+    if (!groups.has(key)) groups.set(key, { key, tag, label: tag ?? UNTAGGED_LABEL, birthdays: [] })
+    groups.get(key)!.birthdays.push(birthday)
+  }
+  const presets = BIRTHDAY_TAGS.map(tag => groups.get(birthdayGroupKey(tag))
+    ?? (includeEmptyPresets ? { key: birthdayGroupKey(tag), tag, label: tag, birthdays: [] } : null))
+    .filter((group): group is BirthdayGroup => !!group)
+  const custom = [...groups.values()].filter(group => group.tag && !BIRTHDAY_TAGS.some(tag => birthdayGroupKey(tag) === group.key))
+    .sort((a, b) => a.label.localeCompare(b.label, 'sv'))
+  const untagged = groups.get(UNTAGGED_GROUP)
+  return [...presets, ...custom, ...(untagged ? [untagged] : [])]
+}
+
+function utcDay(value: string): number {
+  const [year, month, day] = value.split('-').map(Number)
+  const date = new Date(0)
+  date.setUTCFullYear(year, month - 1, day)
+  date.setUTCHours(0, 0, 0, 0)
+  return date.getTime()
+}
+
+/** Whole calendar days until the next celebration (0 on the day itself). */
+export function daysUntilBirthday(birthDate: string, today: Date = new Date()): number {
+  const occasion = nextBirthday(birthDate, today)
+  return Math.round((utcDay(occasion.date) - utcDay(localDateString(today))) / 86_400_000)
+}
+
+export function birthdayCountdownLabel(days: number): string {
+  if (days <= 0) return 'Idag'
+  if (days === 1) return 'I morgon'
+  return `${days} dagar kvar`
+}
+
+/** Soonest first; invalid dates last. Used for the one-time migration and "Sortera efter datum". */
+export function sortBirthdaysByUpcoming<T extends Birthday>(birthdays: readonly T[], today: Date = new Date()): T[] {
+  const occasion = (birthday: Birthday) => isValidBirthDate(birthday.birthDate) ? nextBirthday(birthday.birthDate, today).date : '9999-12-31'
+  return [...birthdays].sort((a, b) => occasion(a).localeCompare(occasion(b)) || a.name.localeCompare(b.name, 'sv'))
+}
+
+/**
+ * Birthdays used to be listed by date only. The first time tags exist, store that date order
+ * as the manual order so nothing visibly jumps, and give every record an explicit tag value.
+ */
+export function normalizeBirthdays(workspace: Workspace, today: Date = new Date()): Workspace {
+  const birthdays = workspace.birthdays
+  if (!birthdays?.length || birthdays.every(birthday => birthday.tag !== undefined)) return workspace
+  const legacy = birthdays.every(birthday => birthday.tag === undefined)
+  const ordered = legacy ? sortBirthdaysByUpcoming(birthdays, today) : birthdays
+  return { ...workspace, birthdays: ordered.map(birthday => birthday.tag === undefined ? { ...birthday, tag: null } : birthday) }
+}

@@ -187,7 +187,7 @@ const noSuccessToast = async page => assert.doesNotMatch((await page.locator('.t
       assert.deepEqual(workspace.projects.map(({ tasks, ...project }) => project), fixture.workspace.projects);
       assert.equal(workspace.projects[0].tasks.length, fixture.workspace.tasks.filter(task => task.projectId).length);
       assert.ok(workspace.tasks.every(task => task.projectId === null));
-      assert.deepEqual(workspace.birthdays, fixture.workspace.birthdays);
+      assert.deepEqual(workspace.birthdays, fixture.workspace.birthdays.map(birthday => ({ ...birthday, tag: birthday.tag ?? null })), 'Birthdays load unchanged apart from an explicit empty tag.');
     } finally { await context.close(); }
   });
 
@@ -205,7 +205,7 @@ const noSuccessToast = async page => assert.doesNotMatch((await page.locator('.t
       await page.getByRole('button', { name: 'Redigera kolumn Pausat', exact: true }).click();
       await dialog(page).getByRole('button', { name: 'Ta bort kolumn', exact: true }).click();
       await page.reload(); await nav(page, 'Planner');
-      assert.deepEqual((await cache(page)).columns, fixture.workspace.columns);
+      assert.deepEqual((await cache(page)).columns, [...fixture.workspace.columns, { id: 'finalized', title: 'Finalized', color: 'green' }]);
       assert.deepEqual((await cache(page)).tasks, fixture.workspace.tasks.map(task => ({ ...task, projectId: null })));
     } finally { await context.close(); }
   });

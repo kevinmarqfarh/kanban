@@ -4,7 +4,7 @@ import type { User } from '@supabase/supabase-js'
 import { createEmptyWorkspace, createSeedWorkspace } from '../lib/seed'
 import { supabase, supabaseConfigurationError } from '../lib/supabase'
 import type { AuthResult, SyncStatus, Workspace } from '../lib/types'
-import { isWorkspace, separateProjectTasks } from '../lib/workspaceValidation'
+import { isWorkspace, migrateWorkspace } from '../lib/workspaceValidation'
 import { applyBirthdayReminders } from '../lib/birthdays'
 import { mergeWorkspaceChanges } from '../lib/workspaceMerge'
 
@@ -40,7 +40,7 @@ function readCache(ownerId: string | null): CachedWorkspace | null {
     if (!object(value) || value.version !== 1 || !isWorkspace(value.workspace)) throw new Error('Invalid workspace cache')
     if (typeof value.dirty !== 'boolean' || (value.revision !== null && (!Number.isInteger(value.revision) || Number(value.revision) < 1))) throw new Error('Invalid revision')
     blockedRecovery.delete(cacheKey(ownerId))
-    return { version: 1, workspace: separateProjectTasks(value.workspace), revision: value.revision as number | null, dirty: value.dirty === true }
+    return { version: 1, workspace: migrateWorkspace(value.workspace), revision: value.revision as number | null, dirty: value.dirty === true }
   } catch {
     // Preserve unsupported/corrupt data before an initial workspace replaces the active cache.
     if (raw) {
@@ -70,7 +70,7 @@ function initialContext(ownerId: string | null): Context {
     ownerId,
     ...(readCache(ownerId) ?? {
       version: 1 as const,
-      workspace: separateProjectTasks(ownerId ? createEmptyWorkspace() : createSeedWorkspace()),
+      workspace: migrateWorkspace(ownerId ? createEmptyWorkspace() : createSeedWorkspace()),
       revision: null,
       dirty: false,
     }),
@@ -138,7 +138,7 @@ export function useWorkspace() {
   }, [])
 
   const applyContext = useCallback((next: Context) => {
-    next = { ...next, workspace: separateProjectTasks(next.workspace) }
+    next = { ...next, workspace: migrateWorkspace(next.workspace) }
     contextRef.current = next
     setContext(next)
     const failure = writeCache(next)

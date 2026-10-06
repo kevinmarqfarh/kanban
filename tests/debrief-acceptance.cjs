@@ -28,6 +28,9 @@ const workspaceFixture = {
 const expectedWorkspace = {
   ...workspaceFixture.workspace,
   tasks: workspaceFixture.workspace.tasks.map(task => ({ ...task, projectId: null })),
+  // The app adds the Finalized column and an explicit (empty) birthday tag when it loads an older workspace.
+  columns: [...workspaceFixture.workspace.columns, ...(workspaceFixture.workspace.columns.some(column => column.id === 'finalized') ? [] : [{ id: 'finalized', title: 'Finalized', color: 'green' }])],
+  ...(workspaceFixture.workspace.birthdays ? { birthdays: workspaceFixture.workspace.birthdays.map(birthday => ({ ...birthday, tag: birthday.tag ?? null })) } : {}),
   projects: workspaceFixture.workspace.projects.map(project => ({ ...project, tasks: workspaceFixture.workspace.tasks.filter(task => task.projectId === project.id).map(({ columnId, projectId, ...task }) => ({ ...task, completed: columnId === 'done' })) })),
 };
 const latest = {

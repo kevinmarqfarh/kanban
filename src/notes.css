@@ -16,7 +16,8 @@
 .note-editor-heading { display: flex; align-items: center; gap: 10px; min-height: 44px; margin: -6px -8px 12px; }
 .notes-back { display: none; }
 .note-save-state { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--ink-muted); }
-.note-editor-heading > .icon-button { margin-left: auto; }
+.note-editor-heading > .note-focus-toggle { margin-left: auto; }
+.note-editor-heading > .note-focus-toggle + .icon-button { margin-left: 0; }
 .note-title-input { width: 100%; border: 0; border-radius: 6px; background: transparent; color: var(--ink); font-size: 25px; font-weight: 550; line-height: 1.3; padding: 5px 0; margin-bottom: 15px; }
 .note-title-input::placeholder { color: var(--ink-muted); }
 .note-toolbar { display: flex; align-items: center; gap: 3px; position: sticky; top: 0; z-index: 2; padding: 4px; margin-bottom: 18px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-solid); }
@@ -37,6 +38,32 @@
 .note-link-picker > button > span { font-size: 10px; color: var(--ink-muted); }
 .note-link-picker strong { font-size: 13px; font-weight: 500; overflow-wrap: anywhere; }
 .note-link-picker > p { font-size: 13px; color: var(--ink-muted); }
+/* Focus mode: the editor covers the window; chrome fades while typing and returns on mouse movement or a tap. */
+html.note-focus-open, html.note-focus-open body { overflow: hidden; }
+html.note-focus-open .notes-writing-area { backdrop-filter: none; -webkit-backdrop-filter: none; }
+html.note-focus-open :is(.topbar, .bottom-nav, .page-heading, .others-section-heading, .notes-sidebar, .note-return-link) { visibility: hidden; }
+.note-editor.is-focus { position: fixed; inset: 0; z-index: 70; overflow-y: auto; overscroll-behavior: contain; padding: 0 max(24px, env(safe-area-inset-right)) calc(40px + env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left)); background: var(--bg); animation: note-focus-in 200ms ease-out; cursor: text; }
+.note-editor.is-focus .note-focus-page { display: flex; flex-direction: column; width: min(720px, 100%); min-height: 100%; margin: 0 auto; }
+.note-editor.is-focus .note-editor-heading { position: sticky; top: 0; z-index: 3; margin: 0 -10px 6px; padding: max(12px, env(safe-area-inset-top)) 0 12px; background: linear-gradient(var(--bg) 72%, transparent); cursor: default; }
+.note-editor.is-focus .note-title-input { margin: 5vh 0 12px; font-size: 34px; letter-spacing: -0.8px; line-height: 1.2; }
+.note-editor.is-focus .note-toolbar { position: static; align-self: flex-start; max-width: 100%; margin-bottom: 26px; border-color: var(--line); background: transparent; cursor: default; }
+.note-editor.is-focus .note-toolbar label { flex: 0 1 140px; }
+.note-editor.is-focus .note-content { flex: 1; min-height: 55vh; padding-bottom: 35vh; font-size: 18px; line-height: 1.85; outline: none; }
+.note-editor.is-focus .note-chrome { transition: opacity 280ms ease; }
+.note-editor.is-typing .note-chrome:not(:focus-within) { opacity: 0; }
+.note-focus-exit { min-height: 44px; padding-inline: 10px; font-size: 12px; color: var(--ink-secondary); }
+.note-word-count { margin-left: auto; padding-right: 10px; color: var(--ink-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+@keyframes note-focus-in { from { opacity: 0; transform: scale(0.995); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 760px) {
+  .note-editor.is-focus { padding-inline: max(18px, env(safe-area-inset-left)); }
+  .note-editor.is-focus .note-editor-heading { margin-inline: -6px; }
+  .note-editor.is-focus .note-save-state { margin-left: 0; }
+  .note-editor.is-focus .note-title-input { margin-top: 2vh; font-size: 27px; }
+  .note-editor.is-focus .note-content { font-size: 17px; line-height: 1.8; padding-bottom: 45vh; }
+  .note-editor.is-focus .note-toolbar { align-self: stretch; margin-bottom: 18px; }
+}
+
 @media (max-width: 760px) {
   .notes-layout { grid-template-columns: 1fr; }
   .notes-writing-area { display: none; padding: 15px 17px 20px; }
@@ -45,7 +72,7 @@
   .notes-back { display: inline-flex; padding-inline: 8px; font-size: 11px; }
   .note-editor-heading { gap: 5px; }
   .note-save-state { margin-left: auto; font-size: 10px; }
-  .note-editor-heading > .icon-button { margin-left: 0; }
+  .note-editor-heading > .note-focus-toggle { margin-left: 0; }
   .note-title-input { font-size: 24px; }
   .notes-search input, .note-toolbar select { font-size: 16px; }
   .note-link-picker > button { grid-template-columns: 70px minmax(0, 1fr) 18px; gap: 7px; }

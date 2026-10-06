@@ -2,6 +2,8 @@
 
 Notes ligger i Others. Anteckningar sparas vid ändringar i text, titel och typsnitt. Listan visar en kort förhandsvisning och kan sökas. På mindre skärmar växlar användaren mellan listan och anteckningen; på större skärmar visas båda samtidigt.
 
+**Helskärm:** knappen ⤢ bredvid papperskorgen öppnar anteckningen som en ren skrivyta över hela fönstret. På Mac och iPad går webbläsaren även i riktig helskärm; på iPhone täcker ytan appen. Rubrik, verktygsrad och knappar tonas bort medan du skriver och kommer tillbaka när du rör musen eller trycker utanför texten. Antal ord visas uppe till höger. Escape eller *Avsluta* stänger. Sparandet fungerar precis som vanligt.
+
 Verktygsraden innehåller Standard, Serif och Monospace, punktlista, numrerad lista och + för textlänkar. Länkvalet söker bland Planner-kort, projekt, träningspass, kostvanor, recept och födelsedagar. Länkarna visas som understruken text. De öppnar rätt innehåll och erbjuder återgång till anteckningen.
 
 Anteckningarna använder arbetsytans befintliga lagring och export. Äldre arbetsytor utan `notes` fortsätter fungera. Sparfel behåller texten och visar Inte sparat samt Försök igen. Uppdateringar i olika fält från flera flikar slås samman; ett gammalt formulär återskapar inte en raderad anteckning.

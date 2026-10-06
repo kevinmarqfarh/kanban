@@ -1,0 +1,27 @@
+/* Shared tag chips: single/multi-select chips, the inline "Lägg till" box and filter rows. */
+.tag-field { min-width: 0; margin: 0; padding: 0; border: 0; }
+.tag-field > legend, .tag-field-label { margin-bottom: 10px; padding: 0; color: var(--ink-secondary); font-size: 11px; font-weight: 550; }
+.tag-field > .birthday-help { margin-top: 8px; }
+.tag-options { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+.tag-chip { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 44px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 11px; background: var(--bg); color: var(--ink-secondary); font-size: 12px; line-height: 1.3; overflow-wrap: anywhere; text-align: left; }
+.tag-chip:hover { border-color: var(--line-strong); color: var(--ink); }
+.tag-chip.active { border-color: var(--ink-muted); background: var(--accent-soft); color: var(--ink); font-weight: 550; }
+.tag-chip-add { border-style: dashed; border-color: var(--line-strong); background: transparent; color: var(--ink-muted); }
+.tag-chip-add svg { flex-shrink: 0; }
+.tag-adder { display: inline-flex; align-items: center; min-height: 44px; max-width: 100%; padding-left: 12px; border: 1px solid var(--ink-muted); border-radius: 11px; background: var(--surface-solid); box-shadow: 0 0 0 3px var(--accent-soft); }
+.tag-adder-input { width: 9.5em; min-width: 0; padding: 8px 0; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 12px; }
+.tag-adder-input::placeholder { color: var(--ink-muted); }
+.tag-adder-confirm { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 9px; color: var(--ink-secondary); }
+.tag-adder-confirm:hover { color: var(--ink); background: var(--surface-muted); }
+
+.filter-chips { display: flex; align-items: center; gap: 6px; min-width: 0; margin: 0 -2px; padding: 2px; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+.filter-chips::-webkit-scrollbar { display: none; }
+.filter-chip { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; min-height: 40px; padding: 8px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); color: var(--ink-secondary); font-size: 12px; white-space: nowrap; }
+.filter-chip:hover { border-color: var(--line-strong); color: var(--ink); }
+.filter-chip.active { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+.filter-chip .filter-count { color: inherit; opacity: 0.6; font-size: 10px; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 760px) {
+  .filter-chip { min-height: 44px; }
+  .tag-adder-input { width: 8.5em; }
+}

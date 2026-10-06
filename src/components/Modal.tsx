@@ -56,12 +56,20 @@ export function Modal({ title, subtitle, children, onClose, footer, error, wide 
       previous?.focus({ preventScroll: true })
     }
   }, [])
+  // Only a press that both starts and ends on the backdrop closes the sheet. A drag or text
+  // selection that is released outside the panel keeps it open.
+  const outside = (event: { target: EventTarget; clientX: number; clientY: number }) => {
+    if (event.target !== ref.current) return false
+    const rect = ref.current.getBoundingClientRect()
+    return event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom
+  }
+  const pressedOutside = useRef(false)
   return <dialog ref={ref} className={`modal-panel${wide ? ' modal-wide' : ''}`} aria-labelledby="modal-title" onCancel={event => {
     event.preventDefault(); closeRef.current()
-  }} onClick={event => {
-    if (event.target !== ref.current) return
-    const rect = ref.current.getBoundingClientRect()
-    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) onClose()
+  }} onPointerDown={event => { pressedOutside.current = outside(event) }} onClick={event => {
+    const started = pressedOutside.current
+    pressedOutside.current = false
+    if (started && outside(event)) onClose()
   }}>
     <div className="modal-header"><div>{subtitle && <p className="eyebrow">{subtitle}</p>}<h2 id="modal-title">{title}</h2></div><button className="icon-button" aria-label="Stäng" onClick={onClose}><X size={20} /></button></div>
     <div className="modal-content">{children}</div>

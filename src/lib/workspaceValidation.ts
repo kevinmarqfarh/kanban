@@ -1,5 +1,5 @@
 import type { Workspace } from './types'
-import { birthdayNotificationId, isValidBirthDate } from './birthdays'
+import { birthdayNotificationId, isValidBirthDate, isValidBirthdayTag, normalizeBirthdays } from './birthdays'
 import { isNonnegativeDecimal, isNonnegativeInteger, nutritionCompletionId, validateRecipeUrl } from './others'
 
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
@@ -34,14 +34,15 @@ export function isWorkspace(value: unknown): value is Workspace {
     && strings(birthday.reminders) && birthday.reminders.every(reminder => reminders.includes(reminder))
     && new Set(birthday.reminders).size === birthday.reminders.length
     && timestamp(birthday.createdAt) && strings(birthday.generatedReminders) && birthday.generatedReminders.every(filled)
-    && new Set(birthday.generatedReminders).size === birthday.generatedReminders.length))) return false
+    && new Set(birthday.generatedReminders).size === birthday.generatedReminders.length
+    && isValidBirthdayTag(birthday.tag)))) return false
   const optional = (key: string, validate: (entry: unknown) => boolean) => value[key] === undefined
     || (Array.isArray(value[key]) && value[key].every(validate))
   if (!optional('workouts', entry => object(entry) && filled(entry.id) && date(entry.date)
     && (entry.title === undefined || typeof entry.title === 'string') && timestamp(entry.createdAt)
     && Array.isArray(entry.rows) && entry.rows.every(row => object(row) && filled(row.id) && filled(row.title)
       && isNonnegativeDecimal(row.amount, true) && typeof row.amountUnit === 'string' && ['sets', 'min'].includes(row.amountUnit)
-      && isNonnegativeDecimal(row.load, true) && typeof row.loadUnit === 'string' && ['time', 'kg'].includes(row.loadUnit) && isNonnegativeInteger(row.bpm, true)))) return false
+      && isNonnegativeDecimal(row.load, true) && typeof row.loadUnit === 'string' && ['time', 'kg', 'level'].includes(row.loadUnit) && isNonnegativeInteger(row.bpm, true)))) return false
   if (!optional('nutritionHabits', entry => object(entry) && filled(entry.id) && filled(entry.title)
     && isNonnegativeDecimal(entry.amount) && typeof entry.unit === 'string' && ['st', 'ml', 'l', 'g', 'portion'].includes(entry.unit) && timestamp(entry.createdAt))) return false
   if (!optional('nutritionCompletions', entry => object(entry) && filled(entry.habitId) && date(entry.date)
@@ -84,4 +85,9 @@ export function separateProjectTasks(workspace: Workspace): Workspace {
     })),
     tasks: workspace.tasks.map(task => task.projectId ? { ...task, projectId: null } : task),
   }
+}
+
+/** Every load path runs the same idempotent upgrades, so old caches and cloud copies stay compatible. */
+export function migrateWorkspace(workspace: Workspace, today: Date = new Date()): Workspace {
+  return normalizeBirthdays(separateProjectTasks(workspace), today)
 }

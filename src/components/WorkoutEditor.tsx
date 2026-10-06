@@ -1,17 +1,60 @@
-import { useState, type FormEvent } from 'react'
-import { Check, Copy, Dumbbell, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
+import { Check, Copy, Dumbbell, History, Pencil, Plus, Trash2, X } from 'lucide-react'
 import type { Workout, WorkoutRow } from '../lib/types'
 import { newId } from '../lib/helpers'
 import { isValidBirthDate, localDateString } from '../lib/birthdays'
-import { workoutRawText } from '../lib/others'
+import { exerciseSuggestions, exerciseSummary, findExercise, recentExercises, workoutLoadUnits, workoutRawText, type ExerciseHistory } from '../lib/others'
 import { Modal } from './Modal'
 
 function newRow(): WorkoutRow {
   return { id: newId(), title: '', amount: '', amountUnit: 'sets', load: '', loadUnit: 'kg', bpm: '' }
 }
 
-export function WorkoutEditor({ workout, onSave, onDelete, onClose }: {
+const shortDate = (date: string) => new Date(`${date}T12:00:00`).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' })
+
+/** Exercise name with a list of recently trained exercises. Free text is always allowed. */
+function ExerciseNameField({ id, index, value, history, onChange, onPick, onNext }: {
+  id: string; index: number; value: string; history: ExerciseHistory[];
+  onChange: (value: string) => void; onPick: (entry: ExerciseHistory) => void; onNext: () => void;
+}) {
+  const listId = useId()
+  const listRef = useRef<HTMLDivElement>(null)
+  const [open, setOpen] = useState(false)
+  const [active, setActive] = useState(-1)
+  const suggestions = exerciseSuggestions(history, value)
+  const visible = open && suggestions.length > 0
+  useEffect(() => { if (visible) listRef.current?.scrollIntoView({ block: 'nearest' }) }, [visible])
+  function pick(entry: ExerciseHistory) { onPick(entry); setOpen(false); setActive(-1) }
+  function keyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'ArrowDown' && suggestions.length) { event.preventDefault(); setOpen(true); setActive(current => Math.min(current + 1, suggestions.length - 1)) }
+    else if (event.key === 'ArrowUp' && visible) { event.preventDefault(); setActive(current => Math.max(current - 1, -1)) }
+    else if (event.key === 'Enter') {
+      event.preventDefault()
+      if (visible && active >= 0) pick(suggestions[active])
+      else { setOpen(false); onNext() }
+    } else if (event.key === 'Escape' && visible) { event.preventDefault(); event.stopPropagation(); setOpen(false); setActive(-1) }
+  }
+  return <div className="exercise-field">
+    <input id={id} className="input" required maxLength={160} aria-label={`Övning ${index}`} placeholder="Övning, t.ex. Knäböj" autoComplete="off" autoCapitalize="sentences" enterKeyHint="next"
+      role="combobox" aria-autocomplete="list" aria-expanded={visible} aria-controls={visible ? listId : undefined}
+      aria-activedescendant={visible && active >= 0 ? `${listId}-${active}` : undefined}
+      value={value} onChange={event => { onChange(event.target.value); setOpen(true); setActive(-1) }}
+      onFocus={() => setOpen(true)} onClick={() => setOpen(true)} onBlur={() => { setOpen(false); setActive(-1) }} onKeyDown={keyDown} />
+    {visible && <div className="exercise-suggestions" ref={listRef}>
+      <p aria-hidden="true">{value.trim() ? 'Förslag' : 'Senast använda'}</p>
+      <ul id={listId} role="listbox" aria-label={value.trim() ? 'Förslag på övningar' : 'Senast använda övningar'}>
+        {suggestions.map((entry, position) => <li key={entry.title} id={`${listId}-${position}`} role="option" aria-selected={position === active} className={position === active ? 'active' : ''}
+          onMouseDown={event => event.preventDefault()} onMouseEnter={() => setActive(position)} onClick={() => pick(entry)}>
+          <strong>{entry.title}</strong><span>{shortDate(entry.date)}{exerciseSummary(entry.row) ? ` · ${exerciseSummary(entry.row)}` : ''}</span>
+        </li>)}
+      </ul>
+    </div>}
+  </div>
+}
+
+export function WorkoutEditor({ workout, history = [], onSave, onDelete, onClose }: {
   workout?: Workout;
+  history?: Workout[];
   onSave: (edited: Workout, original?: Workout) => string | null;
   onDelete: (id: string) => string | null;
   onClose: () => void;
@@ -22,6 +65,13 @@ export function WorkoutEditor({ workout, onSave, onDelete, onClose }: {
   })
   const [error, setError] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [focusRow, setFocusRow] = useState<string | null>(null)
+  const [recent] = useState(() => recentExercises(history, workout?.id))
+  useEffect(() => {
+    if (!focusRow) return
+    document.getElementById(`exercise-${focusRow}`)?.focus()
+    setFocusRow(null)
+  }, [focusRow])
   function updateRow(id: string, values: Partial<WorkoutRow>) {
     setDraft(current => ({ ...current, rows: current.rows.map(row => row.id === id ? { ...row, ...values } : row) }))
   }
@@ -35,19 +85,36 @@ export function WorkoutEditor({ workout, onSave, onDelete, onClose }: {
     if (failure) setError(failure)
     else onClose()
   }
+  function addRow() {
+    const row = newRow()
+    setDraft(current => ({ ...current, rows: [...current.rows, row] }))
+    setFocusRow(row.id)
+  }
   return <Modal title={workout ? 'Redigera pass' : 'Nytt pass'} onClose={onClose} error={error} footer={<>
     {workout && <button className="icon-button danger" type="button" aria-label="Ta bort pass" onClick={() => setConfirmDelete(true)}><Trash2 size={18} /></button>}
     <button className="button secondary" type="button" onClick={onClose}>Avbryt</button><button className="button primary" form="workout-form" type="submit"><Check size={16} />Spara pass</button>
   </>}>
     <form id="workout-form" className="workout-form" onSubmit={save}>
-      <div className="field-row"><label className="field">Datum<input className="input" type="date" required value={draft.date} onChange={event => setDraft({ ...draft, date: event.target.value })} /></label><label className="field">Titel <span className="field-help">Valfri</span><input className="input" maxLength={160} value={draft.title ?? ''} onChange={event => setDraft({ ...draft, title: event.target.value })} /></label></div>
-      <div className="workout-rows">{draft.rows.map((row, index) => <fieldset className="workout-row" key={row.id} data-workout-row={row.id}><legend>Övning {index + 1}</legend><div className="workout-row-top"><label className="field">Övning<input className="input" required maxLength={160} aria-label={`Övning ${index + 1}`} value={row.title} onChange={event => updateRow(row.id, { title: event.target.value })} /></label><button className="icon-button" type="button" aria-label={`Ta bort övning ${index + 1}`} onClick={() => setDraft({ ...draft, rows: draft.rows.filter(item => item.id !== row.id) })}><Trash2 size={16} /></button></div>
-        <div className="workout-measures"><div className="field"><label htmlFor={`amount-${row.id}`}>Mängd</label><div className="workout-value-pair"><input id={`amount-${row.id}`} className="input" type="text" inputMode="decimal" pattern="[0-9]+([.,][0-9]+)?" aria-label={`Mängd övning ${index + 1}`} value={row.amount} onChange={event => updateRow(row.id, { amount: event.target.value })} /><select className="select" aria-label={`Mängdenhet övning ${index + 1}`} value={row.amountUnit} onChange={event => updateRow(row.id, { amountUnit: event.target.value as WorkoutRow['amountUnit'] })}><option value="sets">Set</option><option value="min">Min</option></select></div></div>
-          <div className="field"><label htmlFor={`load-${row.id}`}>{row.loadUnit === 'time' ? 'Tid (min)' : 'Vikt (kg)'}</label><div className="workout-value-pair"><input id={`load-${row.id}`} className="input" type="text" inputMode="decimal" pattern="[0-9]+([.,][0-9]+)?" aria-label={`Belastning övning ${index + 1}`} value={row.load} onChange={event => updateRow(row.id, { load: event.target.value })} /><select className="select" aria-label={`Belastningsenhet övning ${index + 1}`} value={row.loadUnit} onChange={event => updateRow(row.id, { loadUnit: event.target.value as WorkoutRow['loadUnit'] })}><option value="time">Min</option><option value="kg">Kg</option></select></div></div>
-          <label className="field workout-bpm">BPM<input className="input" type="text" inputMode="numeric" pattern="[0-9]+" aria-label={`BPM övning ${index + 1}`} value={row.bpm} onChange={event => updateRow(row.id, { bpm: event.target.value })} /></label>
-        </div>
-      </fieldset>)}</div>
-      <button className="button secondary others-add-row" type="button" onClick={() => setDraft({ ...draft, rows: [...draft.rows, newRow()] })}><Plus size={16} />Lägg till övning</button>
+      <div className="workout-meta"><label className="field">Datum<input className="input" type="date" required value={draft.date} onChange={event => setDraft({ ...draft, date: event.target.value })} /></label><label className="field">Titel<input className="input" maxLength={160} placeholder="Valfri, t.ex. Benpass" value={draft.title ?? ''} onChange={event => setDraft({ ...draft, title: event.target.value })} /></label></div>
+      <ol className="workout-rows">{draft.rows.map((row, index) => {
+        const last = findExercise(recent, row.title)
+        const load = workoutLoadUnits.find(unit => unit.value === row.loadUnit) ?? workoutLoadUnits[0]
+        return <li key={row.id}><fieldset className="workout-row" data-workout-row={row.id}><legend className="sr-only">Övning {index + 1}</legend>
+          <div className="workout-row-top"><span className="workout-row-number" aria-hidden="true">{index + 1}</span>
+            <ExerciseNameField id={`exercise-${row.id}`} index={index + 1} value={row.title} history={recent} onChange={title => updateRow(row.id, { title })}
+              onPick={entry => { updateRow(row.id, { title: entry.title, ...(row.amount ? {} : { amountUnit: entry.row.amountUnit }), ...(row.load ? {} : { loadUnit: entry.row.loadUnit }) }); requestAnimationFrame(() => document.getElementById(`amount-${row.id}`)?.focus()) }}
+              onNext={() => document.getElementById(`amount-${row.id}`)?.focus()} />
+            <button className="icon-button workout-row-delete" type="button" aria-label={`Ta bort övning ${index + 1}`} onClick={() => setDraft({ ...draft, rows: draft.rows.filter(item => item.id !== row.id) })}><Trash2 size={16} /></button></div>
+          {last && exerciseSummary(last.row) && <p className="workout-last"><History size={12} aria-hidden="true" />Senast {shortDate(last.date)}: {exerciseSummary(last.row)}</p>}
+          <div className="workout-measures">
+            <div className="workout-measure"><label htmlFor={`amount-${row.id}`}>Mängd</label><div className="workout-value-pair"><input id={`amount-${row.id}`} type="text" inputMode="decimal" enterKeyHint="next" pattern="[0-9]+([.,][0-9]+)?" placeholder="0" aria-label={`Mängd övning ${index + 1}`} value={row.amount} onChange={event => updateRow(row.id, { amount: event.target.value })} /><select aria-label={`Mängdenhet övning ${index + 1}`} value={row.amountUnit} onChange={event => updateRow(row.id, { amountUnit: event.target.value as WorkoutRow['amountUnit'] })}><option value="sets">Set</option><option value="min">Min</option></select></div></div>
+            <div className="workout-measure"><label htmlFor={`load-${row.id}`}>{load.field}</label><div className="workout-value-pair"><input id={`load-${row.id}`} type="text" inputMode="decimal" enterKeyHint="next" pattern="[0-9]+([.,][0-9]+)?" placeholder="0" aria-label={`Belastning övning ${index + 1}`} value={row.load} onChange={event => updateRow(row.id, { load: event.target.value })} /><select aria-label={`Belastningsenhet övning ${index + 1}`} value={row.loadUnit} onChange={event => updateRow(row.id, { loadUnit: event.target.value as WorkoutRow['loadUnit'] })}>{workoutLoadUnits.map(unit => <option key={unit.value} value={unit.value}>{unit.label}</option>)}</select></div></div>
+            <div className="workout-measure workout-bpm"><label htmlFor={`bpm-${row.id}`}>Puls</label><div className="workout-value-pair"><input id={`bpm-${row.id}`} type="text" inputMode="numeric" enterKeyHint="done" pattern="[0-9]+" placeholder="0" aria-label={`BPM övning ${index + 1}`} value={row.bpm} onChange={event => updateRow(row.id, { bpm: event.target.value })} /><span className="workout-unit" aria-hidden="true">BPM</span></div></div>
+          </div>
+        </fieldset></li>
+      })}</ol>
+      {draft.rows.length === 0 && <p className="others-help">Inga övningar. Lägg till minst en för att logga passet.</p>}
+      <button className="button secondary others-add-row" type="button" onClick={addRow}><Plus size={16} />Lägg till övning</button>
       {confirmDelete && <div className="form-message delete-confirm"><p>Ta bort passet?</p><button className="button secondary" type="button" onClick={() => setConfirmDelete(false)}>Behåll</button><button className="button primary danger" type="button" onClick={() => { const failure = onDelete(draft.id); if (failure) setError(failure); else onClose() }}>Ta bort</button></div>}
     </form>
   </Modal>
@@ -82,6 +149,6 @@ export function Workouts({ workouts, onSave, onDelete, initialId }: {
     {ordered.length === 0 && <p className="others-empty">Inga träningspass ännu.</p>}
     {copyStatus && <p className="others-status" role="status"><Check size={14} />{copyStatus}</p>}
     {rawText !== null && <div className="others-copy-fallback"><div className="others-copy-heading"><p>Kopiera texten manuellt.</p><button className="icon-button" type="button" aria-label="Dölj kopiering" onClick={() => setRawText(null)}><X size={17} /></button></div><textarea className="textarea" rows={6} readOnly autoFocus aria-label="Råtext för träningspass" value={rawText} onFocus={event => event.currentTarget.select()} /></div>}
-    {editing !== undefined && <WorkoutEditor key={editing?.id ?? 'new-workout'} workout={editing ?? undefined} onSave={onSave} onDelete={onDelete} onClose={() => setEditing(undefined)} />}
+    {editing !== undefined && <WorkoutEditor key={editing?.id ?? 'new-workout'} workout={editing ?? undefined} history={workouts} onSave={onSave} onDelete={onDelete} onClose={() => setEditing(undefined)} />}
   </div>
 }

@@ -60,7 +60,7 @@ const screenshot = async (page, filename) => { await page.evaluate(() => documen
 
   await check('Legacy workspace and historical birthday cards load without losing content', async () => {
     const workspace = await cache(page); await unchangedTasks(page);
-    assert.deepEqual(workspace.projects, legacy.workspace.projects.map(project => ({ ...project, tasks: legacy.workspace.tasks.filter(task => task.projectId === project.id).map(({ columnId, projectId, ...task }) => ({ ...task, completed: columnId === (legacy.workspace.columns.find(column => column.id === 'done')?.id ?? legacy.workspace.columns.at(-1)?.id) })) }))); assert.deepEqual(workspace.columns, legacy.workspace.columns);
+    assert.deepEqual(workspace.projects, legacy.workspace.projects.map(project => ({ ...project, tasks: legacy.workspace.tasks.filter(task => task.projectId === project.id).map(({ columnId, projectId, ...task }) => ({ ...task, completed: columnId === (legacy.workspace.columns.find(column => column.id === 'done')?.id ?? legacy.workspace.columns.at(-1)?.id) })) }))); assert.deepEqual(workspace.columns, [...legacy.workspace.columns, { id: 'finalized', title: 'Finalized', color: 'green' }]);
     assert.deepEqual(workspace.birthdays ?? [], []);
     assert.deepEqual(await page.evaluate(key => Object.keys(localStorage).filter(item => item.startsWith(`${key}:recovery:`)), key), []);
   });

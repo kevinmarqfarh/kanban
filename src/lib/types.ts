@@ -53,6 +53,8 @@ export interface Birthday {
   reminders: BirthdayReminder[]
   createdAt: string
   generatedReminders: string[]
+  // Group such as Familj or Vänner. Missing on records saved before tags existed.
+  tag?: string | null
 }
 
 export interface BirthdayNotification {
@@ -73,7 +75,7 @@ export interface WorkoutRow {
   amount: string
   amountUnit: 'sets' | 'min'
   load: string
-  loadUnit: 'time' | 'kg'
+  loadUnit: 'time' | 'kg' | 'level'
   bpm: string
 }
 

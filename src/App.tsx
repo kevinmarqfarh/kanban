@@ -11,7 +11,7 @@ import { TaskEditor } from './components/TaskEditor'
 import { Projects, ProjectDetail, ProjectEditor, ProjectTaskEditor } from './components/Projects'
 import { Profile, type ThemePreference } from './components/Profile'
 import { Modal } from './components/Modal'
-import { Birthdays } from './components/Birthdays'
+import { Birthdays, type BirthdayOrderGroup } from './components/Birthdays'
 import { DebriefNotice } from './components/Summary'
 import { Home } from './components/Home'
 import { Others } from './components/Others'
@@ -184,6 +184,23 @@ export default function App() {
       if (!original) creationSnapshots.current.birthdays.set(birthday.id, structuredClone(next.birthdays!.find(person => person.id === birthday.id)!))
     })
   }
+  /** Persist the manual order shown in the birthday overview; a group's tag is applied to everyone in it. */
+  function reorderBirthdays(groups: BirthdayOrderGroup[], message?: string): string | null {
+    return persistChange(current => {
+      const people = current.birthdays ?? []
+      const byId = new Map(people.map(person => [person.id, person]))
+      const placed = new Set<string>()
+      const ordered: Birthday[] = []
+      for (const group of groups) for (const id of group.ids) {
+        const person = byId.get(id)
+        if (!person || placed.has(id)) continue // Removed in another tab meanwhile.
+        placed.add(id)
+        ordered.push((person.tag ?? null) === group.tag ? person : { ...person, tag: group.tag })
+      }
+      // People added in another tab while dragging keep their place at the end.
+      return { ...current, birthdays: [...ordered, ...people.filter(person => !placed.has(person.id))] }
+    }, message)
+  }
   function saveColumn(column: Column): string | null {
     const original = (editor?.type === 'column' ? editor.column : undefined) ?? creationSnapshots.current.columns.get(column.id)
     return persistChange(current => {
@@ -307,7 +324,7 @@ export default function App() {
       <nav className="bottom-nav" aria-label="Huvudnavigation">{([{ id: 'home', label: 'Home', Icon: House }, { id: 'planner', label: 'Planner', Icon: Columns3 }, { id: 'projects', label: 'Projects', Icon: Folder }, { id: 'others', label: 'Others', Icon: LayoutList }] as const).map(({ id, label, Icon }) => <button key={id} className={`nav-item ${page === id ? 'active' : ''}`} aria-label={label} aria-current={page === id ? 'page' : undefined} onClick={() => switchPage(id)}><Icon className="nav-icon" size={18} /><span className="nav-label">{label}</span>{id === 'home' && unreadCount > 0 && <span className="nav-unread" aria-hidden="true">{unreadCount > 9 ? '9+' : unreadCount}</span>}</button>)}</nav>
     </div>
     {editor?.type === 'profile' && <Modal title="Inställningar" onClose={() => setEditor(null)} footer={<button className="button secondary" onClick={() => setEditor(null)}>Stäng</button>}><div className="settings-content"><Profile data={data} theme={theme} onTheme={setTheme} onExport={exportWorkspace} /></div></Modal>}
-    {editor?.type === 'birthdays' && <Birthdays birthdays={workspace.birthdays ?? []} onClose={() => setEditor(null)} onSave={saveBirthday} onDelete={id => persistChange(current => ({ ...current, birthdays: (current.birthdays ?? []).filter(person => person.id !== id), birthdayNotifications: (current.birthdayNotifications ?? []).filter(note => note.birthdayId !== id) }), 'Födelsedagen är borttagen. Uppgifterna finns kvar.')} />}
+    {editor?.type === 'birthdays' && <Birthdays birthdays={workspace.birthdays ?? []} onClose={() => setEditor(null)} onSave={saveBirthday} onReorder={reorderBirthdays} onDelete={id => persistChange(current => ({ ...current, birthdays: (current.birthdays ?? []).filter(person => person.id !== id), birthdayNotifications: (current.birthdayNotifications ?? []).filter(note => note.birthdayId !== id) }), 'Födelsedagen är borttagen. Uppgifterna finns kvar.')} />}
     {editor?.type === 'task' && <TaskEditor key={editor.task?.id ?? 'new-task'} task={editor.task} columnId={editor.columnId} workspace={workspace} onClose={closeTask} onSave={saveTask} onDelete={id => persistChange(current => ({ ...current, tasks: current.tasks.filter(task => task.id !== id) }), 'Uppgiften är borttagen', closeTask)} />}
     {editor?.type === 'project-task' && <ProjectTaskEditor key={editor.task?.id ?? 'new-project-task'} task={editor.task} focusSubtaskId={editor.focusSubtaskId} onClose={closeTask} onSave={saveProjectTask} onDelete={id => persistChange(current => {
       if (!current.projects.some(project => project.id === editor.projectId)) throw new Error('Projektet har tagits bort i en annan flik.')

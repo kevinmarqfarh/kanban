@@ -3,7 +3,7 @@ import { Check, ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from 'lucide-r
 import type { NutritionHabit, NutritionUnit, Workspace } from '../lib/types'
 import { newId } from '../lib/helpers'
 import { isValidBirthDate } from '../lib/birthdays'
-import { addLocalDays, isNutritionComplete, isoWeek, parseLocalDate, weekDates } from '../lib/others'
+import { addLocalDays, isNutritionComplete, isoWeek, nutritionDayStatus, parseLocalDate, weekDates } from '../lib/others'
 import { useLocalDay } from '../hooks/useLocalDay'
 import { Modal } from './Modal'
 
@@ -64,7 +64,11 @@ export function Nutrition({ workspace, onSave, onDelete, onToggle, initialHabitI
   const completed = habits.filter(habit => isNutritionComplete(workspace, habit.id, selectedDate)).length
   return <div className="others-content">
     <section className="nutrition-calendar" aria-label="Välj dag för kost"><div className="nutrition-week-heading"><strong>Vecka {week} · {weekYear}</strong><div className="nutrition-week-controls"><button className="icon-button" type="button" aria-label="Föregående vecka" onClick={() => setSelectedDate(addLocalDays(selectedDate, -7))}><ChevronLeft size={18} /></button><button className="button ghost" type="button" onClick={() => setSelectedDate(today)}>Idag</button><button className="icon-button" type="button" aria-label="Nästa vecka" onClick={() => setSelectedDate(addLocalDays(selectedDate, 7))}><ChevronRight size={18} /></button></div></div>
-      <div className="nutrition-weekdays">{days.map(date => <button className={`nutrition-day ${selectedDate === date ? 'active' : ''} ${today === date ? 'today' : ''}`} key={date} data-date={date} type="button" aria-pressed={selectedDate === date} aria-label={parseLocalDate(date).toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} onClick={() => setSelectedDate(date)}><span>{parseLocalDate(date).toLocaleDateString('sv-SE', { weekday: 'short' })}</span><strong>{parseLocalDate(date).getDate()}</strong></button>)}</div>
+      <div className="nutrition-weekdays">{days.map(date => {
+        const status = nutritionDayStatus(workspace, date, today)
+        return <button className={`nutrition-day ${selectedDate === date ? 'active' : ''} ${today === date ? 'today' : ''} ${status ? `status-${status}` : ''}`} key={date} data-date={date} data-status={status ?? 'none'} type="button" aria-pressed={selectedDate === date} aria-label={`${parseLocalDate(date).toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}${status === 'complete' ? ', allt klart' : status === 'incomplete' ? ', något saknas' : ''}`} onClick={() => setSelectedDate(date)}><span>{parseLocalDate(date).toLocaleDateString('sv-SE', { weekday: 'short' })}</span><strong>{parseLocalDate(date).getDate()}</strong></button>
+      })}</div>
+      {habits.length > 0 && <p className="nutrition-legend"><span className="nutrition-legend-item complete">Allt klart</span><span className="nutrition-legend-item incomplete">Något saknas</span></p>}
       <div className="nutrition-date-row"><label className="field">Välj datum<input className="input" type="date" aria-label="Välj datum" min="0001-01-01" required value={selectedDate} onChange={event => { if (isValidBirthDate(event.target.value)) setSelectedDate(event.target.value) }} /></label><span>{completed}/{habits.length} klara</span></div>
     </section>
     <div className="others-list-toolbar"><time dateTime={selectedDate}>{parseLocalDate(selectedDate).toLocaleDateString('sv-SE', { day: 'numeric', month: 'long' })}</time><button className="button primary" type="button" onClick={() => setEditing(null)}><Plus size={16} />Ny kostvana</button></div>

@@ -1,10 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, Check, FileText, List, ListOrdered, Plus, Search, Trash2 } from 'lucide-react'
+import { ArrowLeft, Check, FileText, List, ListOrdered, Maximize2, Minimize2, Plus, Search, Trash2 } from 'lucide-react'
 import type { Note, NoteFont, NoteLinkKind, Workspace } from '../lib/types'
 import { newId } from '../lib/helpers'
 import { noteLinkItems, noteLinkLabels, notePlainText, sanitizeNoteHtml, type NoteLinkItem } from '../lib/notes'
 import { mergeRecordChanges } from '../lib/workspaceMerge'
 import { Modal } from './Modal'
+
+function wordCount(html: string) {
+  const text = notePlainText(html).trim()
+  return text ? text.split(/\s+/).length : 0
+}
 
 function noteTitle(note: Note) {
   return note.title === 'Ny anteckning' ? notePlainText(note.content).split('\n')[0]?.slice(0, 70) || note.title : note.title
@@ -26,7 +31,42 @@ function NoteEditor({ note, workspace, onSave, onDelete, onOpenLink, onBack, ini
   const [query, setQuery] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [saved, setSaved] = useState(!initialError)
+  const [focusMode, setFocusMode] = useState(false)
+  const [typing, setTyping] = useState(false)
+  const [words, setWords] = useState(() => wordCount(note.content))
+  const rootRef = useRef<HTMLDivElement>(null)
+  const enteredFullscreen = useRef(false)
   const saveRef = useRef(onSave); saveRef.current = onSave
+  // Focus mode: a clean full-window writing surface. Where the browser allows it (Mac, iPad),
+  // the page also goes truly fullscreen; on iPhone the overlay alone covers the app.
+  useEffect(() => {
+    if (!focusMode) return
+    const root = document.documentElement
+    root.classList.add('note-focus-open')
+    enteredFullscreen.current = false
+    if (document.fullscreenEnabled && !document.fullscreenElement && root.requestFullscreen) {
+      root.requestFullscreen({ navigationUI: 'hide' }).then(() => { enteredFullscreen.current = true }).catch(() => { /* The overlay still gives a clean surface. */ })
+    }
+    const leftFullscreen = () => { if (enteredFullscreen.current && !document.fullscreenElement) setFocusMode(false) }
+    const key = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented || document.querySelector('dialog[open]')) return
+      event.preventDefault(); setFocusMode(false)
+    }
+    const moved = (event: PointerEvent) => { if (event.pointerType === 'mouse' && (Math.abs(event.movementX) + Math.abs(event.movementY) > 3)) setTyping(false) }
+    document.addEventListener('fullscreenchange', leftFullscreen)
+    window.addEventListener('keydown', key)
+    window.addEventListener('pointermove', moved)
+    requestAnimationFrame(() => { restoreRange(); rootRef.current?.scrollTo({ top: 0 }) })
+    return () => {
+      root.classList.remove('note-focus-open')
+      document.removeEventListener('fullscreenchange', leftFullscreen)
+      window.removeEventListener('keydown', key)
+      window.removeEventListener('pointermove', moved)
+      if (enteredFullscreen.current && document.fullscreenElement) void document.exitFullscreen().catch(() => undefined)
+      enteredFullscreen.current = false
+      setTyping(false)
+    }
+  }, [focusMode])
   useEffect(() => {
     const editor = editorRef.current!
     editor.innerHTML = sanitizeNoteHtml(note.content)
@@ -65,7 +105,7 @@ function NoteEditor({ note, workspace, onSave, onDelete, onOpenLink, onBack, ini
     next.title = next.title.trim() || 'Ny anteckning'
     draftRef.current = next
     const failure = saveRef.current(next, baseRef.current)
-    setError(failure); setSaved(!failure)
+    setError(failure); setSaved(!failure); setWords(wordCount(next.content))
     if (!failure) baseRef.current = next
     return failure
   }
@@ -89,12 +129,24 @@ function NoteEditor({ note, workspace, onSave, onDelete, onOpenLink, onBack, ini
     })
   }
   const matches = noteLinkItems(workspace).filter(item => `${item.title} ${noteLinkLabels[item.kind]}`.toLocaleLowerCase('sv').includes(query.trim().toLocaleLowerCase('sv')))
-  return <div className="note-editor" data-note-id={note.id}>
-    <div className="note-editor-heading"><button className="button ghost notes-back" onClick={onBack}><ArrowLeft size={16} />Anteckningar</button><span className="note-save-state" role="status">{saved ? <><Check size={13} />Sparat</> : 'Inte sparat'}</span><button className="icon-button danger" aria-label="Ta bort anteckning" onClick={() => setConfirmDelete(true)}><Trash2 size={17} /></button></div>
-    <input className="note-title-input" aria-label="Anteckningens titel" placeholder="Ny anteckning" maxLength={160} value={title} onChange={event => { setTitle(event.target.value); persist({ title: event.target.value }) }} />
-    <div className="note-toolbar" role="toolbar" aria-label="Textredigerare"><label><span className="sr-only">Typsnitt</span><select aria-label="Typsnitt" value={font} onChange={event => { const next = event.target.value as NoteFont; setFont(next); persist({ font: next }) }}><option value="system">Standard</option><option value="serif">Serif</option><option value="mono">Monospace</option></select></label><button className="icon-button" aria-label="Punktlista" title="Punktlista" onMouseDown={event => event.preventDefault()} onClick={() => list('insertUnorderedList')}><List size={19} /></button><button className="icon-button" aria-label="Numrerad lista" title="Numrerad lista" onMouseDown={event => event.preventDefault()} onClick={() => list('insertOrderedList')}><ListOrdered size={19} /></button><button className="icon-button note-insert" aria-label="Lägg till länk" title="Lägg till länk" onMouseDown={event => event.preventDefault()} onClick={() => { rememberRange(); setQuery(''); setPicker(true) }}><Plus size={20} /></button></div>
+  return <div ref={rootRef} className={`note-editor${focusMode ? ' is-focus' : ''}${focusMode && typing ? ' is-typing' : ''}`} data-note-id={note.id} data-focus-mode={focusMode || undefined}
+    role={focusMode ? 'region' : undefined} aria-label={focusMode ? 'Helskärmsredigerare' : undefined}
+    onPointerDown={event => { if (focusMode && event.pointerType !== 'mouse' && !editorRef.current?.contains(event.target as Node)) setTyping(false) }}
+    onClick={event => { if (focusMode && (event.target === rootRef.current || (event.target as HTMLElement).classList.contains('note-focus-page'))) { editorRef.current?.focus(); rangeRef.current = null; restoreRange() } }}>
+    <div className="note-focus-page">
+    <div className="note-editor-heading note-chrome">
+      {focusMode ? <button className="button ghost note-focus-exit" onClick={() => setFocusMode(false)} aria-label="Avsluta helskärm" title="Avsluta helskärm (Esc)"><Minimize2 size={16} /><span>Avsluta</span></button>
+        : <button className="button ghost notes-back" onClick={onBack}><ArrowLeft size={16} />Anteckningar</button>}
+      <span className="note-save-state" role="status">{saved ? <><Check size={13} />Sparat</> : 'Inte sparat'}</span>
+      {focusMode && <span className="note-word-count" aria-live="off">{words === 1 ? '1 ord' : `${words} ord`}</span>}
+      {!focusMode && <button className="icon-button note-focus-toggle" aria-label="Skriv i helskärm" title="Skriv i helskärm" onClick={() => setFocusMode(true)}><Maximize2 size={17} /></button>}
+      {!focusMode && <button className="icon-button danger" aria-label="Ta bort anteckning" onClick={() => setConfirmDelete(true)}><Trash2 size={17} /></button>}
+    </div>
+    <input className="note-title-input" aria-label="Anteckningens titel" placeholder="Ny anteckning" maxLength={160} value={title} onChange={event => { setTitle(event.target.value); persist({ title: event.target.value }); if (focusMode) setTyping(true) }} />
+    <div className="note-toolbar note-chrome" role="toolbar" aria-label="Textredigerare"><label><span className="sr-only">Typsnitt</span><select aria-label="Typsnitt" value={font} onChange={event => { const next = event.target.value as NoteFont; setFont(next); persist({ font: next }) }}><option value="system">Standard</option><option value="serif">Serif</option><option value="mono">Monospace</option></select></label><button className="icon-button" aria-label="Punktlista" title="Punktlista" onMouseDown={event => event.preventDefault()} onClick={() => list('insertUnorderedList')}><List size={19} /></button><button className="icon-button" aria-label="Numrerad lista" title="Numrerad lista" onMouseDown={event => event.preventDefault()} onClick={() => list('insertOrderedList')}><ListOrdered size={19} /></button><button className="icon-button note-insert" aria-label="Lägg till länk" title="Lägg till länk" onMouseDown={event => event.preventDefault()} onClick={() => { rememberRange(); setQuery(''); setPicker(true) }}><Plus size={20} /></button></div>
     {error && <div className="note-error" role="alert"><p>{error}</p><button className="button secondary" onClick={() => persist()}>Försök igen</button></div>}
-    <div ref={editorRef} className="note-content" data-font={font} contentEditable suppressContentEditableWarning role="textbox" aria-label="Anteckningens text" aria-multiline="true" data-placeholder="Skriv en anteckning…" spellCheck onInput={() => { rememberRange(); persist() }} onKeyUp={rememberRange} onMouseUp={rememberRange} onBlur={rememberRange} onPaste={event => { event.preventDefault(); document.execCommand('insertText', false, event.clipboardData.getData('text/plain')); rememberRange(); persist() }} onClick={event => { const anchor = (event.target as HTMLElement).closest<HTMLAnchorElement>('a[data-note-kind]'); if (anchor) { event.preventDefault(); setError(onOpenLink(anchor.dataset.noteKind as NoteLinkKind, anchor.dataset.noteTarget!)) } }} />
+    <div ref={editorRef} className="note-content" data-font={font} contentEditable suppressContentEditableWarning role="textbox" aria-label="Anteckningens text" aria-multiline="true" data-placeholder="Skriv en anteckning…" spellCheck onInput={() => { rememberRange(); persist(); if (focusMode) setTyping(true) }} onKeyUp={rememberRange} onMouseUp={rememberRange} onBlur={rememberRange} onPaste={event => { event.preventDefault(); document.execCommand('insertText', false, event.clipboardData.getData('text/plain')); rememberRange(); persist() }} onClick={event => { const anchor = (event.target as HTMLElement).closest<HTMLAnchorElement>('a[data-note-kind]'); if (anchor) { event.preventDefault(); setError(onOpenLink(anchor.dataset.noteKind as NoteLinkKind, anchor.dataset.noteTarget!)) } }} />
+    </div>
     {picker && <Modal title="Lägg till länk" onClose={() => setPicker(false)}><label className="field">Sök innehåll<input className="input" type="search" autoFocus value={query} onChange={event => setQuery(event.target.value)} placeholder="Titel eller funktion" /></label><div className="note-link-picker">{matches.slice(0, 100).map(item => <button key={`${item.kind}:${item.id}`} onClick={() => insertLink(item)}><span>{noteLinkLabels[item.kind]}</span><strong>{item.title}</strong><Plus size={16} /></button>)}{!matches.length && <p>Inget innehåll hittades.</p>}</div></Modal>}
     {confirmDelete && <Modal title="Ta bort anteckningen?" onClose={() => setConfirmDelete(false)} error={error} footer={<><button className="button secondary" onClick={() => setConfirmDelete(false)}>Behåll</button><button className="button primary danger" onClick={() => { const failure = onDelete(note.id); if (failure) setError(failure); else onBack() }}>Ta bort</button></>}><p>Anteckningen tas bort från Notes.</p></Modal>}
   </div>

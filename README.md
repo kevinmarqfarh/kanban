@@ -22,6 +22,7 @@ npm run dev
 - Fyra huvudvyer i navigationen: **Home, Planner, Projects och Others**. Home är startsidan; inställningar ligger bakom kugghjulet uppe till vänster.
 - Debriefingar med en större läsyta, historik och en diskret markering för nytt innehåll. Läs eller dölj notisen; sammanfattningen finns kvar för att läsas igen.
 - Others samlar födelsedagar, träning, kost och recept i en enkel lista. Födelsedagar visar aktuell och kommande ålder, med valbara påminnelser exakt 7, 14 och 30 dagar före.
+- **Födelsedagar** kan taggas som Familj, Vänner, Jobb eller en egen tagg (skriv in den under *Lägg till tagg*). Översikten grupperas per tagg och varje person har en nedräkning (”14 dagar”, ”I morgon”, ”Idag”). Dra i handtaget ⠿ för att ändra ordning eller flytta någon till en annan tagg — tomma taggar visas som släppytor medan du drar. Fungerar med mus, touch (håll kort på handtaget) och tangentbord (mellanslag, piltangenter, mellanslag; Escape avbryter). *Sortera efter datum* ordnar varje grupp efter nästa födelsedag. Home visar nedräkningen och kan filtreras per tagg.
 - Lokal lagring som finns kvar efter omladdning och separat temainställning. Exempeldata visar hur appen fungerar.
 
 Lokal lagring är separat för varje webbläsare och enhet. Rensa inte webbläsarens lagring om du vill behålla tavlan. Ändringar mellan flikar bevaras när du sparar och andra öppna flikar uppdateras. Om lagringen är full visas ett fel och dialogen förblir öppen för ett nytt försök. Exportera gärna en kopia under Profil. JSON-exporten är en kopia av innehållet; appen har ingen importfunktion för backupfiler ännu.
@@ -30,11 +31,11 @@ Lokal lagring är separat för varje webbläsare och enhet. Rensa inte webbläsa
 
 Födelsedagspåminnelser visas som notiser på **Home**, med namn, ålder och födelsedatum. De kan markeras som lästa eller döljas; kommande födelsedagar visas separat. Appen kontrollerar vid öppning, återkomst och varje minut medan den är aktiv. Vid sen återkomst skapas den senaste aktuella påminnelsen. Tidigare födelsedagskort i Planner bevaras, men nya påminnelser skapar inga kanbankort. För 29 februari används 28 februari under år utan skottdag. Notiserna finns i appen; inga systemnotiser skickas när appen är stängd.
 
-**Träning:** spara datum och övningsrader med set/minuter, tid i minuter eller vikt i kg och BPM. Decimalfält accepterar både komma och punkt. Kopiera det sparade passet som råtext för att använda det separat. Om urklipp inte är tillgängligt visas texten för manuell kopiering.
+**Träning:** spara datum och övningsrader med set/minuter, vikt i kg, tid i minuter eller nivå (t.ex. motstånd på cykel) och BPM. Klicka i Övning för att se senast använda övningar med senaste värden; skriv för att filtrera eller skriv en ny. Ett val tar över enheterna från förra gången och flyttar fokus till Mängd. Formuläret är kompakt på mobil: värde och enhet delar ett fält, två kolumner på telefon och tre på större skärmar. Decimalfält accepterar både komma och punkt. Kopiera det sparade passet som råtext för att använda det separat. Om urklipp inte är tillgängligt visas texten för manuell kopiering.
 
-**Kost:** återkommande rader med titel, mängd och enhet. Markera per datum; en grön linje bekräftar avklarat. Veckovyn visar måndag–söndag, dagnummer och ISO-veckonummer, med datumval för historik. Dagens markeringar och veckans översikt finns även på Home.
+**Kost:** återkommande rader med titel, mängd och enhet. Markera per datum; en grön linje bekräftar avklarat. Veckovyn visar måndag–söndag, dagnummer och ISO-veckonummer, med datumval för historik. Dagar där alla vanor är klara blir gröna och dagar där något saknas blir orange (både i Kost och på Home). Framtida dagar och dagar innan vanorna fanns förblir neutrala. Dagens markeringar och veckans översikt finns även på Home.
 
-**Recept:** spara titel, egna steg, valfri http-/https-länk och etiketter för frukost, snacks, middag eller egna kategorier. Länken sparas som källa; innehåll hämtas inte automatiskt från webbplatsen.
+**Recept:** spara titel, egna steg, valfri http-/https-länk och etiketter för frukost, snacks, middag eller egna kategorier. Nya etiketter skrivs direkt i rutan *Lägg till etikett* bredvid de färdiga; befintliga etiketter återanvänds oavsett versaler. Listan kan filtreras per etikett. Länken sparas som källa; innehåll hämtas inte automatiskt från webbplatsen.
 
 Säkerhetskopian omfattar även alla Others-poster, kostens daghistorik, födelsedagsnotiser och debriefingar.
 
@@ -72,6 +73,8 @@ npm run test:revision
 BROWSER_ENGINE=webkit npm run test:revision
 npm run test:others
 BROWSER_ENGINE=webkit npm run test:others
+npm run test:organize
+BROWSER_ENGINE=webkit npm run test:organize
 ```
 
 `npm test` verifierar dataintegritet, sparande och ändringar mellan flikar, debriefingarnas läs- och notisstatus samt födelsedagarnas kalender- och påminnelselogik. Webbläsartesterna kontrollerar riktiga flöden för uppgifter, projekt, födelsedagar, debriefingar, drag-and-drop, teman, dialoger, filter, export och mobilbredd. Skärmbilder och resultat skrivs till `tests/artifacts/`, som inte checkas in. `PLAYWRIGHT_MODULE` kan peka på en befintlig Playwright-installation. `APP_URL` kan peka på en annan lokal server.
@@ -100,3 +103,5 @@ Nyckeln börjar med `sb_publishable_`. Använd aldrig en secret- eller service-r
 [Design- och lagringsrevision 2026-10-05](docs/revision-2026-10-05.md) · [Domarens verifiering](docs/revision-verification-2026-10-05.md). 109 webbläsarscenarier godkända i Chromium och WebKit. Mobilens statistikruta döljs så att korten får mer plats; senaste-cache-läsning och trevägsmerge skyddar vardagliga ändringar mellan flikar.
 
 [Verifiering av Home och Others, 6 oktober 2026](docs/others-verification-2026-10-06.md).
+
+[Taggar, nedräkning, helskärmsanteckningar, kostfärger, träning på mobil och receptfilter, 6 oktober 2026](docs/organize-2026-10-06.md).
