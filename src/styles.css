@@ -286,7 +286,11 @@ input[type='checkbox']:checked { border-color: var(--accent); background: var(--
 .new-project-card h2 { font-size: 18px; }
 .new-project-card p { min-height: 0; }
 .new-project-label { display: inline-flex; align-items: center; gap: 9px; margin-top: 26px; color: var(--ink-secondary); font-size: 11px; }
-.icon-picker { display: flex; flex-wrap: wrap; gap: 7px; }
+.icon-picker { display: flex; flex-direction: column; gap: 14px; }
+.icon-picker-group { display: flex; flex-direction: column; gap: 7px; }
+.icon-picker-heading { color: var(--ink-muted); font-size: 10px; font-weight: 500; letter-spacing: 0.02em; }
+.icon-picker-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+.icon-picker-current { margin-left: 6px; color: var(--ink-muted); font-size: 10px; font-weight: 400; }
 .icon-picker .icon-button { border: 1px solid var(--line); border-radius: 12px; background: var(--bg); }
 .icon-picker .icon-button.selected { border-color: var(--ink-muted); background: var(--accent-soft); color: var(--ink); }
 .project-detail-intro { display: flex; align-items: center; gap: 15px; color: var(--ink-secondary); font-size: 12px; line-height: 1.7; }

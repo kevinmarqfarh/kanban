@@ -24,6 +24,10 @@ Use one main heading, “Din plats för framsteg.”, with a short supporting li
 
 A task card should display a short title, up to two description lines, pale labels, and a quiet metadata strip for deadline, checklist progress, and comments. Detailed editing belongs in the task sheet. Project cards show the title, description, main task, subtasks, and a restrained progress indicator. Profile contains identity, theme choice, and synchronization information.
 
+### Project icons
+
+Projects choose from 41 Lucide line icons, grouped in the picker as Allmänt, Hem och familj, Hälsa och mat, Resor och fritid, Arbete och lärande, and Kreativt. Each button has a Swedish accessible name and tooltip ("Ikon Lansering"), and the field label shows the current choice. The catalogue lives in `src/lib/projectIcons.ts` (key, label, group); the key → component map lives in `src/components/Projects.tsx` and uses `satisfies Record<ProjectIconKey, LucideIcon>`, so the build fails if a key lacks a glyph. Keys are persisted in `project.icon`: never rename or remove one, only append. Unknown keys render as the folder icon. To add an icon, append it to the catalogue, map it in `Projects.tsx`, and run `npm test` (`tests/project-icons.mjs` checks uniqueness, grouping, fallbacks and that every glyph exists in `lucide-react`); `node tests/project-icons-acceptance.cjs` verifies selection, persistence and 44 px targets in a browser.
+
 Summary gives the daily debriefing a generous report card and an inline reader. History sits beside the report on desktop and below it on mobile. A bell and a small footer badge indicate unread, undismissed reports; Kanban has a quiet reminder strip. Reading or dismissing a report clears its notification while preserving the report in history. Empty states contain no invented AI report. Reports use plain text, so automation content cannot inject HTML.
 
 ## Interaction and accessibility

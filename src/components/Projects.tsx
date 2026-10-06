@@ -1,13 +1,30 @@
 import { useRef, useState, type FormEvent } from 'react'
-import { ArrowUpRight, Plus, CalendarDays, Check, Folder, Leaf, Home, Compass, Sparkles, Pencil, Trash2 } from 'lucide-react'
+import { ArrowUpRight, Plus, CalendarDays, Check, Pencil, Trash2, type LucideIcon,
+  Folder, Leaf, Home, Compass, Sparkles, Target, Flag, Star, Lightbulb, Calendar, PiggyBank,
+  Users, Baby, PawPrint, Hammer, Wrench, Sprout, ShoppingBag, Gift,
+  HeartPulse, Dumbbell, Bike, Utensils, Coffee,
+  Plane, MapPin, Car, Mountain, Tent, Sun, PartyPopper, Gamepad2,
+  Briefcase, Rocket, Code, GraduationCap, BookOpen,
+  Palette, PenLine, Camera, Music } from 'lucide-react'
 import type { Project, ProjectTask, Workspace } from '../lib/types'
+import { projectIconLabel, projectIconsByGroup, resolveProjectIcon, type ProjectIconKey } from '../lib/projectIcons'
 import { dateLabel, newId, projectProgress } from '../lib/helpers'
 import { Modal } from './Modal'
 
-const projectIcons = { folder: Folder, leaf: Leaf, home: Home, compass: Compass, sparkles: Sparkles }
+// `satisfies` makes the build fail if a key in lib/projectIcons.ts has no component here.
+const projectIcons = {
+  folder: Folder, leaf: Leaf, home: Home, compass: Compass, sparkles: Sparkles,
+  target: Target, flag: Flag, star: Star, lightbulb: Lightbulb, calendar: Calendar, 'piggy-bank': PiggyBank,
+  users: Users, baby: Baby, 'paw-print': PawPrint, hammer: Hammer, wrench: Wrench, sprout: Sprout, 'shopping-bag': ShoppingBag, gift: Gift,
+  'heart-pulse': HeartPulse, dumbbell: Dumbbell, bike: Bike, utensils: Utensils, coffee: Coffee,
+  plane: Plane, 'map-pin': MapPin, car: Car, mountain: Mountain, tent: Tent, sun: Sun, 'party-popper': PartyPopper, gamepad: Gamepad2,
+  briefcase: Briefcase, rocket: Rocket, code: Code, 'graduation-cap': GraduationCap, book: BookOpen,
+  palette: Palette, 'pen-line': PenLine, camera: Camera, music: Music,
+} satisfies Record<ProjectIconKey, LucideIcon>
+const iconGroups = projectIconsByGroup()
 export function ProjectIcon({ name, size = 22 }: { name: string; size?: number }) {
-  const Icon = projectIcons[name as keyof typeof projectIcons] ?? Folder
-  return <Icon size={size} strokeWidth={1.6} />
+  const Icon = projectIcons[resolveProjectIcon(name)]
+  return <Icon size={size} strokeWidth={1.6} aria-hidden="true" />
 }
 
 export function Projects({ workspace, onOpen, onAdd }: { workspace: Workspace; onOpen: (project: Project) => void; onAdd: () => void }) {
@@ -40,7 +57,7 @@ export function ProjectEditor({ project, onSave, onClose }: {
   }
   return <Modal title={project ? 'Redigera projekt' : 'Nytt projekt'} error={saveError} onClose={onClose} footer={<><button className="button secondary" onClick={onClose}>Avbryt</button><button form="project-form" type="submit" className="button primary"><Check size={17} />{project ? 'Spara projekt' : 'Skapa projekt'}</button></>}>
     <form id="project-form" onSubmit={save}><label className="field">Projektnamn<input className="input title-input" required autoFocus maxLength={120} value={draft.title} onChange={event => setDraft({ ...draft, title: event.target.value })} /></label><label className="field">Beskrivning<textarea className="textarea" rows={3} value={draft.description} onChange={event => setDraft({ ...draft, description: event.target.value })} /></label>
-      <div className="field"><span>Projektikon</span><div className="icon-picker">{Object.keys(projectIcons).map(name => <button key={name} type="button" className={`icon-button ${draft.icon === name ? 'selected' : ''}`} aria-label={`Ikon ${name}`} aria-pressed={draft.icon === name} onClick={() => setDraft({ ...draft, icon: name })}><ProjectIcon name={name} /></button>)}</div></div>
+      <div className="field" role="group" aria-labelledby="project-icon-label"><span id="project-icon-label">Projektikon <small className="icon-picker-current">{projectIconLabel(draft.icon)}</small></span><div className="icon-picker">{iconGroups.map(group => <div key={group.id} className="icon-picker-group" role="group" aria-label={group.label}><span className="icon-picker-heading" aria-hidden="true">{group.label}</span><div className="icon-picker-grid">{group.icons.map(({ key, label }) => <button key={key} type="button" className={`icon-button ${resolveProjectIcon(draft.icon) === key ? 'selected' : ''}`} aria-label={`Ikon ${label}`} title={label} aria-pressed={resolveProjectIcon(draft.icon) === key} onClick={() => setDraft({ ...draft, icon: key })}><ProjectIcon name={key} /></button>)}</div></div>)}</div></div>
       <label className="field">Deadline<input type="date" className="input" value={draft.deadline ?? ''} onChange={event => setDraft({ ...draft, deadline: event.target.value || null })} /></label>
       {!project && <><label className="field">Huvuduppgift<input className="input" value={mainTask} onChange={event => setMainTask(event.target.value)} /></label><label className="field">Deluppgifter<textarea className="textarea" rows={3} placeholder="En deluppgift per rad" value={subtasks} onChange={event => setSubtasks(event.target.value)} disabled={!mainTask.trim()} /></label></>}
     </form>
