@@ -230,11 +230,11 @@ async function mouseDrag(page, fromName, target, position = 'top') {
 
   /* ---------------- Notes focus mode ---------------- */
   const note = { id: 'note-one', title: 'Idéer', content: '<div>Första raden.</div>', font: 'system', createdAt: stamp, updatedAt: stamp };
-  await check('Notes fullscreen covers the window, fades the chrome while typing, keeps saving and closes with Escape', async () => {
+  await check('Notes always open fullscreen: the editor covers the window, fades the chrome while typing, keeps saving and closes with Escape', async () => {
     await withPage({ notes: [note] }, async page => {
       await openOthers(page, 'Notes'); await page.getByRole('button', { name: 'Öppna anteckning Idéer', exact: true }).click();
-      await page.getByRole('button', { name: 'Skriv i helskärm', exact: true }).click();
       const editor = page.locator('.note-editor.is-focus'); await editor.waitFor(); await pause(250);
+      assert.equal(await page.getByRole('button', { name: 'Skriv i helskärm' }).count(), 0, 'Fullscreen is the only mode; there is no toggle.');
       const box = await editor.boundingBox(); const viewport = page.viewportSize();
       assert.ok(box.x <= 0 && box.y <= 0 && box.width >= viewport.width - 1 && box.height >= viewport.height - 1, 'The editor covers the whole window.');
       assert.equal(await page.locator('.bottom-nav').evaluate(element => getComputedStyle(element).visibility), 'hidden');
@@ -255,14 +255,17 @@ async function mouseDrag(page, fromName, target, position = 'top') {
       assert.equal(await page.evaluate(() => document.fullscreenElement), null, 'Leaving focus mode leaves browser fullscreen.');
       assert.equal(await page.evaluate(() => document.documentElement.classList.contains('note-focus-open')), false);
       assert.equal(await page.locator('.bottom-nav').evaluate(element => getComputedStyle(element).visibility), 'visible');
-      await page.getByRole('button', { name: 'Skriv i helskärm', exact: true }).waitFor();
+      await page.getByRole('button', { name: 'Öppna anteckning Idéer', exact: true }).waitFor();
+      await page.getByRole('button', { name: 'Ny', exact: true }).click();
+      await page.locator('.note-editor.is-focus').waitFor();
+      assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label')), 'Anteckningens text', 'A new note opens fullscreen ready for typing.');
+      await page.getByRole('button', { name: 'Anteckningar', exact: true }).click(); await page.locator('.note-editor').waitFor({ state: 'detached' });
     });
   });
 
-  await check('Notes fullscreen on iPhone covers the app, keeps safe margins and exits with Avsluta', async () => {
+  await check('Notes fullscreen on iPhone covers the app, keeps safe margins and closes with Anteckningar', async () => {
     await withPage({ notes: [note] }, async page => {
       await openOthers(page, 'Notes'); await page.getByRole('button', { name: 'Öppna anteckning Idéer', exact: true }).click();
-      await page.getByRole('button', { name: 'Skriv i helskärm', exact: true }).click();
       const editor = page.locator('.note-editor.is-focus'); await editor.waitFor(); await pause(250);
       await noOverflow(page);
       const box = await editor.boundingBox(); assert.ok(box.width >= 429 && box.height >= 931);
@@ -270,9 +273,109 @@ async function mouseDrag(page, fromName, target, position = 'top') {
       await page.keyboard.type(' Från telefonen.'); await pause(200);
       await screenshot(page, 'notes-focus-iphone.png');
       await page.locator('.note-title-input').tap(); await pause(200);
-      await page.getByRole('button', { name: 'Avsluta helskärm', exact: true }).tap(); await editor.waitFor({ state: 'detached' });
+      await page.getByRole('button', { name: 'Anteckningar', exact: true }).tap(); await editor.waitFor({ state: 'detached' });
       assert.match((await cache(page)).notes[0].content, /Från telefonen\./);
     }, phone);
+  });
+
+  await check('Notes: select text to get a format bar; bold and italic apply, show their state and survive reload', async () => {
+    await withPage({ notes: [{ ...note, content: '<div>Det här är viktigt idag.</div>' }] }, async page => {
+      await openOthers(page, 'Notes'); await page.getByRole('button', { name: 'Öppna anteckning Idéer', exact: true }).click();
+      const text = page.getByRole('textbox', { name: 'Anteckningens text', exact: true });
+      const selectWord = word => text.evaluate((element, word) => {
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT); let node = walker.nextNode();
+        while (node && !node.textContent.includes(word)) node = walker.nextNode();
+        const start = node.textContent.indexOf(word);
+        const range = document.createRange(); range.setStart(node, start); range.setEnd(node, start + word.length);
+        const selection = getSelection(); selection.removeAllRanges(); selection.addRange(range);
+      }, word);
+      await text.click(); await selectWord('viktigt');
+      const bubble = page.getByRole('toolbar', { name: 'Formatera markerad text' });
+      await bubble.waitFor();
+      const bubbleBox = await bubble.boundingBox(); const textBox = await text.boundingBox();
+      assert.ok(bubbleBox.y + bubbleBox.height <= textBox.y + 30, 'On desktop the bar sits above the selected line.');
+      await bubble.getByRole('button', { name: 'Fet markering', exact: true }).click(); await pause(150);
+      assert.equal(await page.getByRole('button', { name: 'Fet', exact: true }).getAttribute('aria-pressed'), 'true', 'The toolbar shows bold for the selection.');
+      assert.match((await cache(page)).notes[0].content, /<b>viktigt<\/b>/);
+      await selectWord('idag');
+      await page.getByRole('button', { name: 'Kursiv', exact: true }).click(); await pause(150);
+      assert.match((await cache(page)).notes[0].content, /<i>idag<\/i>/);
+      await selectWord('Det');
+      await page.keyboard.press('ControlOrMeta+b'); await pause(150);
+      assert.match((await cache(page)).notes[0].content, /<b>Det<\/b>/, 'The keyboard shortcut also saves.');
+      await text.press('ControlOrMeta+End'); await pause(100);
+      assert.equal(await bubble.count(), 0, 'The bar disappears when nothing is selected.');
+      await page.reload(); await openOthers(page, 'Notes'); await page.getByRole('button', { name: /^Öppna anteckning/ }).click();
+      assert.equal(await text.locator('b').count(), 2); assert.equal(await text.locator('i').count(), 1);
+      await screenshot(page, 'notes-bold-italic.png');
+    });
+  });
+
+  await check('Notes on iPhone: the format bar appears below the selection, clear of the native menu', async () => {
+    await withPage({ notes: [{ ...note, content: '<div>Markera mig snabbt.</div>' }] }, async page => {
+      await openOthers(page, 'Notes'); await page.getByRole('button', { name: 'Öppna anteckning Idéer', exact: true }).tap();
+      const text = page.getByRole('textbox', { name: 'Anteckningens text', exact: true });
+      await text.tap();
+      await text.evaluate(element => { const node = element.querySelector('div').firstChild; const range = document.createRange(); range.setStart(node, 8); range.setEnd(node, 11); const selection = getSelection(); selection.removeAllRanges(); selection.addRange(range); });
+      const bubble = page.getByRole('toolbar', { name: 'Formatera markerad text' }); await bubble.waitFor();
+      const line = await text.evaluate(element => getSelection().getRangeAt(0).getBoundingClientRect().bottom);
+      assert.ok((await bubble.boundingBox()).y >= line, 'The bar is placed below the selection on touch screens.');
+      await noOverflow(page); await screenshot(page, 'iphone-format-bubble.png');
+      await bubble.getByRole('button', { name: 'Kursiv markering', exact: true }).tap(); await pause(150);
+      assert.match((await cache(page)).notes[0].content, /<i>mig<\/i>/);
+      const toolbar = await page.locator('.note-toolbar').evaluate(element => element.scrollWidth <= element.clientWidth + 1);
+      assert.ok(toolbar, 'The toolbar with Fet and Kursiv fits on a phone.');
+    }, phone);
+  });
+
+  const notes = [note, { id: 'note-two', title: 'Inköp', content: '<div>Mjölk</div>', font: 'system', createdAt: stamp, updatedAt: '2026-10-02T09:00:00.000Z' }];
+  if (engine === 'chromium') await check('Swiping a note from right to left reveals Ta bort; tap closes, delete removes and Ångra restores', async () => {
+    await withPage({ notes }, async (page, context) => {
+      await openOthers(page, 'Notes');
+      const item = page.getByRole('button', { name: 'Öppna anteckning Idéer', exact: true });
+      const remove = page.getByRole('button', { name: 'Ta bort anteckning Idéer', exact: true });
+      assert.equal(await remove.isVisible(), false, 'The delete action is hidden until swiped.');
+      const cdp = await context.newCDPSession(page);
+      const swipe = async (dx, dy = 0) => {
+        const box = await item.boundingBox(); const point = { x: box.x + box.width - 20, y: box.y + box.height / 2, radiusX: 5, radiusY: 5, force: 1, id: 1 };
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
+        for (let step = 1; step <= 10; step++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ ...point, x: point.x + dx * step / 10, y: point.y + dy * step / 10 }] }); await pause(16); }
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await pause(320);
+      };
+      await swipe(-25);
+      assert.equal(await remove.isVisible(), false, 'A short swipe snaps back.');
+      await swipe(-140);
+      await remove.waitFor(); assert.equal(await page.locator('.note-editor').count(), 0, 'Swiping does not open the note.');
+      await screenshot(page, 'iphone-note-swipe.png');
+      await item.tap(); await pause(320);
+      assert.equal(await remove.isVisible(), false, 'Tapping an open row closes it.');
+      assert.equal(await page.locator('.note-editor').count(), 0, 'and does not open the note.');
+      await swipe(-10, 80);
+      assert.equal(await remove.isVisible(), false, 'A vertical gesture never reveals delete.');
+      await swipe(-140); await remove.tap(); await pause(200);
+      assert.deepEqual((await cache(page)).notes.map(entry => entry.id), ['note-two']);
+      assert.equal(await page.getByRole('button', { name: 'Öppna anteckning Idéer', exact: true }).count(), 0);
+      await page.getByRole('status').filter({ hasText: 'Anteckningen är borttagen.' }).getByRole('button', { name: 'Ångra', exact: true }).tap();
+      await item.waitFor();
+      assert.deepEqual((await cache(page)).notes.map(entry => entry.id).sort(), ['note-one', 'note-two']);
+      assert.equal((await cache(page)).notes.find(entry => entry.id === 'note-one').content, note.content, 'Undo restores the whole note.');
+      await noOverflow(page);
+    }, phone);
+  });
+
+  await check('A mouse drag to the left also reveals delete on desktop, and Escape closes it', async () => {
+    await withPage({ notes }, async page => {
+      await openOthers(page, 'Notes');
+      const box = await page.getByRole('button', { name: 'Öppna anteckning Inköp', exact: true }).boundingBox();
+      await page.mouse.move(box.x + box.width - 20, box.y + box.height / 2); await page.mouse.down();
+      await page.mouse.move(box.x + box.width - 140, box.y + box.height / 2, { steps: 10 }); await page.mouse.up(); await pause(320);
+      const remove = page.getByRole('button', { name: 'Ta bort anteckning Inköp', exact: true });
+      await remove.waitFor(); assert.equal(await page.locator('.note-editor').count(), 0);
+      await remove.focus(); await page.keyboard.press('Escape'); await pause(320);
+      assert.equal(await remove.isVisible(), false);
+      await page.getByRole('button', { name: 'Öppna anteckning Inköp', exact: true }).click();
+      await page.locator('.note-editor').waitFor();
+    });
   });
 
   /* ---------------- Nutrition ---------------- */

@@ -5,11 +5,21 @@
 .notes-search { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 10px; border-radius: 11px; border: 1px solid var(--line); background: var(--bg); color: var(--ink-muted); }
 .notes-search input { min-width: 0; width: 100%; border: 0; background: transparent; color: var(--ink); font-size: 14px; }
 .notes-list { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; }
-.notes-list > button { display: flex; flex-direction: column; gap: 5px; padding: 13px 11px; min-height: 78px; text-align: left; border-radius: 12px; }
-.notes-list > button:hover, .notes-list > button.active { background: var(--accent-soft); }
-.notes-list strong { font-size: 14px; font-weight: 550; overflow-wrap: anywhere; }
-.notes-list span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 12px; color: var(--ink-secondary); overflow-wrap: anywhere; }
-.notes-list time { font-size: 10px; color: var(--ink-muted); }
+.note-list-item { display: flex; flex-direction: column; gap: 5px; width: 100%; padding: 13px 11px; min-height: 78px; text-align: left; border-radius: 12px; }
+.note-list-item:hover, .note-list-item.active { background: var(--accent-soft); }
+/* Swipe from right to left to reveal Ta bort. */
+.swipe-row { position: relative; overflow: hidden; border-radius: 12px; touch-action: pan-y; -webkit-user-select: none; user-select: none; }
+.swipe-row-content { position: relative; z-index: 1; border-radius: 12px; background: var(--surface-solid); transition: transform 220ms cubic-bezier(.2, .8, .2, 1); }
+.swipe-row.is-dragging .swipe-row-content { transition: none; }
+.swipe-row-action { position: absolute; inset: 0 0 0 auto; display: flex; width: 88px; visibility: hidden; }
+.swipe-row.is-revealed .swipe-row-action { visibility: visible; }
+.swipe-row-action button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 100%; border-radius: 0 12px 12px 0; background: #c2493a; color: #fff; font-size: 11px; font-weight: 550; }
+.swipe-row-action button:focus-visible { outline: 2px solid var(--ink); outline-offset: -4px; }
+.notes-undo { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding: 6px 6px 6px 12px; border: 1px solid var(--line); border-radius: 11px; background: var(--bg); color: var(--ink-secondary); font-size: 12px; }
+.notes-undo .button { min-height: 40px; }
+.note-list-item strong { font-size: 14px; font-weight: 550; overflow-wrap: anywhere; }
+.note-list-item span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 12px; color: var(--ink-secondary); overflow-wrap: anywhere; }
+.note-list-item time { font-size: 10px; color: var(--ink-muted); }
 .notes-empty { margin-top: 20px; color: var(--ink-muted); font-size: 13px; }
 .notes-writing-area { padding: 19px 24px 25px; min-height: 430px; }
 .notes-start { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; min-height: 365px; color: var(--ink-muted); font-size: 14px; }
@@ -23,7 +33,13 @@
 .note-toolbar { display: flex; align-items: center; gap: 3px; position: sticky; top: 0; z-index: 2; padding: 4px; margin-bottom: 18px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-solid); }
 .note-toolbar label { min-width: 0; flex: 1; }
 .note-toolbar select { width: 100%; min-height: 44px; border: 0; border-radius: 9px; padding: 8px; background: transparent; color: var(--ink); font-size: 13px; }
-.note-toolbar .icon-button { border-radius: 9px; }
+.note-toolbar .icon-button { flex-shrink: 0; min-width: 44px; min-height: 44px; border-radius: 9px; }
+.note-toolbar .icon-button.is-active { background: var(--accent-soft); color: var(--ink); }
+.note-content b, .note-content strong { font-weight: 650; }
+.note-format-bubble { position: fixed; z-index: 90; display: flex; align-items: center; gap: 2px; padding: 4px; border-radius: 13px; background: var(--accent); color: var(--accent-ink); box-shadow: var(--shadow-popover); transform: translateX(-50%); animation: fade-in 120ms ease-out; }
+.note-format-bubble button { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 40px; border-radius: 9px; color: inherit; opacity: 0.8; }
+.note-format-bubble button:hover, .note-format-bubble button.is-active { opacity: 1; background: color-mix(in srgb, var(--accent-ink) 16%, transparent); }
+.note-format-bubble > span { width: 1px; height: 20px; margin: 0 3px; background: currentColor; opacity: 0.25; }
 .note-toolbar .note-insert { border-left: 1px solid var(--line); border-radius: 0 9px 9px 0; }
 .note-content { min-height: 280px; color: var(--ink); font-size: 16px; line-height: 1.8; overflow-wrap: anywhere; white-space: pre-wrap; outline-offset: 6px; }
 .note-content:empty::before { content: attr(data-placeholder); color: var(--ink-muted); pointer-events: none; }
@@ -53,7 +69,7 @@ html.note-focus-open :is(.topbar, .bottom-nav, .page-heading, .others-section-he
 .note-editor.is-typing .note-chrome:not(:focus-within) { opacity: 0; }
 .note-focus-exit { min-height: 44px; padding-inline: 10px; font-size: 12px; color: var(--ink-secondary); }
 .note-word-count { margin-left: auto; padding-right: 10px; color: var(--ink-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
-@keyframes note-focus-in { from { opacity: 0; transform: scale(0.995); } to { opacity: 1; transform: none; } }
+@keyframes note-focus-in { from { opacity: 0; } to { opacity: 1; } }
 
 @media (max-width: 760px) {
   .note-editor.is-focus { padding-inline: max(18px, env(safe-area-inset-left)); }

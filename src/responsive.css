@@ -14,7 +14,7 @@ html, body { overflow-x: hidden; }
 :where(input, select, textarea, [contenteditable='true']) { min-inline-size: 0; max-inline-size: 100%; }
 :where(img, video, canvas, iframe) { max-inline-size: 100%; }
 :where(.modal-header > div, .modal-footer > *, .checklist-row > label,
-  .checklist-row label > span, .section-label > span, .notes-list > button) { min-inline-size: 0; }
+  .checklist-row label > span, .section-label > span, .note-list-item, .swipe-row) { min-inline-size: 0; }
 :where(.modal-header h2, .field-help, .field-hint, .form-message,
   .label-chip, .recipe-steps, .note-content, .home-panel-heading h2) { overflow-wrap: anywhere; }
 

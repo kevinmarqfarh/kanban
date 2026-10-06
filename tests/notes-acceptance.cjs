@@ -21,6 +21,8 @@ const results = [], errors = [];
 const check = async (name, fn) => { try { await fn(); results.push({ name, passed: true }); console.log('PASS '+name); } catch (error) { results.push({ name, passed: false, error: error.message }); console.log('FAIL '+name+': '+error.message); } };
 const cache = page => page.evaluate(key => JSON.parse(localStorage.getItem(key)).workspace, key);
 const navNotes = async page => {
+  // Notes open fullscreen, so return to the list first when a note is open.
+  if (await page.locator('.note-editor').count()) { await page.getByRole('button', { name: 'Anteckningar', exact: true }).click(); await page.locator('.note-editor').waitFor({ state: 'detached' }); return; }
   await page.locator('.bottom-nav').getByRole('button', { name: 'Others', exact: true }).click();
   await page.getByRole('button', { name: /^Notes(?:\s|$)/ }).click();
 };
@@ -56,7 +58,7 @@ const insert = async (page, title) => {
       assert.equal((await cache(page)).notes[0].title, 'Kvällstankar');
       assert.match((await cache(page)).notes[0].content, /Min första tanke/);
       await page.reload(); await openNote(page, 'Kvällstankar'); assert.match(await text(page).innerText(), /Min första tanke/);
-      await newNote(page, 'Matidéer', 'Något gott att laga.'); await page.getByLabel('Sök anteckningar').fill('Kväll');
+      await newNote(page, 'Matidéer', 'Något gott att laga.'); await navNotes(page); await page.getByLabel('Sök anteckningar').fill('Kväll');
       assert.equal(await page.getByRole('button', { name: 'Öppna anteckning Kvällstankar', exact: true }).count(), 1);
       assert.equal(await page.getByRole('button', { name: 'Öppna anteckning Matidéer', exact: true }).count(), 0);
       assert.deepEqual((await cache(page)).tasks, fixture.tasks);
@@ -118,7 +120,7 @@ const insert = async (page, title) => {
       try {
         await newNote(page,'Snabba anteckningar','En idé att spara.');
         const size=await page.evaluate(() => ({ width:innerWidth,scroll:document.documentElement.scrollWidth })); assert.ok(size.scroll<=size.width+1);
-        for (const name of ['Punktlista','Numrerad lista','Lägg till länk']) { const box=await page.getByRole('button',{name,exact:true}).boundingBox(); assert.ok(box.width>=44 && box.height>=44) }
+        for (const name of ['Punktlista','Numrerad lista','Lägg till länk']) { const box=await page.getByRole('button',{name,exact:true}).boundingBox(); assert.ok(box.width>=44 && box.height>=44, `${name} is ${box.width}x${box.height} at ${width}px`) }
         await page.screenshot({path:path.join(out,`notes-${width}.png`),fullPage:false});
         await page.getByRole('button',{name:'Anteckningar',exact:true}).click(); await page.getByRole('button',{name:'Öppna anteckning Snabba anteckningar',exact:true}).click(); assert.match(await text(page).innerText(),/idé att spara/);
       } finally { await context.close(); }

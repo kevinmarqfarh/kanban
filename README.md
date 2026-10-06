@@ -104,4 +104,4 @@ Nyckeln börjar med `sb_publishable_`. Använd aldrig en secret- eller service-r
 
 [Verifiering av Home och Others, 6 oktober 2026](docs/others-verification-2026-10-06.md).
 
-[Taggar, nedräkning, helskärmsanteckningar, kostfärger, träning på mobil och receptfilter, 6 oktober 2026](docs/organize-2026-10-06.md).
+[Taggar, nedräkning, helskärmsanteckningar med fet/kursiv och svep för att ta bort, kostfärger, träning på mobil och receptfilter, 6 oktober 2026](docs/organize-2026-10-06.md).

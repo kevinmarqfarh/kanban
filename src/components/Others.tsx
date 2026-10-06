@@ -7,7 +7,7 @@ import { Recipes } from './Recipes'
 import { Notes } from './Notes'
 
 type Section = 'workouts' | 'nutrition' | 'recipes' | 'notes'
-export function Others({ workspace, initialSection, initialRecord, initialNoteId, onBirthdays, onSaveWorkout, onDeleteWorkout, onSaveHabit, onToggleHabit, onDeleteHabit, onSaveRecipe, onDeleteRecipe, onSaveNote, onDeleteNote, onOpenNoteLink }: {
+export function Others({ workspace, initialSection, initialRecord, initialNoteId, onBirthdays, onSaveWorkout, onDeleteWorkout, onSaveHabit, onToggleHabit, onDeleteHabit, onSaveRecipe, onDeleteRecipe, onSaveNote, onDeleteNote, onRestoreNote, onOpenNoteLink }: {
   workspace: Workspace;
   initialSection?: Section | null;
   initialRecord?: { kind: NoteLinkKind; id: string } | null;
@@ -22,6 +22,7 @@ export function Others({ workspace, initialSection, initialRecord, initialNoteId
   onDeleteRecipe: (id: string) => string | null;
   onSaveNote: (edited: Note, original?: Note) => string | null;
   onDeleteNote: (id: string) => string | null;
+  onRestoreNote: (note: Note) => string | null;
   onOpenNoteLink: (kind: NoteLinkKind, id: string, noteId?: string) => string | null;
 }) {
   const [section, setSection] = useState<Section | null>(initialSection ?? null)
@@ -38,6 +39,6 @@ export function Others({ workspace, initialSection, initialRecord, initialNoteId
     {section === 'workouts' && <Workouts workouts={workspace.workouts ?? []} initialId={initialRecord?.kind === 'workout' ? initialRecord.id : undefined} onSave={onSaveWorkout} onDelete={onDeleteWorkout} />}
     {section === 'nutrition' && <Nutrition workspace={workspace} initialHabitId={initialRecord?.kind === 'nutrition' ? initialRecord.id : undefined} onSave={onSaveHabit} onDelete={onDeleteHabit} onToggle={onToggleHabit} />}
     {section === 'recipes' && <Recipes recipes={workspace.recipes ?? []} initialId={initialRecord?.kind === 'recipe' ? initialRecord.id : undefined} onSave={onSaveRecipe} onDelete={onDeleteRecipe} />}
-    {section === 'notes' && <Notes workspace={workspace} initialId={initialNoteId} onSave={onSaveNote} onDelete={onDeleteNote} onOpenLink={onOpenNoteLink} />}
+    {section === 'notes' && <Notes workspace={workspace} initialId={initialNoteId} onSave={onSaveNote} onDelete={onDeleteNote} onRestore={onRestoreNote} onOpenLink={onOpenNoteLink} />}
   </section>
 }
