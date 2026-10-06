@@ -192,6 +192,24 @@ async function mouseDrag(page, fromName, target, position = 'top') {
     }, phone);
   });
 
+  await check('Countdowns are marked green within 30 days, yellow within 14 and red within 7, in the overview and on Home', async () => {
+    const people = [person('r', 'Röd', '1988-10-13', null), person('y', 'Gul', '1990-10-20', null), person('g', 'Grön', '1980-11-05', null), person('n', 'Ingen', '1962-12-03', null), person('t', 'Idag', '1999-10-06', null)];
+    await withPage({ birthdays: people }, async page => {
+      const home = await page.getByTestId('upcoming-birthdays').locator('.home-birthday-when').evaluateAll(items => items.map(item => `${item.dataset.countdown}:${item.dataset.urgency ?? '-'}`));
+      assert.deepEqual(home, ['0:red', '7:red', '14:yellow', '30:green', '58:-']);
+      await openBirthdays(page);
+      const rows = await dialog(page).locator('[data-birthday-id]').evaluateAll(items => items.map(item => `${item.dataset.countdown}:${item.dataset.urgency ?? '-'}:${getComputedStyle(item).borderLeftColor}:${getComputedStyle(item).borderLeftWidth}`));
+      const byDays = Object.fromEntries(rows.map(row => [row.split(':')[0], row]));
+      assert.match(byDays['7'], /^7:red:rgb\(207, 74, 60\):3px$/);
+      assert.match(byDays['14'], /^14:yellow:rgb\(214, 162, 30\):3px$/);
+      assert.match(byDays['30'], /^30:green:rgb\(63, 154, 104\):3px$/);
+      assert.match(byDays['0'], /^0:red:/);
+      assert.match(byDays['58'], /^58:-:.*:1px$/, 'Further away than 30 days keeps the normal border.');
+      assert.equal(await dialog(page).locator('[data-urgency="yellow"] .birthday-countdown').evaluate(element => getComputedStyle(element).borderTopColor), 'rgb(214, 162, 30)');
+      await screenshot(page, 'birthday-urgency.png');
+    });
+  });
+
   await check('Sort by date reorders every group by the next birthday', async () => {
     await withPage({ birthdays: [person('sara', 'Sara', '2019-03-14', 'Familj'), person('mamma', 'Mamma', '1962-12-03', 'Familj'), person('pappa', 'Pappa', '1960-10-08', 'Familj'), person('erik', 'Erik Lindqvist', '1988-10-07', null)] }, async page => {
       await openBirthdays(page);

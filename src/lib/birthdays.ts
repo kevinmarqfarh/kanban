@@ -212,6 +212,16 @@ export function daysUntilBirthday(birthDate: string, today: Date = new Date()): 
   return Math.round((utcDay(occasion.date) - utcDay(localDateString(today))) / 86_400_000)
 }
 
+export type BirthdayUrgency = 'red' | 'yellow' | 'green'
+
+/** Colour level for the countdown: within 7 days red, 14 yellow, 30 green, otherwise none. */
+export function birthdayUrgency(days: number): BirthdayUrgency | null {
+  if (days <= 7) return 'red'
+  if (days <= 14) return 'yellow'
+  if (days <= 30) return 'green'
+  return null
+}
+
 export function birthdayCountdownLabel(days: number): string {
   if (days <= 0) return 'Idag'
   if (days === 1) return 'I morgon'

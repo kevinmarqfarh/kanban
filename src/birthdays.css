@@ -23,7 +23,13 @@
 .birthday-countdown { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; width: 48px; height: 48px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-solid); color: var(--ink); }
 .birthday-countdown strong { font-size: 17px; font-weight: 550; line-height: 1.05; letter-spacing: -0.4px; font-variant-numeric: tabular-nums; }
 .birthday-countdown > span { color: var(--ink-muted); font-size: 9px; line-height: 1.2; }
-.birthday-countdown.is-soon { border-color: var(--line-strong); background: var(--accent-soft); }
+.birthday-countdown.is-soon { background: var(--accent-soft); }
+/* Countdown colour: within 30 days green, 14 yellow, 7 red — a side line on the row and the tile border. */
+.birthday-row[data-urgency] { border-left: 3px solid var(--urgency); }
+.birthday-row[data-urgency] .birthday-countdown { border: 1.5px solid var(--urgency); }
+.birthday-row[data-urgency='green'] { --urgency: var(--urgency-green); }
+.birthday-row[data-urgency='yellow'] { --urgency: var(--urgency-yellow); }
+.birthday-row[data-urgency='red'] { --urgency: var(--urgency-red); }
 .birthday-countdown.is-today { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
 .birthday-countdown.is-today > span { color: var(--accent-ink); opacity: 0.8; font-weight: 550; }
 .birthday-countdown.is-unknown { color: var(--ink-muted); }

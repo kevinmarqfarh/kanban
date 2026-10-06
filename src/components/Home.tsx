@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ArrowRight, Bell, Cake, Check, Utensils, X } from 'lucide-react'
 import type { Workspace } from '../lib/types'
 import type { useDebriefs } from '../hooks/useDebriefs'
-import { birthdayCountdownLabel, birthdayGroupKey, currentAge, groupBirthdays, isValidBirthDate, nextBirthday, unreadBirthdayNotifications } from '../lib/birthdays'
+import { birthdayCountdownLabel, birthdayUrgency, birthdayGroupKey, currentAge, groupBirthdays, isValidBirthDate, nextBirthday, unreadBirthdayNotifications } from '../lib/birthdays'
 import { daysBetween, isoWeek, isNutritionComplete, nutritionDayStatus, parseLocalDate, weekDates } from '../lib/others'
 import { Summary } from './Summary'
 
@@ -64,7 +64,7 @@ export function Home({ workspace, today, reports, initialId, localOnly, onBirthd
             <button className={`filter-chip${activeFilter ? '' : ' active'}`} type="button" aria-pressed={!activeFilter} onClick={() => setBirthdayFilter(null)}>Alla</button>
             {birthdayTags.map(group => <button className={`filter-chip${activeFilter === group.key ? ' active' : ''}`} type="button" key={group.key} aria-pressed={activeFilter === group.key} onClick={() => setBirthdayFilter(activeFilter === group.key ? null : group.key)}>{group.label}<span className="filter-count">{group.birthdays.length}</span></button>)}
           </div>}
-          {upcoming.length > 0 ? <div className="home-birthday-list">{upcoming.slice(0, 5).map(({ person, date, age, days }) => <button className="home-birthday-row" key={person.id} data-birthday-id={person.id} onClick={onBirthdays}><span><strong>{person.name}</strong><small>{currentAge(person.birthDate, parseLocalDate(today))} år · fyller {age}{!activeFilter && person.tag ? ` · ${person.tag}` : ''}</small></span><span className={`home-birthday-when${days === 0 ? ' is-today' : days <= 7 ? ' is-soon' : ''}`} data-countdown={days}><strong>{birthdayCountdownLabel(days)}</strong><time dateTime={date}>{dateText(date, today)}</time></span></button>)}{upcoming.length > 5 && <button className="button ghost" onClick={onBirthdays}>Visa alla {upcoming.length}<ArrowRight size={15} /></button>}</div>
+          {upcoming.length > 0 ? <div className="home-birthday-list">{upcoming.slice(0, 5).map(({ person, date, age, days }) => <button className="home-birthday-row" key={person.id} data-birthday-id={person.id} onClick={onBirthdays}><span><strong>{person.name}</strong><small>{currentAge(person.birthDate, parseLocalDate(today))} år · fyller {age}{!activeFilter && person.tag ? ` · ${person.tag}` : ''}</small></span><span className={`home-birthday-when${days === 0 ? ' is-today' : ''}`} data-countdown={days} data-urgency={birthdayUrgency(days) ?? undefined}><strong>{birthdayCountdownLabel(days)}</strong><time dateTime={date}>{dateText(date, today)}</time></span></button>)}{upcoming.length > 5 && <button className="button ghost" onClick={onBirthdays}>Visa alla {upcoming.length}<ArrowRight size={15} /></button>}</div>
             : (workspace.birthdays ?? []).length > 0 ? <div className="home-empty"><p>Inga födelsedagar med den taggen.</p></div>
             : <div className="home-empty"><p>Inga födelsedagar ännu.</p><button className="button secondary" onClick={onBirthdays}>Lägg till födelsedag<ArrowRight size={15} /></button></div>}
         </section>

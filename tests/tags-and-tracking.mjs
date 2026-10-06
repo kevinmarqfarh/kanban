@@ -19,7 +19,7 @@ const others = await module('../src/lib/others.ts', { './birthdays': birthdays }
 const { isWorkspace, migrateWorkspace } = await module('../src/lib/workspaceValidation.ts', { './birthdays': birthdays, './others': others })
 const { mergeWorkspaceChanges, mergeRecordChanges } = await module('../src/lib/workspaceMerge.ts')
 const {
-  BIRTHDAY_TAGS, birthdayCountdownLabel, birthdayGroupKey, birthdayTagOptions, cleanBirthdayTag, daysUntilBirthday, groupBirthdays,
+  BIRTHDAY_TAGS, birthdayCountdownLabel, birthdayUrgency, birthdayGroupKey, birthdayTagOptions, cleanBirthdayTag, daysUntilBirthday, groupBirthdays,
   isValidBirthdayTag, normalizeBirthdays, resolveBirthdayTag, sortBirthdaysByUpcoming, UNTAGGED_GROUP,
 } = birthdays
 const {
@@ -69,6 +69,7 @@ assert.equal(daysUntilBirthday('2000-02-29', day('2027-02-27')), 1, 'Leap-day bi
 assert.equal(daysUntilBirthday('2000-02-29', day('2028-02-27')), 2)
 assert.equal(daysUntilBirthday('1990-03-30', day('2027-03-27')), 3, 'Counting across the spring DST change stays in whole days.')
 assert.equal(daysUntilBirthday('1990-10-31', day('2026-10-24')), 7, 'Counting across the autumn DST change stays in whole days.')
+assert.deepEqual([0, 1, 7, 8, 14, 15, 30, 31, 200].map(birthdayUrgency), ['red', 'red', 'red', 'yellow', 'yellow', 'green', 'green', null, null], 'Red within 7 days, yellow within 14, green within 30.')
 assert.equal(birthdayCountdownLabel(0), 'Idag')
 assert.equal(birthdayCountdownLabel(1), 'I morgon')
 assert.equal(birthdayCountdownLabel(23), '23 dagar kvar')

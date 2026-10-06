@@ -8,7 +8,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { ArrowDownUp, Bell, Cake, Check, GripVertical, Pencil, Plus, Trash2 } from 'lucide-react'
 import type { Birthday, BirthdayReminder } from '../lib/types'
 import {
-  BIRTHDAY_TAG_MAX_LENGTH, REMINDER_OPTIONS, birthdayCountdownLabel, birthdayGroupKey, birthdayTagOptions, currentBirthdayAge,
+  BIRTHDAY_TAG_MAX_LENGTH, REMINDER_OPTIONS, birthdayCountdownLabel, birthdayUrgency, birthdayGroupKey, birthdayTagOptions, currentBirthdayAge,
   daysUntilBirthday, groupBirthdays, isValidBirthDate, localDateString, nextBirthday, resolveBirthdayTag, sortBirthdaysByUpcoming,
 } from '../lib/birthdays'
 import { newId } from '../lib/helpers'
@@ -51,7 +51,7 @@ function BirthdayRow({ birthday, today, confirming, onEdit, onAskDelete, onCance
   const valid = isValidBirthDate(birthday.birthDate)
   const occasion = valid ? nextBirthday(birthday.birthDate) : null
   const days = valid ? daysUntilBirthday(birthday.birthDate) : null
-  return <article ref={setNodeRef} className={`birthday-row${isDragging ? ' is-dragging' : ''}`} data-birthday-id={birthday.id} data-countdown={days ?? undefined}
+  return <article ref={setNodeRef} className={`birthday-row${isDragging ? ' is-dragging' : ''}`} data-birthday-id={birthday.id} data-countdown={days ?? undefined} data-urgency={days !== null ? birthdayUrgency(days) ?? undefined : undefined}
     style={{ transform: CSS.Translate.toString(transform), transition }}>
     <div className="birthday-row-header">
       <button ref={setActivatorNodeRef} className="birthday-drag-handle" type="button" {...attributes} {...listeners} aria-label={`Flytta ${birthday.name}`} title="Dra för att flytta · mellanslag + piltangenter"><GripVertical size={16} /></button>
