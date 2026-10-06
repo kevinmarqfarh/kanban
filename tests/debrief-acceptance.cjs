@@ -24,6 +24,12 @@ const workspaceFixture = {
     birthdays: [{ id: 'private-birthday', name: 'Min vän', birthDate: '1989-05-17', reminders: [], generatedReminders: [], createdAt: '2026-10-01T09:00:00.000Z' }],
   },
 };
+// Debrief actions must preserve the already-separated copies of legacy project work.
+const expectedWorkspace = {
+  ...workspaceFixture.workspace,
+  tasks: workspaceFixture.workspace.tasks.map(task => ({ ...task, projectId: null })),
+  projects: workspaceFixture.workspace.projects.map(project => ({ ...project, tasks: workspaceFixture.workspace.tasks.filter(task => task.projectId === project.id).map(({ columnId, projectId, ...task }) => ({ ...task, completed: columnId === 'done' })) })),
+};
 const latest = {
   date: '2026-10-05', title: 'En tydlig start på dagen',
   summary: 'Tre små steg för ett lugnare tempo.',
@@ -44,7 +50,16 @@ const check = async (name, fn) => {
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 const workspace = page => page.evaluate(key => JSON.parse(localStorage.getItem(key)).workspace, workspaceKey);
 const feed = page => page.evaluate(key => JSON.parse(localStorage.getItem(key)), feedKey);
-const nav = (page, label) => page.locator('.bottom-nav').getByRole('button', { name: label, exact: true }).click();
+const nav = async (page, label) => {
+  const settings = page.getByRole('dialog').filter({ has: page.getByRole('heading', { name: 'Inställningar', exact: true }) });
+  if (label === 'Profile') {
+    if (!await settings.count()) await page.getByRole('button', { name: 'Öppna inställningar', exact: true }).click();
+    await settings.waitFor();
+  } else {
+    if (await settings.count()) await settings.getByRole('button', { name: 'Stäng', exact: true }).first().click();
+    await page.locator('.bottom-nav').getByRole('button', { name: label, exact: true }).click();
+  }
+};
 const noOverflow = async page => {
   const sizes = await page.evaluate(() => ({ width: innerWidth, scroll: document.documentElement.scrollWidth }));
   assert.ok(sizes.scroll <= sizes.width + 1, `Unintended page overflow: ${sizes.scroll} > ${sizes.width}`);
@@ -72,7 +87,7 @@ const overview = page => page.getByTestId('summary-overview');
 const reader = page => page.getByTestId('debrief-reader');
 const hero = page => page.getByTestId('latest-debrief');
 const historyRow = (page, date) => page.locator(`.summary-history-row[data-debrief-id="${date}"]`);
-const summaryBadge = page => page.locator('.bottom-nav').getByRole('button', { name: 'Summary', exact: true }).locator('.nav-unread');
+const summaryBadge = page => page.locator('.bottom-nav').getByRole('button', { name: 'Home', exact: true }).locator('.nav-unread');
 const stateFor = async (page, date) => (await feed(page)).entries.find(entry => entry.date === date);
 const backToOverview = async page => {
   await reader(page).getByRole('button', { name: 'Till översikten', exact: true }).click();
@@ -93,23 +108,23 @@ const backToOverview = async page => {
 
   await overview(page).waitFor();
 
-  await check('Summary is the honest empty default and exposes four exact footer destinations', async () => {
+  await check('Home retains an honest empty debrief feed and exposes four exact footer destinations', async () => {
     assert.equal(await page.locator('.bottom-nav button').count(), 4);
-    for (const label of ['Summary', 'Kanban', 'Projects', 'Profile']) assert.equal(await page.locator('.bottom-nav').getByRole('button', { name: label, exact: true }).count(), 1);
-    assert.equal(await page.locator('.bottom-nav').getByRole('button', { name: 'Summary', exact: true }).getAttribute('aria-current'), 'page');
+    for (const label of ['Home', 'Planner', 'Projects', 'Others']) assert.equal(await page.locator('.bottom-nav').getByRole('button', { name: label, exact: true }).count(), 1);
+    assert.equal(await page.locator('.bottom-nav').getByRole('button', { name: 'Home', exact: true }).getAttribute('aria-current'), 'page');
     await hero(page).getByText('Din första sammanfattning visas här.', { exact: true }).waitFor();
     assert.equal(await hero(page).getAttribute('data-debrief-id'), null);
     assert.equal(await summaryBadge(page).count(), 0);
     assert.equal(await page.locator('.debrief-bell-dot').count(), 0);
     assert.deepEqual((await feed(page)).entries, []);
-    await nav(page, 'Kanban');
+    await nav(page, 'Planner');
     assert.equal(await page.locator('.debrief-notice').count(), 0);
     await page.getByRole('button', { name: 'Öppna Min privata uppgift', exact: true }).waitFor();
     await nav(page, 'Projects');
     await page.getByRole('button', { name: 'Öppna projekt Mitt privata projekt', exact: true }).waitFor();
-    await nav(page, 'Profile');
-    await page.getByRole('button', { name: 'Visa födelsedagar', exact: true }).waitFor();
-    await page.getByRole('button', { name: 'Öppna debriefingar', exact: true }).click();
+    await nav(page, 'Others');
+    await page.getByRole('button', { name: /^Födelsedagar(?:\s|$)/ }).waitFor();
+    await page.getByRole('button', { name: 'Öppna notiser', exact: true }).click();
     await overview(page).waitFor();
     await noOverflow(page);
   });
@@ -128,7 +143,7 @@ const backToOverview = async page => {
     assert.equal(await summaryBadge(page).textContent(), '3');
     assert.equal(await page.locator('.debrief-bell-dot').count(), 1);
     await screenshot(page, 'desktop-summary-overview.png');
-    await nav(page, 'Kanban');
+    await nav(page, 'Planner');
     assert.equal(await page.locator('.debrief-notice').getAttribute('data-debrief-id'), latest.date);
   });
 
@@ -144,9 +159,9 @@ const backToOverview = async page => {
     assert.equal((await stateFor(page, latest.date)).dismissedAt, hidden.dismissedAt);
     assert.equal((await stateFor(page, latest.date)).readAt, null);
     await expectEntries(page, 3);
-    await nav(page, 'Kanban');
+    await nav(page, 'Planner');
     assert.equal(await page.locator('.debrief-notice').getAttribute('data-debrief-id'), yesterday.date);
-    await nav(page, 'Summary');
+    await nav(page, 'Home');
   });
 
   await check('Inline reading preserves hidden state and returns focus to its original read button', async () => {
@@ -172,13 +187,13 @@ const backToOverview = async page => {
   });
 
   await check('The header bell opens the latest unread report and old reports remain readable', async () => {
-    await nav(page, 'Kanban');
-    await page.getByRole('button', { name: 'Öppna debriefingar', exact: true }).click();
+    await nav(page, 'Planner');
+    await page.getByRole('button', { name: 'Öppna notiser', exact: true }).click();
     await reader(page).waitFor();
     assert.equal(await reader(page).getAttribute('data-debrief-id'), yesterday.date);
     assert.ok((await stateFor(page, yesterday.date)).readAt);
     await backToOverview(page);
-    await nav(page, 'Kanban');
+    await nav(page, 'Planner');
     assert.equal(await page.locator('.debrief-notice').getAttribute('data-debrief-id'), historic.date);
     await page.locator('.debrief-notice').getByRole('button', { name: 'Läs', exact: true }).click();
     await reader(page).waitFor();
@@ -192,9 +207,9 @@ const backToOverview = async page => {
     await historyRow(page, historic.date).waitFor();
     assert.equal(await summaryBadge(page).count(), 0);
     assert.equal(await page.locator('.debrief-bell-dot').count(), 0);
-    await nav(page, 'Kanban');
+    await nav(page, 'Planner');
     assert.equal(await page.locator('.debrief-notice').count(), 0);
-    await nav(page, 'Summary');
+    await nav(page, 'Home');
   });
 
   await check('Identical reimports preserve read, dismissed and created timestamps', async () => {
@@ -253,7 +268,7 @@ const backToOverview = async page => {
   });
 
   await check('Backup includes complete debrief history while every original workspace field stays identical', async () => {
-    assert.deepEqual(await workspace(page), workspaceFixture.workspace);
+    assert.deepEqual(await workspace(page), expectedWorkspace);
     assert.equal(Object.hasOwn(await workspace(page), 'debriefs'), false);
     await nav(page, 'Profile');
     const downloadEvent = page.waitForEvent('download');
@@ -261,10 +276,10 @@ const backToOverview = async page => {
     const download = await downloadEvent;
     await download.saveAs(path.join(out, 'backup.json'));
     const { debriefs, ...savedWorkspace } = JSON.parse(fs.readFileSync(path.join(out, 'backup.json'), 'utf8'));
-    assert.deepEqual(savedWorkspace, workspaceFixture.workspace);
+    assert.deepEqual(savedWorkspace, expectedWorkspace);
     assert.deepEqual(debriefs, (await feed(page)).entries);
     assert.ok(debriefs.some(entry => entry.date === historic.date));
-    await nav(page, 'Summary');
+    await nav(page, 'Home');
   });
 
   await check('A debrief storage failure stays visible and Retry persists its in-memory report', async () => {
@@ -281,7 +296,7 @@ const backToOverview = async page => {
     await page.locator('.debrief-error').getByText(/kunde inte sparas på enheten/).waitFor();
     assert.equal((await feed(page)).entries.length, 4);
     assert.equal(await page.locator('.debrief-import-success').count(), 0);
-    assert.deepEqual(await workspace(page), workspaceFixture.workspace);
+    assert.deepEqual(await workspace(page), expectedWorkspace);
     await page.evaluate(() => window.__restoreDebriefStorage());
     await page.locator('.debrief-error').getByRole('button', { name: 'Försök igen', exact: true }).click();
     await expectEntries(page, 5);
@@ -303,7 +318,7 @@ const backToOverview = async page => {
   await phone.goto(baseURL);
   await overview(phone).waitFor();
 
-  await check('iPhone Summary, inline reader and four footer destinations are touch-friendly', async () => {
+  await check('iPhone Home, inline reader and four footer destinations are touch-friendly', async () => {
     await noOverflow(phone);
     assert.equal(await hero(phone).getAttribute('data-debrief-id'), latest.date, 'Latest must win even when cached entries are unsorted');
     const controls = phone.locator('.bottom-nav button, .debrief-bell, .summary-latest-action button, .summary-latest-state button, .summary-import button, .summary-history-row');
@@ -319,14 +334,14 @@ const backToOverview = async page => {
     await screenshot(phone, 'mobile-summary-reader.png');
     await reader(phone).getByRole('button', { name: 'Till översikten', exact: true }).tap();
     assert.equal(await hero(phone).getByRole('button', { name: 'Läs igen', exact: true }).evaluate(element => element === document.activeElement), true);
-    for (const label of ['Kanban', 'Projects', 'Profile', 'Summary']) {
+    for (const label of ['Planner', 'Projects', 'Others', 'Home']) {
       await phone.locator('.bottom-nav').getByRole('button', { name: label, exact: true }).tap();
       await noOverflow(phone);
     }
   });
 
   await check('Mobile dismiss, reload, dark mode and history reading preserve report states', async () => {
-    await nav(phone, 'Kanban');
+    await nav(phone, 'Planner');
     const notice = phone.locator('.debrief-notice');
     assert.equal(await notice.getAttribute('data-debrief-id'), yesterday.date);
     const heights = await notice.locator('button').evaluateAll(elements => elements.map(element => element.getBoundingClientRect().height));
@@ -346,7 +361,7 @@ const backToOverview = async page => {
     assert.ok((await stateFor(phone, yesterday.date)).dismissedAt);
     await screenshot(phone, 'mobile-summary-reader-dark.png');
     await noOverflow(phone);
-    assert.deepEqual(await workspace(phone), workspaceFixture.workspace);
+    assert.deepEqual(await workspace(phone), expectedWorkspace);
   });
 
   await check('No uncaught browser exceptions during debrief flows', async () => assert.deepEqual(errors, []));

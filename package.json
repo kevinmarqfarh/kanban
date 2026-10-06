@@ -8,11 +8,15 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "check": "tsc -b",
-    "test": "node tests/data-integrity.mjs && node tests/birthdays.mjs && node tests/debriefs.mjs && node tests/persistence.mjs",
+    "test": "node tests/data-integrity.mjs && node tests/birthdays.mjs && node tests/debriefs.mjs && node tests/persistence.mjs && node tests/others.mjs",
+    "test:projects": "node tests/projects-editing.cjs",
     "test:e2e": "node tests/acceptance.cjs",
+    "test:offline": "node tests/offline-acceptance.cjs",
     "test:birthdays": "node tests/birthday-acceptance.cjs",
     "test:debriefs": "node tests/debrief-acceptance.cjs",
-    "test:revision": "node tests/revision-acceptance.cjs"
+    "test:revision": "node tests/revision-acceptance.cjs",
+    "test:others": "node tests/others-acceptance.cjs",
+    "test:notes": "node tests/notes.mjs && node tests/notes-acceptance.cjs"
   },
   "dependencies": {
     "@dnd-kit/core": "6.3.1",
@@ -29,6 +33,7 @@
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.1.1",
     "playwright": "1.63.0",
+    "supabase": "2.120.0",
     "typescript": "5.9.3",
     "vite": "8.3.2"
   }

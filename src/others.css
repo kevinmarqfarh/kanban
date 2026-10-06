@@ -1,0 +1,93 @@
+.others-module-list { display: flex; flex-direction: column; gap: 12px; width: min(850px, 100%); }
+.others-module-row { display: flex; align-items: center; gap: 15px; min-height: 79px; padding: 17px 20px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); text-align: left; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+.others-module-row:hover { background: var(--surface-hover); border-color: var(--line-strong); }
+.others-module-icon, .others-record-icon { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; flex-shrink: 0; border: 1px solid var(--line); border-radius: 13px; background: var(--accent-soft); color: var(--ink-secondary); }
+.others-module-row > strong { flex: 1; color: var(--ink); font-size: 15px; font-weight: 500; }
+.others-module-row > svg { color: var(--ink-muted); }
+.others-section { display: flex; flex-direction: column; gap: 19px; width: min(1000px, 100%); }
+.others-section-heading { display: flex; align-items: center; gap: 15px; }
+.others-section-heading .button { margin-left: -13px; min-height: 44px; }
+.others-section-heading h2 { font-size: 20px; font-weight: 500; letter-spacing: -0.5px; }
+.others-content { display: flex; flex-direction: column; gap: 15px; min-width: 0; }
+.others-list-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--ink-secondary); font-size: 12px; }
+.others-record-list { display: flex; flex-direction: column; gap: 10px; }
+.others-record-row { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; padding: 13px 15px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); text-align: left; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+.others-record-open { display: flex; align-items: center; gap: 13px; width: 100%; min-height: 44px; min-width: 0; padding: 0; text-align: left; }
+.others-record-open > svg { margin-left: auto; color: var(--ink-muted); }
+.others-record-copy { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 6px; }
+.others-record-copy > strong { color: var(--ink); font-size: 14px; font-weight: 500; line-height: 1.5; overflow-wrap: anywhere; }
+.others-record-copy > span { color: var(--ink-secondary); font-size: 10px; line-height: 1.6; }
+.others-empty { padding: 28px 16px; border: 1px dashed var(--line-strong); border-radius: 18px; color: var(--ink-muted); font-size: 12px; text-align: center; }
+.others-help { color: var(--ink-secondary); font-size: 11px; line-height: 1.7; }
+.others-error { padding: 12px 14px; border-radius: 12px; background: var(--danger-soft); color: var(--danger); font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
+.others-status { display: flex; align-items: center; gap: 6px; color: var(--ink-secondary); font-size: 12px; }
+.others-copy-fallback { padding: 15px; border: 1px solid var(--line); border-radius: 17px; background: var(--surface); }
+.others-copy-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 7px; color: var(--ink-secondary); font-size: 12px; }
+.others-add-row { width: 100%; }
+.workout-rows { display: flex; flex-direction: column; gap: 14px; }
+.workout-row { min-width: 0; margin: 0; padding: 13px 14px 15px; border: 1px solid var(--line); border-radius: 16px; background: var(--bg); }
+.workout-row > legend { padding: 0 5px; color: var(--ink-secondary); font-size: 11px; font-weight: 500; }
+.workout-row-top { display: flex; align-items: flex-end; gap: 7px; margin-bottom: 14px; }
+.workout-row-top > .field { flex: 1; }
+.workout-row-top > .icon-button { margin-right: -5px; }
+.workout-row .input, .workout-row .select { background-color: var(--surface-solid); }
+.workout-measures { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
+.workout-value-pair { display: grid; grid-template-columns: minmax(0, 1fr) 85px; min-width: 0; gap: 5px; }
+.workout-value-pair .select { padding-left: 11px; padding-right: 29px; background-position: right 10px center; }
+.workout-bpm { grid-column: 1 / -1; }
+.nutrition-calendar { min-width: 0; padding: 18px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+.nutrition-week-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: -4px -7px 12px 0; }
+.nutrition-week-heading > strong { font-size: 13px; font-weight: 500; }
+.nutrition-week-controls { display: flex; align-items: center; gap: 1px; }
+.nutrition-week-controls .button { min-width: 44px; min-height: 44px; padding-inline: 8px; font-size: 11px; }
+.nutrition-weekdays { display: grid; grid-template-columns: repeat(7, minmax(44px, 1fr)); gap: 5px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.nutrition-weekdays::-webkit-scrollbar { display: none; }
+.nutrition-day { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; min-width: 44px; min-height: 59px; padding: 9px 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--ink-secondary); }
+.nutrition-day > span { font-size: 10px; }
+.nutrition-day > strong { font-size: 16px; font-weight: 500; line-height: 1.2; }
+.nutrition-day.today { border-color: var(--ink-muted); }
+.nutrition-day.active { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+.nutrition-date-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-top: 15px; }
+.nutrition-date-row > .field { width: 165px; }
+.nutrition-date-row > span { padding-bottom: 12px; color: var(--ink-muted); font-size: 11px; white-space: nowrap; }
+.nutrition-habits { display: flex; flex-direction: column; gap: 10px; }
+.nutrition-habit-row { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+.nutrition-habit-row > label { display: flex; align-items: center; gap: 13px; flex: 1; min-height: 44px; min-width: 0; cursor: pointer; }
+.nutrition-habit-row label > span { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.nutrition-habit-row strong { color: var(--ink); font-size: 14px; font-weight: 500; line-height: 1.5; overflow-wrap: anywhere; }
+.nutrition-habit-row small { color: var(--ink-secondary); font-size: 11px; }
+.nutrition-habit-row.completed { border-left: 3px solid #79a184; background: rgba(106, 150, 119, 0.12); }
+.nutrition-habit-row.completed strong { text-decoration: line-through; text-decoration-color: #71917a; }
+.recipe-list-row { min-height: 80px; gap: 13px; }
+.recipe-list-row > svg { color: var(--ink-muted); }
+.recipe-list-labels, .recipe-detail-labels { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+.recipe-label-options { display: flex; flex-wrap: wrap; gap: 7px; }
+.recipe-label-option { min-height: 44px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 11px; background: var(--bg); color: var(--ink-secondary); font-size: 12px; }
+.recipe-label-option.active { border-color: var(--ink-muted); background: var(--accent-soft); color: var(--ink); }
+.recipe-link { align-self: flex-start; text-decoration: none; }
+.recipe-steps { color: var(--ink); font-size: 14px; line-height: 1.9; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+@media (max-width: 760px) {
+  .others-module-row { min-height: 73px; padding: 14px 16px; gap: 12px; border-radius: 18px; }
+  .others-module-row > strong { font-size: 14px; }
+  .others-module-icon, .others-record-icon { width: 37px; height: 37px; border-radius: 12px; }
+  .others-record-row { padding: 12px; }
+  .others-record-open { gap: 10px; }
+  .others-record-copy > span { font-size: 10px; }
+  .others-content .input, .others-content .select, .others-content .textarea, .workout-form .input, .workout-form .select, .others-copy-fallback .textarea { font-size: 16px; }
+  .nutrition-calendar { padding: 15px; }
+  .nutrition-week-heading { gap: 5px; }
+  .nutrition-week-heading > strong { font-size: 12px; }
+  .nutrition-weekdays { gap: 4px; }
+  .recipe-steps { font-size: 15px; }
+}
+
+@media (max-width: 359px) {
+  .workout-measures { grid-template-columns: 1fr; }
+  .workout-bpm { grid-column: auto; }
+  .workout-value-pair { grid-template-columns: minmax(0, 1fr) 95px; }
+  .nutrition-week-heading { flex-wrap: wrap; }
+  .nutrition-week-controls { margin-left: auto; }
+  .nutrition-date-row > .field { width: 156px; }
+  .others-record-icon { display: none; }
+}

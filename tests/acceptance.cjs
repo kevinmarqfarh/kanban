@@ -17,7 +17,16 @@ const check = async (name, fn) => {
   catch (error) { results.push({ name, passed: false, error: error.message }); console.log(`FAIL ${name}: ${error.message}`); }
 };
 const cache = page => page.evaluate(() => JSON.parse(localStorage.getItem('forma:workspace:v1:guest')).workspace);
-const nav = (page, label) => page.locator('.bottom-nav').getByRole('button', { name: label, exact: true }).click();
+const nav = async (page, label) => {
+  const settings = page.getByRole('dialog').filter({ has: page.getByRole('heading', { name: 'Inställningar', exact: true }) });
+  if (label === 'Profile') {
+    if (!await settings.count()) await page.getByRole('button', { name: 'Öppna inställningar', exact: true }).click();
+    await settings.waitFor();
+  } else {
+    if (await settings.count()) await settings.getByRole('button', { name: 'Stäng', exact: true }).first().click();
+    await page.locator('.bottom-nav').getByRole('button', { name: label, exact: true }).click();
+  }
+};
 const dialog = page => page.getByRole('dialog');
 const capture = async (page, filename, fullPage = true) => {
   await page.evaluate(() => document.fonts.ready);
@@ -31,19 +40,19 @@ const assertNoOverflow = async page => {
 const title = 'QA – planera nästa helg';
 
 (async () => {
-  const browser = await (engine === 'webkit' ? webkit : chromium).launch({ headless: true });
+  const browser = await (engine === 'webkit' ? webkit : chromium).launch({ headless: true, ...(process.env.PLAYWRIGHT_EXECUTABLE_PATH ? { executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH } : {}) });
   const desktop = await browser.newContext({ viewport: { width: 1512, height: 982 } });
   const page = await desktop.newPage();
   page.setDefaultTimeout(10000);
   page.on('pageerror', error => errors.push(error.message));
   await page.goto(baseURL);
-  await nav(page, 'Kanban');
+  await nav(page, 'Planner');
   await page.locator('[data-task-id="task-light"]').waitFor();
   await capture(page, 'desktop-light.png');
 
   await check('Desktop layout and footer navigation', async () => {
     await assertNoOverflow(page);
-    for (const label of ['Summary', 'Kanban', 'Projects', 'Profile']) assert.equal(await page.locator('.bottom-nav').getByRole('button', { name: label, exact: true }).count(), 1);
+    for (const label of ['Home', 'Planner', 'Projects', 'Others']) assert.equal(await page.locator('.bottom-nav').getByRole('button', { name: label, exact: true }).count(), 1);
   });
 
   await check('Create a task with every requested field', async () => {
@@ -72,7 +81,7 @@ const title = 'QA – planera nästa helg';
 
   await check('Task reload, editing and accessible status move', async () => {
     await page.reload();
-    await nav(page, 'Kanban');
+    await nav(page, 'Planner');
     await page.getByRole('button', { name: `Öppna ${title}`, exact: true }).click();
     assert.equal(await dialog(page).getByLabel('Titel', { exact: true }).inputValue(), title);
     assert.equal(await dialog(page).getByLabel('Deadline', { exact: true }).inputValue(), '2026-10-18');
@@ -82,7 +91,7 @@ const title = 'QA – planera nästa helg';
     await dialog(page).getByRole('button', { name: 'Spara ändringar', exact: true }).click();
     await page.locator('[data-column-id="doing"]').getByRole('button', { name: `Öppna ${title}`, exact: true }).waitFor();
     await page.reload();
-    await nav(page, 'Kanban');
+    await nav(page, 'Planner');
     await page.locator('[data-column-id="doing"]').getByRole('button', { name: `Öppna ${title}`, exact: true }).waitFor();
   });
 
@@ -156,8 +165,28 @@ const title = 'QA – planera nästa helg';
     await dialog(page).getByRole('button', { name: 'Stäng', exact: true }).click();
   });
 
+  await check('Projects have independent tasks, status and deletion', async () => {
+    const before = structuredClone((await cache(page)).tasks);
+    await page.getByRole('button', { name: 'Öppna projekt QA – ett eget projekt', exact: true }).click();
+    await dialog(page).getByRole('button', { name: /Planera projektets första steg/ }).click();
+    await dialog(page).getByLabel('Titel', { exact: true }).fill('Projektets eget steg');
+    await dialog(page).getByLabel(/^Status/).selectOption('done');
+    await dialog(page).getByRole('button', { name: 'Spara uppgift', exact: true }).click();
+    assert.deepEqual((await cache(page)).tasks, before);
+    assert.equal((await cache(page)).projects.find(project => project.title === 'QA – ett eget projekt').tasks[0].completed, true);
+    await dialog(page).getByRole('button', { name: 'Stäng', exact: true }).click();
+    await nav(page, 'Planner');
+    assert.equal(await page.getByRole('button', { name: 'Öppna Projektets eget steg', exact: true }).count(), 0);
+    await nav(page, 'Projects');
+    await page.getByRole('button', { name: 'Öppna projekt QA – ett eget projekt', exact: true }).click();
+    await dialog(page).getByRole('button', { name: 'Ta bort projekt', exact: true }).click();
+    await dialog(page).locator('.delete-confirm').getByRole('button', { name: 'Ta bort projekt', exact: true }).click();
+    assert.deepEqual((await cache(page)).tasks, before);
+    await nav(page, 'Planner');
+  });
+
   await check('Delete task requires deliberate confirmation', async () => {
-    await nav(page, 'Kanban');
+    await nav(page, 'Planner');
     await page.getByRole('button', { name: `Öppna ${title}`, exact: true }).click();
     await dialog(page).getByRole('button', { name: 'Ta bort uppgift', exact: true }).click();
     assert.ok((await cache(page)).tasks.some(task => task.title === title));
@@ -193,21 +222,23 @@ const title = 'QA – planera nästa helg';
     await page.evaluate(() => { Crypto.prototype.randomUUID = window.__qaRandomUUID; });
   });
 
-  await check('Search and project filter narrow visible cards', async () => {
+  await check('Search works without project controls on the board or cards', async () => {
+    assert.equal(await page.getByLabel('Filtrera projekt', { exact: true }).count(), 0);
+    assert.equal(await page.locator('.task-project').count(), 0);
     await page.getByLabel('Sök uppgifter', { exact: true }).fill('läshörnan');
     assert.equal(await page.locator('.task-card:not(.drag-overlay)').count(), 1);
-    await page.getByLabel('Sök uppgifter', { exact: true }).fill('');
-    await page.getByLabel('Filtrera projekt', { exact: true }).selectOption('home');
-    const ids = await page.locator('[data-task-id]').evaluateAll(elements => elements.map(element => element.dataset.taskId));
-    const workspace = await cache(page);
-    assert.ok(ids.length > 0 && ids.every(id => workspace.tasks.find(task => task.id === id).projectId === 'home'));
     await page.getByRole('button', { name: /Rensa filter/ }).click();
+    assert.equal(await page.locator('[data-task-id]').count(), (await cache(page)).tasks.length);
+    await page.locator('[data-task-id="task-light"] .task-open').click();
+    assert.equal(await dialog(page).getByLabel('Projekt', { exact: true }).count(), 0);
+    await dialog(page).getByRole('button', { name: 'Avbryt', exact: true }).click();
   });
 
-  await check('Profile describes local saving and omits unavailable cloud auth', async () => {
+  await check('Profile describes local saving and exports the independent workspace', async () => {
     await nav(page, 'Profile');
-    await page.getByText('Innehållet sparas i den här webbläsaren.', { exact: true }).waitFor();
-    assert.equal(await page.locator('.auth-form').count(), 0);
+    await page.locator('.profile-storage').getByText('Sparas lokalt', { exact: true }).waitFor();
+    const cloudConfigured = await page.locator('.auth-form').count() > 0;
+    await page.getByText(cloudConfigured ? 'Logga in för att synka mellan dina enheter.' : 'Innehållet sparas i den här webbläsaren.', { exact: true }).waitFor();
     const download = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Exportera säkerhetskopia', exact: true }).click();
     const file = await download;
@@ -219,7 +250,7 @@ const title = 'QA – planera nästa helg';
   });
 
   await check('Storage quota failure is visible without a false saved claim', async () => {
-    await nav(page, 'Kanban');
+    await nav(page, 'Planner');
     await page.evaluate(() => {
       const original = Storage.prototype.setItem;
       window.__qaRestoreStorage = () => { Storage.prototype.setItem = original; };
@@ -239,7 +270,7 @@ const title = 'QA – planera nästa helg';
     await page.getByRole('button', { name: 'Försök igen', exact: true }).click();
     await page.waitForFunction(() => JSON.parse(localStorage.getItem('forma:workspace:v1:guest')).workspace.tasks.find(task => task.id === 'task-light').title === 'QA – osparad ändring');
     await page.reload();
-    await nav(page, 'Kanban');
+    await nav(page, 'Planner');
     await page.getByRole('button', { name: 'Öppna QA – osparad ändring', exact: true }).waitFor();
   });
 
@@ -248,7 +279,7 @@ const title = 'QA – planera nästa helg';
   phone.setDefaultTimeout(10000);
   phone.on('pageerror', error => errors.push(error.message));
   await phone.goto(baseURL);
-  await nav(phone, 'Kanban');
+  await nav(phone, 'Planner');
   await phone.locator('[data-task-id="task-light"]').waitFor();
   await capture(phone, 'mobile-light.png');
 
@@ -271,7 +302,7 @@ const title = 'QA – planera nästa helg';
     await pause(150);
     const task = (await cache(phone)).tasks.find(task => task.id === 'task-light');
     assert.notEqual(task.columnId, 'todo');
-    assert.ok(['doing', 'done'].includes(task.columnId));
+    assert.ok((await cache(phone)).columns.some(column => column.id === task.columnId), 'Touch drag must persist a valid destination column.');
     await phone.locator(`[data-column-id="${task.columnId}"] [data-task-id="task-light"]`).waitFor();
     await cdp.detach();
   });
@@ -280,8 +311,7 @@ const title = 'QA – planera nästa helg';
     await assertNoOverflow(phone);
     const searchSize = await phone.getByLabel('Sök uppgifter', { exact: true }).evaluate(element => parseFloat(getComputedStyle(element).fontSize));
     assert.ok(searchSize >= 16, 'Mobile search input should avoid Safari autozoom');
-    const filterHeight = await phone.getByLabel('Filtrera projekt', { exact: true }).evaluate(element => element.getBoundingClientRect().height);
-    assert.ok(filterHeight >= 44, `Mobile project filter is only ${filterHeight}px tall`);
+    assert.equal(await phone.getByLabel('Filtrera projekt', { exact: true }).count(), 0);
     assert.equal(await phone.locator('.mobile-column-tabs').isVisible(), true);
     await phone.locator('.mobile-column-tabs').getByRole('button', { name: /Pågår/ }).tap();
     await pause(400);
@@ -310,7 +340,7 @@ const title = 'QA – planera nästa helg';
     await phone.getByRole('button', { name: 'Mörkt', exact: true }).tap();
     assert.equal(await phone.evaluate(() => document.documentElement.dataset.theme), 'dark');
     await phone.reload();
-    await nav(phone, 'Kanban');
+    await nav(phone, 'Planner');
     assert.equal(await phone.evaluate(() => document.documentElement.dataset.theme), 'dark');
     await capture(phone, 'mobile-dark.png');
     await nav(phone, 'Profile');

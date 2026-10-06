@@ -24,7 +24,7 @@ export function DebriefNotice({ debrief, onRead, onDismiss }: {
   </section>
 }
 
-export function Summary({ debriefs, initialId, onRead, onDismiss, onImport, error, onRetry, localOnly }: {
+export function Summary({ debriefs, initialId, onRead, onDismiss, onImport, error, onRetry, localOnly, onReaderChange }: {
   debriefs: DailyDebrief[];
   initialId?: string;
   onRead: (id: string) => void;
@@ -33,6 +33,7 @@ export function Summary({ debriefs, initialId, onRead, onDismiss, onImport, erro
   error: string | null;
   onRetry: () => void;
   localOnly: boolean;
+  onReaderChange?: (reading: boolean) => void;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(initialId ?? null)
   const [importing, setImporting] = useState(false)
@@ -50,6 +51,9 @@ export function Summary({ debriefs, initialId, onRead, onDismiss, onImport, erro
   const latest = ordered[0]
   const history = ordered.slice(1)
   const selected = ordered.find(debrief => debrief.id === selectedId)
+  const readerChangeRef = useRef(onReaderChange)
+  readerChangeRef.current = onReaderChange
+  useEffect(() => { readerChangeRef.current?.(!!selected) }, [selected?.id])
 
   useEffect(() => {
     if (!initialId) return

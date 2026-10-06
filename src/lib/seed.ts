@@ -16,10 +16,16 @@ export function createSeedWorkspace(): Workspace {
 
   return {
     birthdays: [],
+    birthdayNotifications: [],
+    workouts: [],
+    nutritionHabits: [],
+    nutritionCompletions: [],
+    recipes: [],
     columns: [
       { id: 'todo', title: 'Att göra', color: 'gray' },
       { id: 'doing', title: 'Pågår', color: 'blue' },
       { id: 'done', title: 'Klart', color: 'green' },
+      { id: 'finalized', title: 'Finalized', color: 'green' },
     ],
     projects: [
       { id: 'home', title: 'Ett lugnare hem', description: 'Små förändringar som gör vardagen lite finare.', icon: 'home', color: 'sage', deadline: relativeDate(21), createdAt },
@@ -83,5 +89,5 @@ export function createSeedWorkspace(): Workspace {
 }
 
 export function createEmptyWorkspace(): Workspace {
-  return { columns: createSeedWorkspace().columns, tasks: [], projects: [], birthdays: [] }
+  return { columns: createSeedWorkspace().columns, tasks: [], projects: [], birthdays: [], birthdayNotifications: [], workouts: [], nutritionHabits: [], nutritionCompletions: [], recipes: [] }
 }

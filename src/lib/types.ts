@@ -2,6 +2,7 @@ export interface Column {
   id: string
   title: string
   color: string
+  collapsed?: boolean
 }
 
 export interface ChecklistItem {
@@ -24,15 +25,19 @@ export interface Task {
   labels: string[]
   checklist: ChecklistItem[]
   deadline: string | null
+  deadlineTime?: string | null
   comments: Comment[]
   projectId: string | null
   createdAt: string
 }
 
+export type ProjectTask = Omit<Task, 'columnId' | 'projectId'> & { completed: boolean }
+
 export interface Project {
   id: string
   title: string
   description: string
+  tasks?: ProjectTask[]
   icon: string
   color: string
   deadline: string | null
@@ -48,6 +53,73 @@ export interface Birthday {
   reminders: BirthdayReminder[]
   createdAt: string
   generatedReminders: string[]
+}
+
+export interface BirthdayNotification {
+  id: string
+  birthdayId: string
+  date: string
+  reminder: BirthdayReminder
+  name: string
+  age: number
+  createdAt: string
+  readAt: string | null
+  dismissedAt: string | null
+}
+
+export interface WorkoutRow {
+  id: string
+  title: string
+  amount: string
+  amountUnit: 'sets' | 'min'
+  load: string
+  loadUnit: 'time' | 'kg'
+  bpm: string
+}
+
+export interface Workout {
+  id: string
+  date: string
+  title?: string
+  rows: WorkoutRow[]
+  createdAt: string
+}
+
+export type NutritionUnit = 'st' | 'ml' | 'l' | 'g' | 'portion'
+
+export interface NutritionHabit {
+  id: string
+  title: string
+  amount: string
+  unit: NutritionUnit
+  createdAt: string
+}
+
+export interface NutritionCompletion {
+  id: string
+  habitId: string
+  date: string
+  completed: boolean
+}
+
+export interface Recipe {
+  id: string
+  title: string
+  url: string
+  steps: string
+  labels: string[]
+  createdAt: string
+}
+
+export type NoteFont = 'system' | 'serif' | 'mono'
+export type NoteLinkKind = 'task' | 'project' | 'workout' | 'nutrition' | 'recipe' | 'birthday'
+export interface Note {
+  id: string
+  title: string
+  content: string
+  font: NoteFont
+  createdAt: string
+  updatedAt: string
 }
 
 export interface DailyDebrief {
@@ -75,6 +147,12 @@ export interface Workspace {
   projects: Project[]
   // Optional when loading workspaces created before birthdays were introduced.
   birthdays?: Birthday[]
+  birthdayNotifications?: BirthdayNotification[]
+  workouts?: Workout[]
+  nutritionHabits?: NutritionHabit[]
+  nutritionCompletions?: NutritionCompletion[]
+  recipes?: Recipe[]
+  notes?: Note[]
 }
 
 export type SyncStatus = 'local' | 'syncing' | 'synced' | 'offline' | 'error' | 'conflict'

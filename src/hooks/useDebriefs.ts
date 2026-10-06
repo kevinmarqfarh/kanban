@@ -15,6 +15,7 @@ interface DebriefCache {
   version: 1
   entries: DailyDebrief[]
   pending: Record<string, PendingState>
+  imports?: Record<string, DailyDebrief>
 }
 
 interface Context extends DebriefCache { ownerId: string | null }
@@ -35,8 +36,9 @@ function readCache(ownerId: string | null): Context | null {
     if (!object(value) || value.version !== 1 || !Array.isArray(value.entries) || !value.entries.every(isDailyDebrief)
       || new Set(value.entries.map(entry => entry.id)).size !== value.entries.length || !object(value.pending)
       || !Object.values(value.pending).every(state => object(state) && nullableDate(state.readAt) && nullableDate(state.dismissedAt) && typeof state.content === 'string')) throw new Error('Invalid cache')
+    if (value.imports !== undefined && (!object(value.imports) || !Object.entries(value.imports).every(([id, entry]) => isDailyDebrief(entry) && entry.id === id))) throw new Error('Invalid queued imports')
     blockedRecovery.delete(cacheKey(ownerId))
-    return { ownerId, version: 1, entries: value.entries, pending: value.pending as unknown as Record<string, PendingState> }
+    return { ownerId, version: 1, entries: value.entries, pending: value.pending as unknown as Record<string, PendingState>, imports: value.imports as Record<string, DailyDebrief> | undefined }
   } catch {
     if (raw) {
       try { localStorage.setItem(`${cacheKey(ownerId)}:recovery:${Date.now()}`, raw); blockedRecovery.delete(cacheKey(ownerId)) }
@@ -68,7 +70,11 @@ function mergeCache(base: Context, edited: Context, latest: Context): Context {
     const entry = entries.find(entry => entry.id === id)
     if (entry && state.content === contentKey(entry)) pending[id] = { readAt: entry.readAt, dismissedAt: entry.dismissedAt, content: contentKey(entry) }
   }
-  return { ...latest, entries: entries.sort((a, b) => b.date.localeCompare(a.date)), pending }
+  const imports = { ...latest.imports }
+  for (const [id, entry] of Object.entries(edited.imports ?? {})) {
+    if (JSON.stringify(entry) !== JSON.stringify(base.imports?.[id])) imports[id] = entry
+  }
+  return { ...latest, entries: entries.sort((a, b) => b.date.localeCompare(a.date)), pending, imports }
 }
 
 function writeCache(context: Context): string | null {
@@ -154,8 +160,30 @@ export function useDebriefs(ownerId: string | null, ready: boolean) {
 
     const poll = async () => {
       if (!currentOwner() || running || blocked || document.visibilityState !== 'visible') return
+      if (!navigator.onLine) { setError(storageFailure.current ?? feedError(new Error('offline'))); return }
       running = true
       try {
+        for (const [id, entry] of Object.entries(latestContext().imports ?? {})) {
+          const result = await client.from('daily_debriefs').insert({
+            user_id: ownerId, date: entry.date, title: entry.title, summary: entry.summary, body: entry.body, created_at: entry.createdAt,
+          })
+          if (!currentOwner()) return
+          if (result.error?.code === '23505') {
+            const existing = await client.from('daily_debriefs').select('title,summary,body,created_at').eq('user_id', ownerId).eq('date', entry.date).single()
+            if (!currentOwner()) return
+            if (existing.error) throw existing.error
+            if (JSON.stringify([existing.data.title, existing.data.summary, existing.data.body, existing.data.created_at]) !== contentKey(entry)) {
+              blocked = true
+              throw new Error('En annan debriefing finns redan för ' + entry.date + '. Din offlineimport finns kvar på enheten och molnversionen har inte skrivits över.')
+            }
+          } else if (result.error) throw result.error
+          const current = latestContext()
+          if (contentKey(current.imports?.[id] ?? entry) === contentKey(entry)) {
+            const imports = { ...current.imports }
+            delete imports[id]
+            commit({ ...current, imports })
+          }
+        }
         // Retry read/dismiss states first; their local overlay also protects an offline visit.
         for (const [id, pending] of Object.entries(latestContext().pending)) {
           const entry = contextRef.current.entries.find(entry => entry.id === id)
@@ -193,7 +221,7 @@ export function useDebriefs(ownerId: string | null, ready: boolean) {
         if (!currentOwner()) return
         const message = object(failure) && typeof failure.message === 'string' ? failure.message : ''
         if (/schema cache|permission denied|relation.*does not exist/i.test(message)) blocked = true
-        setError(storageFailure.current ?? feedError(failure))
+        setError(storageFailure.current ?? (message.includes('Din offlineimport') ? message : feedError(failure)))
       } finally { running = false }
     }
     void poll()
@@ -233,18 +261,12 @@ export function useDebriefs(ownerId: string | null, ready: boolean) {
       if (!values.length || values.length > 100) return 'Välj en fil med 1–100 debriefingar.'
       const incoming = values.map(value => parseDebriefPayload(value))
       if (new Set(incoming.map(entry => entry.id)).size !== incoming.length) return 'Filen innehåller flera debriefingar för samma dag.'
-      if (ownerId && supabase) {
-        const result = await supabase.from('daily_debriefs').insert(incoming.map(entry => ({
-          user_id: ownerId, date: entry.date, title: entry.title, summary: entry.summary, body: entry.body, created_at: entry.createdAt,
-        })))
-        if (activeOwner.current !== ownerId) return 'Kontot ändrades. Läs in filen igen i rätt inkorg.'
-        if (result.error?.code === '23505') return 'Det finns redan en debriefing för den dagen.'
-        if (result.error) throw result.error
-      }
       const latest = latestContext()
+      if (ownerId && incoming.some(entry => latest.entries.some(existing => existing.id === entry.id))) return 'Det finns redan en debriefing för den dagen.'
       const entries = incoming.reduce((list, entry) => mergeDebrief(list, entry), latest.entries)
       if (entries === latest.entries && !storageFailure.current) return null
-      const failure = commit({ ...latest, entries })
+      const imports = ownerId ? { ...latest.imports, ...Object.fromEntries(incoming.map(entry => [entry.id, entry])) } : latest.imports
+      const failure = commit({ ...latest, entries, imports })
       if (!failure) setError(null)
       if (ownerId) setRefresh(value => value + 1)
       return failure

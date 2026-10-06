@@ -1,0 +1,46 @@
+/* Shared layout boundaries. Wide boards/calendar strips scroll inside themselves. */
+html, body, #root { min-inline-size: 0; inline-size: 100%; max-inline-size: 100%; }
+html, body { overflow-x: hidden; }
+@supports (overflow: clip) {
+  html, body { overflow-x: clip; }
+}
+
+:where(.app-shell, .main-content, .page-heading, .home-page, .others-section,
+  .others-content, .notes-layout, .notes-writing-area, .note-editor,
+  .modal-content, .modal-content form, .field, .field-row, fieldset) {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+:where(input, select, textarea, [contenteditable='true']) { min-inline-size: 0; max-inline-size: 100%; }
+:where(img, video, canvas, iframe) { max-inline-size: 100%; }
+:where(.modal-header > div, .modal-footer > *, .checklist-row > label,
+  .checklist-row label > span, .section-label > span, .notes-list > button) { min-inline-size: 0; }
+:where(.modal-header h2, .field-help, .field-hint, .form-message,
+  .label-chip, .recipe-steps, .note-content, .home-panel-heading h2) { overflow-wrap: anywhere; }
+
+.modal-panel { min-inline-size: 0; max-inline-size: 100%; }
+.modal-content { overflow-x: hidden; scrollbar-gutter: stable; -webkit-overflow-scrolling: touch; }
+.modal-content > *, .modal-content form { min-inline-size: 0; max-inline-size: 100%; }
+.modal-content form { inline-size: 100%; }
+.modal-footer { flex-wrap: wrap; }
+.input, .select, .textarea, .note-title-input { max-inline-size: 100%; }
+.textarea, textarea { resize: none; }
+.checklist-add, .comment-compose, .comment-form, .workout-row-top { min-inline-size: 0; }
+.checklist-add .input, .comment-compose .input, .comment-form .textarea { flex-basis: 0; }
+.modal-panel input:is([type='date'], [type='time']) { display: block; min-inline-size: 0; max-inline-size: 100%; }
+.modal-panel input::-webkit-date-and-time-value { min-inline-size: 0; text-align: left; }
+
+@media (max-width: 760px) {
+  /* A visual viewport can shrink for a keyboard while the layout viewport does not. */
+  .modal-panel {
+    inset: auto 0 var(--modal-bottom-inset, 0px);
+    inline-size: 100%;
+    max-block-size: calc(var(--modal-visible-height, 100dvh) - 16px);
+  }
+  .modal-content { overscroll-behavior-x: none; }
+  body :is(input:not([type='checkbox']):not([type='radio']):not(.note-title-input),
+    select, textarea, [contenteditable='true']) { font-size: 16px; }
+  .modal-footer > .button { white-space: normal; text-align: center; }
+  .note-toolbar { flex-wrap: wrap; }
+  .note-toolbar > label { flex-basis: 110px; }
+}

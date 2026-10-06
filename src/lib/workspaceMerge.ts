@@ -54,5 +54,11 @@ export function mergeWorkspaceChanges(base: Workspace, edited: Workspace, latest
     tasks: mergeList(base.tasks, edited.tasks, latest.tasks),
     projects: mergeList(base.projects, edited.projects, latest.projects),
     ...((base.birthdays || edited.birthdays || latest.birthdays) ? { birthdays: mergeList(base.birthdays ?? [], edited.birthdays ?? [], latest.birthdays ?? []) } : {}),
+    ...((base.birthdayNotifications || edited.birthdayNotifications || latest.birthdayNotifications) ? { birthdayNotifications: mergeList(base.birthdayNotifications ?? [], edited.birthdayNotifications ?? [], latest.birthdayNotifications ?? []) } : {}),
+    ...((base.workouts || edited.workouts || latest.workouts) ? { workouts: mergeList(base.workouts ?? [], edited.workouts ?? [], latest.workouts ?? []) } : {}),
+    ...((base.nutritionHabits || edited.nutritionHabits || latest.nutritionHabits) ? { nutritionHabits: mergeList(base.nutritionHabits ?? [], edited.nutritionHabits ?? [], latest.nutritionHabits ?? []) } : {}),
+    ...((base.nutritionCompletions || edited.nutritionCompletions || latest.nutritionCompletions) ? { nutritionCompletions: mergeList(base.nutritionCompletions ?? [], edited.nutritionCompletions ?? [], latest.nutritionCompletions ?? []) } : {}),
+    ...((base.recipes || edited.recipes || latest.recipes) ? { recipes: mergeList(base.recipes ?? [], edited.recipes ?? [], latest.recipes ?? []) } : {}),
+    ...((base.notes || edited.notes || latest.notes) ? { notes: mergeList(base.notes ?? [], edited.notes ?? [], latest.notes ?? []) } : {}),
   }
 }

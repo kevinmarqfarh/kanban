@@ -28,15 +28,15 @@ Att dölja en debriefing tar bort den från olästa poster men behåller histori
 
 Inkorgen sparas i en separat webbläsarnyckel: `forma:debriefs:v1:guest` för gästen och `forma:debriefs:v1:<user-id>` för respektive konto. Cacheformatet är `{ "version": 1, "entries": [], "pending": {} }`. `pending` innehåller läst-/döljändringar som behöver skickas till ett anslutet konto. Lokal lagring delas inte mellan enheter.
 
-## Förberedd molnanslutning
+## Molnanslutning
 
-`supabase/debriefs.sql` förbereder `public.daily_debriefs` i projektet `rucwlpzrumxejvhwazat`. Filen har inte körts. Den är fristående från `kanban_workspaces` och ersätter inga befintliga tabeller. Om en tabell med samma namn redan finns måste dess struktur granskas före anslutning.
+`supabase/debriefs.sql` skapade `public.daily_debriefs` i projektet `rucwlpzrumxejvhwazat` den 2026-10-06. Den är fristående från `kanban_workspaces` och ersätter inga befintliga tabeller. Kör inte filen igen mot den redan skapade tabellen.
 
 Tabellens primärnyckel är `(user_id, date)`. RLS tillåter ett inloggat konto att läsa och skapa sina egna poster. Användaren får endast uppdatera `read_at` och `dismissed_at`; rapportens datum, ägare och innehåll kan inte ändras via klientens UPDATE. Dölja använder UPDATE, inte DELETE. Rättigheterna är explicit angivna, vilket också stödjer Supabases ändrade regler för API-exponering. [API-rättigheter](https://supabase.com/docs/guides/api/securing-your-api), [RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), [kolumnrättigheter](https://supabase.com/docs/guides/database/postgres/column-level-security), [relevant ändring](https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically).
 
 Appen läser `date,title,summary,body,created_at,read_at,dismissed_at` med ett explicit ägarfilter och fallande datumordning. Läst-/döljändringar sparas lokalt och kan återförsökas efter nätverksfel. Uppdateringen filtrerar även på den inlästa `created_at`, så en sen statusändring inte markerar en reviderad rapport som läst.
 
-Import till ett anslutet konto använder INSERT. Ett befintligt datum ger felkod `23505` och meddelandet att det redan finns en debriefing för dagen. Klienten använder inte upsert för att ersätta rapportinnehåll. Kontots inkorg hämtas när appen öppnas, åter blir synlig eller får fokus, samt varje minut medan den är synlig.
+Import till ett anslutet konto sparas först i en lokal kö och använder INSERT när nätet är tillgängligt. Ett datum som redan finns lokalt avvisas. Vid serverfel `23505` jämförs innehåll och skapandetid: identiskt innehåll bekräftar ett tidigare lyckat anrop, medan annat innehåll ger en konflikt och behåller offlineimporten lokalt. Klienten använder inte upsert för att ersätta rapportinnehåll. Kontots inkorg hämtas när appen öppnas, åter blir synlig, får fokus eller återfår internet, samt varje minut medan den är synlig.
 
 ## Kontrakt för en framtida serverautomation
 
@@ -79,4 +79,4 @@ Serverautomationens enda skrivmål är `daily_debriefs`. Den ska inte skriva til
 
 `tests/debriefs.mjs` verifierar riktiga kalenderdatum, ISO-tider, JSON-validering, vanlig text, storleksgränser, importdubbletter, läst-/döljstatus, historik och reviderat innehåll. TypeScript-kontrollen verifierar domänfunktionerna mot appens datatyper.
 
-SQL-filen har granskats mot aktuella officiella Supabase-dokument och changelog men har **inte körts mot en databas**. Molnimport, serverautomation, SQL-rättigheter och RLS är därför inte liveverifierade. Före anslutning behöver tabellen skapas, rättigheterna kontrolleras med två separata testkonton och en testpost läsas/importeras. Kontrollera också att en klient inte kan uppdatera rapportinnehåll, medan läst-/döljstatus fungerar för ägaren. Inga nycklar eller molnändringar behövs för den lokala JSON-importen.
+SQL-filen har körts mot databasen. En återställd transaktion med två tillfälliga användaridentiteter verifierade import, läst-/döljstatus, skyddat rapportinnehåll och kontoisolering. Publik REST-åtkomst nekades. Appens publika klientnyckel är konfigurerad lokalt. Verklig användarinloggning, import via webbläsaren och serverautomation återstår att verifiera. Inga nycklar eller molnändringar behövs för den lokala JSON-importen.

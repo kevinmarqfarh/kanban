@@ -1,11 +1,11 @@
-import type { Birthday, BirthdayReminder, Task, Workspace } from './types'
+import type { Birthday, BirthdayReminder, BirthdayNotification, Workspace } from './types'
 
 export const REMINDER_OPTIONS: { value: BirthdayReminder; label: string }[] = [
-  { value: 'month', label: '1 månad' },
-  { value: 'two-weeks', label: '2 veckor' },
-  { value: 'week', label: '1 vecka' },
-  { value: 'day', label: 'På födelsedagen' },
+  { value: 'week', label: '7 dagar' },
+  { value: 'two-weeks', label: '14 dagar' },
+  { value: 'month', label: '30 dagar' },
 ]
+const schedulingOptions = [...REMINDER_OPTIONS, { value: 'day' as const, label: 'På födelsedagen' }]
 
 export function localDateString(date: Date): string {
   return `${String(date.getFullYear()).padStart(4, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
@@ -41,6 +41,12 @@ export function nextBirthday(birthDate: string, today: Date = new Date()): { dat
   return { date: localDateString(occasion), age: year - birthYear }
 }
 
+export function currentAge(birthDate: string, today: Date = new Date()): number {
+  const next = nextBirthday(birthDate, today)
+  return Math.max(0, next.age - (next.date === localDateString(today) ? 0 : 1))
+}
+export const currentBirthdayAge = currentAge
+
 export function birthdayDescription(birthday: Birthday, occasion = nextBirthday(birthday.birthDate)): string {
   const [year, month, day] = occasion.date.split('-').map(Number)
   const date = calendarDate(year, month - 1, day).toLocaleDateString('sv-SE', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -49,32 +55,51 @@ export function birthdayDescription(birthday: Birthday, occasion = nextBirthday(
 
 export function reminderDate(occasionDate: string, reminder: BirthdayReminder): string {
   const [year, month, day] = occasionDate.split('-').map(Number)
-  if (reminder === 'month') {
-    const lastDay = calendarDate(year, month - 1, 0).getDate()
-    return localDateString(calendarDate(year, month - 2, Math.min(day, lastDay)))
-  }
-  const days = reminder === 'two-weeks' ? 14 : reminder === 'week' ? 7 : 0
+  const days = reminder === 'month' ? 30 : reminder === 'two-weeks' ? 14 : reminder === 'week' ? 7 : 0
   return localDateString(calendarDate(year, month - 1, day - days))
 }
 
-/** Check the next anniversary only, creating reminders when the app is active. */
+export function birthdayNotificationId(birthdayId: string, occasionDate: string, reminder: BirthdayReminder): string {
+  return `birthday-notification:${birthdayId}:${occasionDate}:${reminder}`
+}
+
+export function unreadBirthdayNotifications(workspace: Workspace): BirthdayNotification[] {
+  return (workspace.birthdayNotifications ?? []).filter(entry => !entry.readAt && !entry.dismissedAt)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || a.date.localeCompare(b.date))
+}
+
+/** Create in-app notifications only. Existing birthday Kanban cards stay intact. */
 export function applyBirthdayReminders(workspace: Workspace, now: Date = new Date()): Workspace {
   const birthdays = workspace.birthdays
-  const columnId = workspace.columns.find(column => column.id === 'todo')?.id ?? workspace.columns[0]?.id
-  if (!birthdays?.length || !columnId) return workspace
-
   const today = localDateString(now)
-  const existingTaskIds = new Set(workspace.tasks.map(task => task.id))
-  const addedTasks: Task[] = []
+  let notificationChanged = false
+  const notifications = (workspace.birthdayNotifications ?? []).flatMap(entry => {
+    if (entry.readAt || entry.dismissedAt) return [entry]
+    const person = birthdays?.find(birthday => birthday.id === entry.birthdayId)
+    if (!person || !isValidBirthDate(person.birthDate) || person.birthDate > today || !person.reminders.includes(entry.reminder)) {
+      notificationChanged = true
+      return []
+    }
+    const occasion = nextBirthday(person.birthDate, now)
+    if (entry.date !== occasion.date) { notificationChanged = true; return [] }
+    if (entry.name !== person.name || entry.age !== occasion.age) {
+      notificationChanged = true
+      return [{ ...entry, name: person.name, age: occasion.age }]
+    }
+    return [entry]
+  })
+  if (!birthdays?.length) return notificationChanged ? { ...workspace, birthdayNotifications: notifications } : workspace
+  const existingIds = new Set(notifications.map(entry => entry.id))
+  const addedNotifications: BirthdayNotification[] = []
   let changed = false
   const updatedBirthdays = birthdays.map(birthday => {
     if (!isValidBirthDate(birthday.birthDate) || birthday.birthDate > today || !birthday.reminders.length) return birthday
     const occasion = nextBirthday(birthday.birthDate, now)
-    const due = REMINDER_OPTIONS.filter(option => birthday.reminders.includes(option.value))
+    const due = schedulingOptions.filter(option => birthday.reminders.includes(option.value))
       .map(option => ({
         ...option,
         date: reminderDate(occasion.date, option.value),
-        id: `birthday:${birthday.id}:${occasion.date}:${option.value}`,
+        id: birthdayNotificationId(birthday.id, occasion.date, option.value),
       }))
       .filter(option => option.date <= today)
       .sort((a, b) => a.date.localeCompare(b.date))
@@ -84,21 +109,19 @@ export function applyBirthdayReminders(workspace: Workspace, now: Date = new Dat
     const latest = due[due.length - 1]
     // On a late first visit, catch up once using the most recent selected reminder.
     // Earlier due reminders are also recorded so edits/reloads never create a burst.
-    if (!handled.has(latest.id) && !existingTaskIds.has(latest.id)) {
-      const timing = latest.value === 'day' ? 'På födelsedagen' : `${latest.label} före födelsedagen`
-      addedTasks.push({
+    if (!handled.has(latest.id) && !existingIds.has(latest.id)) {
+      addedNotifications.push({
         id: latest.id,
-        title: `${birthday.name} fyller ${occasion.age} år`,
-        description: `${birthdayDescription(birthday, occasion)}\nPåminnelse: ${timing}.`,
-        columnId,
-        labels: ['Födelsedag'],
-        checklist: [],
-        deadline: occasion.date,
-        comments: [],
-        projectId: null,
+        birthdayId: birthday.id,
+        date: occasion.date,
+        reminder: latest.value,
+        name: birthday.name,
+        age: occasion.age,
         createdAt: now.toISOString(),
+        readAt: null,
+        dismissedAt: null,
       })
-      existingTaskIds.add(latest.id)
+      existingIds.add(latest.id)
     }
     const unhandled = due.filter(option => !handled.has(option.id)).map(option => option.id)
     if (!unhandled.length) return birthday
@@ -106,6 +129,6 @@ export function applyBirthdayReminders(workspace: Workspace, now: Date = new Dat
     return { ...birthday, generatedReminders: [...birthday.generatedReminders, ...unhandled] }
   })
 
-  if (!changed && !addedTasks.length) return workspace
-  return { ...workspace, birthdays: updatedBirthdays, tasks: [...workspace.tasks, ...addedTasks] }
+  if (!changed && !addedNotifications.length && !notificationChanged) return workspace
+  return { ...workspace, birthdays: updatedBirthdays, birthdayNotifications: [...notifications, ...addedNotifications] }
 }

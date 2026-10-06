@@ -7,7 +7,7 @@ const { chromium, webkit } = require(process.env.PLAYWRIGHT_MODULE || 'playwrigh
 const baseURL = process.env.APP_URL || 'http://127.0.0.1:4173';
 const engine = process.env.BROWSER_ENGINE === 'webkit' ? 'webkit' : 'chromium';
 const phase = process.env.REVISION_PHASE === 'before' ? 'before' : 'after';
-const out = path.join(__dirname, 'artifacts', engine, 'revision-2026-10-05', phase);
+const out = path.join(__dirname, 'artifacts', engine, phase === 'before' ? 'revision-2026-10-05' : 'revision-2026-10-06', phase);
 const workspaceKey = 'forma:workspace:v1:guest';
 const feedKey = 'forma:debriefs:v1:guest';
 const results = [];
@@ -35,7 +35,16 @@ const check = async (name, fn) => {
 };
 const cache = page => page.evaluate(key => JSON.parse(localStorage.getItem(key)).workspace, workspaceKey);
 const feed = page => page.evaluate(key => JSON.parse(localStorage.getItem(key)), feedKey);
-const nav = (page, label) => page.locator('.bottom-nav').getByRole('button', { name: label, exact: true }).click();
+const nav = async (page, label) => {
+  const settings = page.getByRole('dialog').filter({ has: page.getByRole('heading', { name: 'Inställningar', exact: true }) });
+  if (label === 'Profile') {
+    if (!await settings.count()) await page.getByRole('button', { name: 'Öppna inställningar', exact: true }).click();
+    await settings.waitFor();
+  } else {
+    if (await settings.count()) await settings.getByRole('button', { name: 'Stäng', exact: true }).first().click();
+    await page.locator('.bottom-nav').getByRole('button', { name: label, exact: true }).click();
+  }
+};
 const dialog = page => page.getByRole('dialog');
 const openTask = async (page, id) => {
   await page.locator(`[data-task-id="${id}"] .task-open`).click();
@@ -65,7 +74,7 @@ const blockWorkspaceStorage = page => page.evaluate(key => {
 const noSuccessToast = async page => assert.doesNotMatch((await page.locator('.toast').allTextContents()).join(' '), /sparad|sparat|sparade|uppdaterad|skapad/i);
 
 (async () => {
-  const browser = await (engine === 'webkit' ? webkit : chromium).launch({ headless: true });
+  const browser = await (engine === 'webkit' ? webkit : chromium).launch({ headless: true, ...(process.env.PLAYWRIGHT_EXECUTABLE_PATH ? { executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH } : {}) });
   const fresh = async (options = {}, withFeed = false) => {
     const context = await browser.newContext({ viewport: { width: 1512, height: 982 }, timezoneId: 'Europe/Stockholm', ...options });
     await context.addInitScript(({ workspaceKey, feedKey, fixture, entries }) => {
@@ -80,7 +89,7 @@ const noSuccessToast = async page => assert.doesNotMatch((await page.locator('.t
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(baseURL);
     await page.getByTestId('summary-overview').waitFor();
-    if (kanban) { await nav(page, 'Kanban'); await page.locator('[data-task-id="rapid-1"]').waitFor(); }
+    if (kanban) { await nav(page, 'Planner'); await page.locator('[data-task-id="rapid-1"]').waitFor(); }
     return page;
   };
 
@@ -99,7 +108,7 @@ const noSuccessToast = async page => assert.doesNotMatch((await page.locator('.t
       assert.ok(workspace.tasks.some(task => task.title === 'Ett nytt kort från flik A'), 'The task saved in tab A was silently lost by tab B');
       assert.equal(workspace.tasks.find(task => task.id === 'rapid-2').title, 'Kort 2 redigerat i den äldre fliken');
       assert.equal(workspace.tasks.length, 11);
-      await a.reload(); await nav(a, 'Kanban');
+      await a.reload(); await nav(a, 'Planner');
       await a.getByRole('button', { name: 'Öppna Ett nytt kort från flik A', exact: true }).waitFor();
       assert.equal((await cache(a)).tasks.length, 11);
     } finally { await context.close(); }
@@ -156,7 +165,7 @@ const noSuccessToast = async page => assert.doesNotMatch((await page.locator('.t
         await dialog(page).getByLabel('Ny kommentar', { exact: true }).fill(`Kommentar ${number} ska finnas kvar.`);
         await saveTask(page);
       }
-      await page.reload(); await nav(page, 'Kanban');
+      await page.reload(); await nav(page, 'Planner');
       const workspace = await cache(page);
       assert.equal(workspace.tasks.length, 10);
       assert.equal(new Set(workspace.tasks.map(task => task.id)).size, 10);
@@ -175,7 +184,9 @@ const noSuccessToast = async page => assert.doesNotMatch((await page.locator('.t
         assert.equal(task.comments[0].text, `Kommentar ${number} ska finnas kvar.`);
         assert.equal(task.createdAt, '2026-10-01T09:00:00.000Z');
       }
-      assert.deepEqual(workspace.projects, fixture.workspace.projects);
+      assert.deepEqual(workspace.projects.map(({ tasks, ...project }) => project), fixture.workspace.projects);
+      assert.equal(workspace.projects[0].tasks.length, fixture.workspace.tasks.filter(task => task.projectId).length);
+      assert.ok(workspace.tasks.every(task => task.projectId === null));
       assert.deepEqual(workspace.birthdays, fixture.workspace.birthdays);
     } finally { await context.close(); }
   });
@@ -193,9 +204,9 @@ const noSuccessToast = async page => assert.doesNotMatch((await page.locator('.t
       assert.ok((await cache(page)).columns.some(column => column.title === 'Pausat'));
       await page.getByRole('button', { name: 'Redigera kolumn Pausat', exact: true }).click();
       await dialog(page).getByRole('button', { name: 'Ta bort kolumn', exact: true }).click();
-      await page.reload(); await nav(page, 'Kanban');
+      await page.reload(); await nav(page, 'Planner');
       assert.deepEqual((await cache(page)).columns, fixture.workspace.columns);
-      assert.deepEqual((await cache(page)).tasks, fixture.workspace.tasks);
+      assert.deepEqual((await cache(page)).tasks, fixture.workspace.tasks.map(task => ({ ...task, projectId: null })));
     } finally { await context.close(); }
   });
 
@@ -216,7 +227,7 @@ const noSuccessToast = async page => assert.doesNotMatch((await page.locator('.t
         await a.waitForFunction(key => JSON.parse(localStorage.getItem(key)).workspace.tasks.length === 11, workspaceKey);
         assert.equal(await dialog(a).count(), 1);
         const created = (await cache(a)).tasks.find(task => task.title === 'Ett nytt kort som väntar på lagring');
-        await b.reload(); await nav(b, 'Kanban');
+        await b.reload(); await nav(b, 'Planner');
         await openTask(b, created.id);
         await dialog(b).getByLabel(/^Beskrivning/).fill('Den senaste beskrivningen från flik B.');
         await dialog(b).getByLabel(/^Status/).selectOption('doing');
@@ -229,7 +240,7 @@ const noSuccessToast = async page => assert.doesNotMatch((await page.locator('.t
         assert.equal(saved.title, 'En ändrad titel från den första formen');
         assert.equal(saved.description, 'Den senaste beskrivningen från flik B.');
         assert.equal(saved.columnId, 'doing');
-        await a.reload(); await nav(a, 'Kanban');
+        await a.reload(); await nav(a, 'Planner');
         await a.getByRole('button', { name: 'Öppna En ändrad titel från den första formen', exact: true }).waitFor();
       } finally { await context.close(); }
     });
@@ -253,7 +264,7 @@ const noSuccessToast = async page => assert.doesNotMatch((await page.locator('.t
         await noSuccessToast(page);
         await page.evaluate(() => window.__restoreRevisionStorage());
         await dialog(page).getByRole('button', { name: 'Skapa uppgift', exact: true }).click();
-        await page.reload(); await nav(page, 'Kanban');
+        await page.reload(); await nav(page, 'Planner');
         const workspace = await cache(page);
         const cards = workspace.tasks.filter(task => task.title === 'En uppgift som ska sparas en gång');
         assert.equal(workspace.tasks.length, 11);
@@ -290,9 +301,9 @@ const noSuccessToast = async page => assert.doesNotMatch((await page.locator('.t
         const projects = workspace.projects.filter(project => project.title === 'Projekt att sparas en gång');
         assert.equal(projects.length, 1);
         assert.equal(workspace.projects.length, 2);
-        const tasks = workspace.tasks.filter(task => task.projectId === projects[0].id);
+        const tasks = projects[0].tasks;
         assert.equal(tasks.length, 1);
-        assert.equal(workspace.tasks.length, 11);
+        assert.equal(workspace.tasks.length, 10);
         assert.equal(tasks[0].title, 'En enda huvuduppgift');
         assert.deepEqual(tasks[0].checklist.map(item => item.title), ['Ett delsteg', 'Ett annat delsteg']);
         await page.getByRole('button', { name: 'Öppna projekt Projekt att sparas en gång', exact: true }).click();
@@ -340,14 +351,14 @@ const noSuccessToast = async page => assert.doesNotMatch((await page.locator('.t
       const context = await fresh({ viewport: { width, height: isPhone ? 956 : 982 }, isMobile: isPhone, hasTouch: isPhone, deviceScaleFactor: isPhone ? 3 : 1 }, true);
       try {
         const page = await load(context, false);
-        for (const label of ['Summary', 'Kanban', 'Projects', 'Profile']) {
+        for (const label of ['Home', 'Planner', 'Projects', 'Others']) {
           await nav(page, label);
           await noOverflow(page);
           const navSize = await page.locator('.bottom-nav').boundingBox();
           assert.ok(navSize.x >= 0 && navSize.x + navSize.width <= width + 1);
           await capture(page, `${width}-${label.toLowerCase()}-light.png`);
         }
-        await nav(page, 'Kanban');
+        await nav(page, 'Planner');
         await openTask(page, 'rapid-1');
         const box = await dialog(page).boundingBox();
         assert.ok(box.x >= -1 && box.x + box.width <= width + 1, `Task form exceeds ${width}px viewport`);
@@ -358,7 +369,7 @@ const noSuccessToast = async page => assert.doesNotMatch((await page.locator('.t
         }
         await capture(page, `${width}-task-form-light.png`);
         await dialog(page).getByRole('button', { name: 'Stäng', exact: true }).click();
-        await nav(page, 'Summary');
+        await nav(page, 'Home');
         await page.getByRole('button', { name: 'Byt till mörkt tema', exact: true }).click();
         await noOverflow(page);
         await capture(page, `${width}-summary-dark.png`);

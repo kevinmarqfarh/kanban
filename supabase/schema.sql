@@ -1,5 +1,5 @@
 -- Run in the SQL editor for project rucwlpzrumxejvhwazat.
--- This schema has not been applied automatically: the connected account cannot access that project.
+-- Applied and database-verified on 2026-10-06. Run only when the table is absent.
 begin;
 
 create table public.kanban_workspaces (

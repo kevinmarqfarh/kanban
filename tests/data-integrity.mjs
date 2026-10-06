@@ -16,7 +16,8 @@ async function readModule(relativePath, dependencies = {}) {
 
 const { createSeedWorkspace, createEmptyWorkspace } = await readModule('../src/lib/seed.ts')
 const birthdays = await readModule('../src/lib/birthdays.ts')
-const { isWorkspace } = await readModule('../src/lib/workspaceValidation.ts', { './birthdays': birthdays })
+const others = await readModule('../src/lib/others.ts', { './birthdays': birthdays })
+const { isWorkspace, separateProjectTasks } = await readModule('../src/lib/workspaceValidation.ts', { './birthdays': birthdays, './others': others })
 
 const seed = createSeedWorkspace()
 assert.ok(isWorkspace(seed), 'The example board must be valid and every task must reference an existing column/project.')
@@ -56,3 +57,21 @@ const invalidCases = [
 ]
 for (const value of invalidCases) assert.equal(isWorkspace(value), false, 'Malformed data must never reach the editor.')
 console.log('Data integrity passed: independent seed, empty account, references, duplicate IDs and malformed nested data.')
+
+const separated = separateProjectTasks(createSeedWorkspace())
+assert.ok(isWorkspace(separated))
+assert.equal(separated.tasks.length, seed.tasks.length, 'Migration preserves every board card.')
+assert.ok(separated.tasks.every(task => task.projectId === null))
+const legacyProjectCard = createSeedWorkspace().tasks.find(task => task.projectId)
+const independent = separated.projects.find(project => project.id === legacyProjectCard.projectId).tasks.find(task => task.id === legacyProjectCard.id)
+assert.ok(independent)
+assert.equal(independent.columnId, undefined)
+assert.equal(independent.projectId, undefined)
+assert.equal(independent.completed, legacyProjectCard.columnId === 'done')
+assert.deepEqual(independent.checklist, legacyProjectCard.checklist)
+assert.equal(separateProjectTasks(separated), separated, 'Migration is idempotent.')
+independent.title = 'Changed only in Projects'
+assert.equal(separated.tasks.find(task => task.id === legacyProjectCard.id).title, legacyProjectCard.title)
+assert.equal(isWorkspace({ ...separated, projects: [{ ...separated.projects[0], tasks: [{ ...independent, completed: 'yes' }] }] }), false)
+assert.equal(isWorkspace({ ...separated, projects: [{ ...separated.projects[0], tasks: [independent, independent] }] }), false)
+console.log('Project separation passed: lossless/idempotent migration, independent records, and nested validation.')

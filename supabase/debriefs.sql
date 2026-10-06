@@ -1,4 +1,4 @@
--- Prepared for rucwlpzrumxejvhwazat; not applied or live-verified.
+-- Applied to rucwlpzrumxejvhwazat and database-verified on 2026-10-06.
 -- Inspect any existing daily_debriefs table before running this file.
 -- Debriefs are separate from kanban_workspaces; automation must never overwrite its JSON.
 begin;

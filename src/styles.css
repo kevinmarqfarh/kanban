@@ -155,9 +155,6 @@ button, input, textarea, select { transition: background-color 160ms ease, borde
 .task-meta-item { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; line-height: 1.4; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .task-meta-item svg { width: 12px; height: 12px; stroke-width: 1.7; }
 .task-meta-item:last-child { margin-left: auto; }
-.task-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; }
-.task-project { display: inline-flex; align-items: center; gap: 5px; max-width: 80%; overflow: hidden; color: var(--ink-muted); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
-.task-project svg { width: 11px; height: 11px; }
 .drag-handle { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex-shrink: 0; margin: -12px -10px -12px 0; color: var(--ink-muted); cursor: grab; touch-action: none; border-radius: 10px; }
 .drag-handle:hover { background: var(--surface-hover); }
 .task-open { display: block; width: 100%; padding: 0; text-align: left; }
@@ -166,8 +163,6 @@ button, input, textarea, select { transition: background-color 160ms ease, borde
 .task-open .task-title { padding-right: 27px; }
 .task-complete .task-title { color: var(--ink-secondary); }
 .task-complete .task-description { color: var(--ink-muted); }
-.task-footer > svg, .project-mini-icon { color: var(--ink-muted); }
-.project-mini-icon { font-size: 13px; line-height: 1; }
 .drag-handle:active { cursor: grabbing; }
 .drag-handle svg { width: 15px; height: 15px; stroke-width: 1.3; }
 .date-chip { display: inline-flex; align-items: center; gap: 4px; color: var(--ink-secondary); font-size: 10px; }
@@ -387,6 +382,38 @@ input[type='checkbox']:checked { border-color: var(--accent); background: var(--
 
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes modal-in { from { opacity: 0; transform: translateY(12px) scale(0.985); } to { opacity: 1; transform: none; } }
+
+.project-detail-layout, .project-overview, .project-work, .project-task-details, .project-task-checklist { min-width: 0; }
+.project-overview, .project-task-details, .project-task-checklist { display: flex; flex-direction: column; gap: 18px; }
+.project-overview .project-progress { margin-top: 0; }
+.project-work > .field-hint, .project-task-checklist > .field-hint { margin-top: 8px; }
+.project-work .project-tasks { margin-top: 16px; padding-top: 0; border: 0; }
+.project-task-body strong { white-space: normal; overflow-wrap: anywhere; }
+.project-edit-label { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; color: var(--ink-muted); font-size: 10px; }
+.project-subtask-row { display: flex; align-items: center; gap: 8px; }
+.project-subtask-row .project-subtask { flex: 1; min-width: 0; }
+.project-subtask-row .icon-button { flex-shrink: 0; }
+.project-task-checklist .checklist { margin-top: 12px; }
+.project-checklist-row { padding: 6px 8px; gap: 8px; }
+.project-checklist-row > .input { border-color: transparent; background: transparent; padding: 10px 6px; }
+.project-checklist-row > .input:focus { border-color: var(--ink-muted); background: var(--surface-solid); }
+.project-checklist-row > .icon-button { flex-shrink: 0; }
+@media (min-width: 761px) {
+  .modal-panel.modal-wide { width: min(1080px, calc(100% - 80px)); max-height: min(900px, calc(100svh - 64px)); }
+  .modal-wide .modal-content { padding: 28px 32px; }
+  .project-detail-layout { display: grid; grid-template-columns: minmax(220px, 0.8fr) minmax(0, 2fr); gap: 32px; }
+  .project-overview { align-self: start; position: sticky; top: 0; padding-right: 28px; border-right: 1px solid var(--line); }
+  .project-detail-intro { align-items: flex-start; flex-direction: column; font-size: 13px; }
+  .project-work .project-task-group { padding: 16px 18px; }
+  .project-work .project-task-body strong { font-size: 14px; }
+  .modal-content form.project-task-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 32px; align-items: start; }
+  .project-task-checklist { padding-left: 28px; border-left: 1px solid var(--line); }
+}
+@media (max-width: 760px) {
+  .project-detail-layout { display: flex; flex-direction: column; gap: 24px; }
+  .project-task-checklist { padding-top: 18px; border-top: 1px solid var(--line); }
+  .project-edit-label { font-size: 0; gap: 0; }
+}
 
 @media (min-width: 1600px) {
   .topbar, .main-content { width: min(1340px, calc(100% - 160px)); }

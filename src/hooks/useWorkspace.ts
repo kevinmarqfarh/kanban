@@ -4,7 +4,7 @@ import type { User } from '@supabase/supabase-js'
 import { createEmptyWorkspace, createSeedWorkspace } from '../lib/seed'
 import { supabase, supabaseConfigurationError } from '../lib/supabase'
 import type { AuthResult, SyncStatus, Workspace } from '../lib/types'
-import { isWorkspace } from '../lib/workspaceValidation'
+import { isWorkspace, separateProjectTasks } from '../lib/workspaceValidation'
 import { applyBirthdayReminders } from '../lib/birthdays'
 import { mergeWorkspaceChanges } from '../lib/workspaceMerge'
 
@@ -40,7 +40,7 @@ function readCache(ownerId: string | null): CachedWorkspace | null {
     if (!object(value) || value.version !== 1 || !isWorkspace(value.workspace)) throw new Error('Invalid workspace cache')
     if (typeof value.dirty !== 'boolean' || (value.revision !== null && (!Number.isInteger(value.revision) || Number(value.revision) < 1))) throw new Error('Invalid revision')
     blockedRecovery.delete(cacheKey(ownerId))
-    return { version: 1, workspace: value.workspace, revision: value.revision as number | null, dirty: value.dirty === true }
+    return { version: 1, workspace: separateProjectTasks(value.workspace), revision: value.revision as number | null, dirty: value.dirty === true }
   } catch {
     // Preserve unsupported/corrupt data before an initial workspace replaces the active cache.
     if (raw) {
@@ -70,7 +70,7 @@ function initialContext(ownerId: string | null): Context {
     ownerId,
     ...(readCache(ownerId) ?? {
       version: 1 as const,
-      workspace: ownerId ? createEmptyWorkspace() : createSeedWorkspace(),
+      workspace: separateProjectTasks(ownerId ? createEmptyWorkspace() : createSeedWorkspace()),
       revision: null,
       dirty: false,
     }),
@@ -109,6 +109,7 @@ export function useWorkspace() {
   const generation = useRef(0)
   const syncing = useRef(false)
   const remoteConflict = useRef<RemoteWorkspace | null>(null)
+  const retryNetwork = useRef(false)
   const ownerId = user?.id ?? null
   const activeOwner = useRef(ownerId)
   activeOwner.current = ownerId
@@ -137,6 +138,7 @@ export function useWorkspace() {
   }, [])
 
   const applyContext = useCallback((next: Context) => {
+    next = { ...next, workspace: separateProjectTasks(next.workspace) }
     contextRef.current = next
     setContext(next)
     const failure = writeCache(next)
@@ -226,6 +228,16 @@ export function useWorkspace() {
       if (!cacheFailure) setSyncStatus('local')
       return
     }
+    if (!navigator.onLine) {
+      retryNetwork.current = true
+      setLoading(false)
+      if (!cacheFailure) {
+        setSyncStatus('offline')
+        setSyncError(errorMessage(new Error('offline')))
+      }
+      return
+    }
+    retryNetwork.current = false
     setSyncStatus('syncing')
     const client = supabase
     let alive = true
@@ -259,8 +271,9 @@ export function useWorkspace() {
         setSyncTick(tick => tick + 1)
       } catch (error) {
         if (!alive || run !== generation.current) return
+        retryNetwork.current = !navigator.onLine || /fetch|network|timeout|load failed/i.test(object(error) && typeof error.message === 'string' ? error.message : '')
         setSyncError(storageFailure.current ?? errorMessage(error))
-        setSyncStatus(storageFailure.current || navigator.onLine ? 'error' : 'offline')
+        setSyncStatus(storageFailure.current || !retryNetwork.current ? 'error' : 'offline')
       } finally {
         if (alive && run === generation.current) setLoading(false)
       }
@@ -328,10 +341,11 @@ export function useWorkspace() {
           }
         } catch (error) {
           if (run !== generation.current) return
-          // Keep the dirty local copy. Retry is deliberate; do not loop on auth/schema failures.
+          // Retry temporary connection failures after re-reading the server revision.
+          retryNetwork.current = !navigator.onLine || /fetch|network|timeout|load failed/i.test(object(error) && typeof error.message === 'string' ? error.message : '')
           hydrated.current = false
           setSyncError(storageFailure.current ?? errorMessage(error))
-          setSyncStatus(storageFailure.current || navigator.onLine ? 'error' : 'offline')
+          setSyncStatus(storageFailure.current || !retryNetwork.current ? 'error' : 'offline')
         } finally {
           if (run === generation.current) {
             syncing.current = false
@@ -347,10 +361,20 @@ export function useWorkspace() {
 
   useEffect(() => {
     const reconnect = () => retrySync()
-    const refreshOnFocus = () => { if (document.visibilityState === 'visible' && ownerId) retrySync() }
+    const refreshOnFocus = () => { if (navigator.onLine && document.visibilityState === 'visible' && ownerId) retrySync() }
+    const retryConnection = () => { if (ownerId && navigator.onLine && document.visibilityState === 'visible' && retryNetwork.current && !syncing.current) retrySync() }
+    const timer = window.setInterval(retryConnection, 15_000)
     window.addEventListener('online', reconnect)
+    window.addEventListener('offline', reconnect)
+    window.addEventListener('focus', refreshOnFocus)
     document.addEventListener('visibilitychange', refreshOnFocus)
-    return () => { window.removeEventListener('online', reconnect); document.removeEventListener('visibilitychange', refreshOnFocus) }
+    return () => {
+      window.clearInterval(timer)
+      window.removeEventListener('online', reconnect)
+      window.removeEventListener('offline', reconnect)
+      window.removeEventListener('focus', refreshOnFocus)
+      document.removeEventListener('visibilitychange', refreshOnFocus)
+    }
   }, [ownerId, retrySync])
 
   const resolveConflict = useCallback((choice: 'local' | 'remote') => {
@@ -379,7 +403,9 @@ export function useWorkspace() {
     if (!guest) return { error: 'Det finns ingen lokal tavla att importera.' }
     const current = latestContext()
     if (cacheConflict.current) return { error: storageFailure.current }
-    if (current.workspace.tasks.length || current.workspace.projects.length || current.workspace.birthdays?.length) return { error: 'Din molntavla innehåller redan innehåll. Importera bara till en tom tavla.' }
+    if (current.workspace.tasks.length || current.workspace.projects.length || current.workspace.birthdays?.length
+      || current.workspace.workouts?.length || current.workspace.nutritionHabits?.length || current.workspace.nutritionCompletions?.length
+      || current.workspace.recipes?.length || current.workspace.notes?.length || current.workspace.birthdayNotifications?.length) return { error: 'Din molntavla innehåller redan innehåll. Importera bara till en tom tavla.' }
     const error = setWorkspace(guest.workspace)
     return { error, message: error ? undefined : 'Din lokala tavla har kopierats till kontot. Originalet finns kvar på enheten.' }
   }, [ownerId, loading, setWorkspace, latestContext])

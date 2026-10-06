@@ -16,32 +16,42 @@ npm run dev
 - Skapa, redigera och ta bort uppgifter och egna kolumner.
 - Dra kort mellan kolumner med mus eller genom att hålla i kortets handtag på mobilen. Status uppdateras direkt. Tangentbord: fokusera handtaget, tryck mellanslag, använd pilarna och släpp med mellanslag. Status kan också ändras i uppgiften.
 - Uppgifter med titel, beskrivning, status, etiketter, checklista, deadline och kommentarer.
-- Projekt med huvuduppgifter och deluppgifter. En huvuduppgift är ett kanbankort; dess deluppgifter är checklistan. Klara huvuduppgifter ligger i kolumnen Klart.
-- Sökning, projektfilter, synlig projektprogress och export till JSON.
-- Fyra huvudvyer i den flytande navigationen: **Summary, Kanban, Projects och Profile**. Summary är startsidan.
+- Projects med egna huvuduppgifter, deluppgifter och status. Kanban och Projects är separata funktioner; ändringar eller borttagning i den ena påverkar inte den andra. Tidigare delade uppgifter bevaras som fristående kopior i båda funktionerna.
+- Redigera huvuduppgifter och deluppgifter även efter skapandet. Pennan vid en deluppgift öppnar dess textfält direkt; projektvyn använder två kolumner på större skärmar.
+- Sökning på kanbantavlan, projektprogress i Projects och export till JSON.
+- Fyra huvudvyer i navigationen: **Home, Planner, Projects och Others**. Home är startsidan; inställningar ligger bakom kugghjulet uppe till vänster.
 - Debriefingar med en större läsyta, historik och en diskret markering för nytt innehåll. Läs eller dölj notisen; sammanfattningen finns kvar för att läsas igen.
-- Födelsedagar under Profil: namn, födelsedatum och valbara, årliga påminnelser en kalendermånad, två veckor, en vecka före eller på födelsedagen. Välj flera tider eller stäng av påminnelser.
+- Others samlar födelsedagar, träning, kost och recept i en enkel lista. Födelsedagar visar aktuell och kommande ålder, med valbara påminnelser exakt 7, 14 och 30 dagar före.
 - Lokal lagring som finns kvar efter omladdning och separat temainställning. Exempeldata visar hur appen fungerar.
 
 Lokal lagring är separat för varje webbläsare och enhet. Rensa inte webbläsarens lagring om du vill behålla tavlan. Ändringar mellan flikar bevaras när du sparar och andra öppna flikar uppdateras. Om lagringen är full visas ett fel och dialogen förblir öppen för ett nytt försök. Exportera gärna en kopia under Profil. JSON-exporten är en kopia av innehållet; appen har ingen importfunktion för backupfiler ännu.
 
-**Daily debriefing:** Under Summary kan du läsa in en sammanfattning som JSON-fil, eller flera dagars sammanfattningar i en lista. Lässtatus och dolda notiser sparas lokalt. En identisk fil skapar inga dubbletter. Ingen automatisk AI-summering körs i den lokala versionen. Den förberedda molninkorgen är separat från kanbantavlan och kan fyllas av dina framtida automationer när Supabase är anslutet. Format och anslutning beskrivs i [docs/debriefs.md](docs/debriefs.md). Notiserna visas inne i appen; iOS-push är inte aktiverat.
+**Daily debriefing:** Under Home kan du läsa in en sammanfattning som JSON-fil, eller flera dagars sammanfattningar i en lista. Lässtatus och dolda notiser sparas lokalt. En identisk fil skapar inga dubbletter. Ingen automatisk AI-summering körs i den lokala versionen. Den förberedda molninkorgen är separat från kanbantavlan och kan fyllas av dina framtida automationer när Supabase är anslutet. Format och anslutning beskrivs i [docs/debriefs.md](docs/debriefs.md). Notiserna visas inne i appen; iOS-push är inte aktiverat.
 
-Födelsedagspåminnelser blir vanliga kort i **Att göra**, med namn, ålder och födelsedatum; kortets deadline är födelsedagen. Appen kontrollerar påminnelser när du öppnar den, återvänder till den och varje minut medan den är aktiv. Om flera tider har passerat före en kommande födelsedag skapas bara den senaste påminnelsen. Inga systemnotiser skickas när appen är stängd. Tidigare kort finns kvar om du ändrar eller tar bort en person, och raderade påminnelsekort återskapas inte för samma tillfälle. För födelsedagar den 29 februari används 28 februari under år utan skottdag.
+Födelsedagspåminnelser visas som notiser på **Home**, med namn, ålder och födelsedatum. De kan markeras som lästa eller döljas; kommande födelsedagar visas separat. Appen kontrollerar vid öppning, återkomst och varje minut medan den är aktiv. Vid sen återkomst skapas den senaste aktuella påminnelsen. Tidigare födelsedagskort i Planner bevaras, men nya påminnelser skapar inga kanbankort. För 29 februari används 28 februari under år utan skottdag. Notiserna finns i appen; inga systemnotiser skickas när appen är stängd.
 
-## Supabase, förberett för senare
+**Träning:** spara datum och övningsrader med set/minuter, tid i minuter eller vikt i kg och BPM. Decimalfält accepterar både komma och punkt. Kopiera det sparade passet som råtext för att använda det separat. Om urklipp inte är tillgängligt visas texten för manuell kopiering.
 
-Appen riktar sig till **https://rucwlpzrumxejvhwazat.supabase.co**. Användaren har valt att slutföra lokalt tills vidare. Molnsynk är därför **inte aktiverad eller verifierad** i detta projekt ännu. Utan en publik API-nyckel visas lokal lagring tydligt och inloggningsformuläret döljs.
+**Kost:** återkommande rader med titel, mängd och enhet. Markera per datum; en grön linje bekräftar avklarat. Veckovyn visar måndag–söndag, dagnummer och ISO-veckonummer, med datumval för historik. Dagens markeringar och veckans översikt finns även på Home.
 
-När du vill ansluta molnet:
+**Recept:** spara titel, egna steg, valfri http-/https-länk och etiketter för frukost, snacks, middag eller egna kategorier. Länken sparas som källa; innehåll hämtas inte automatiskt från webbplatsen.
 
-1. Kör `supabase/schema.sql` i SQL-editorn för rätt projekt. Schemat skapar `kanban_workspaces` med en privat, versionskontrollerad tavla per användare och ägarbaserad RLS.
-   Kör även `supabase/debriefs.sql` för den separata inkorgen med dagliga debriefingar.
+Säkerhetskopian omfattar även alla Others-poster, kostens daghistorik, födelsedagsnotiser och debriefingar.
+
+## Supabase
+
+Appen är lokalt konfigurerad mot **https://rucwlpzrumxejvhwazat.supabase.co** sedan 2026-10-06. CLI-kopplingen, båda tabellerna och den publika klientnyckeln i `.env.local` är klara. Databastester verifierar sparning, versionskontroll, debriefstatus och isolering mellan användare. Gäster sparar lokalt; inloggade konton använder molnsynk. Verklig användarinloggning och synk mellan enheter återstår att verifiera.
+
+Vid installation på en annan dator eller publicering:
+
+1. Tabellerna i `supabase/schema.sql` och `supabase/debriefs.sql` finns redan i det angivna projektet. Kör endast filerna vid anslutning till ett nytt projekt där tabellerna saknas.
 2. Kopiera `.env.example` till `.env.local` och fyll i projektets **publishable** API-nyckel. Använd aldrig en secret- eller service-role-nyckel i appen.
 3. Starta om appen. I Supabase Auth, lägg till din appadress som Site URL och tillåten redirect URL för e-postbekräftelse.
 4. Skapa konto under Profil och bekräfta din e-post om projektet kräver det. Nya konton börjar med en tom molntavla. Du kan frivilligt kopiera den lokala tavlan till ett tomt konto.
 
-Molnkoden har separata användarcacher, återförsök efter frånkoppling och versionskontroll som förhindrar att en gammal tavla skriver över en nyare. Vid konflikt får användaren välja vilken version som ska behållas. Tabellens SQL och liveflödet måste verifieras när projektåtkomst finns.
+Molnkoden har separata användarcacher, återförsök efter frånkoppling och versionskontroll som förhindrar att en gammal tavla skriver över en nyare. Vid konflikt får användaren välja vilken version som ska behållas. Se [verifieringsstatus och installationssteg](docs/backend.md).
+
+Supabase är den enda molnlagringen. Offlineändringar, debriefimport och läst-/döljstatus sparas lokalt och synkas automatiskt vid återanslutning. Tillfälliga nätfel återförsöks medan appen är synlig. Produktionsappen kan öppnas och laddas om offline efter första besöket; utvecklingsservern saknar appfilscache. Inloggning första gången kräver internet. `npm run test:offline` verifierar produktionsflödet mot `npm run preview -- --port 4180` med simulerad Supabase.
 
 ## Kontrollera och bygga
 
@@ -57,8 +67,11 @@ npm run test:birthdays
 BROWSER_ENGINE=webkit npm run test:birthdays
 npm run test:debriefs
 BROWSER_ENGINE=webkit npm run test:debriefs
+npm run test:projects
 npm run test:revision
 BROWSER_ENGINE=webkit npm run test:revision
+npm run test:others
+BROWSER_ENGINE=webkit npm run test:others
 ```
 
 `npm test` verifierar dataintegritet, sparande och ändringar mellan flikar, debriefingarnas läs- och notisstatus samt födelsedagarnas kalender- och påminnelselogik. Webbläsartesterna kontrollerar riktiga flöden för uppgifter, projekt, födelsedagar, debriefingar, drag-and-drop, teman, dialoger, filter, export och mobilbredd. Skärmbilder och resultat skrivs till `tests/artifacts/`, som inte checkas in. `PLAYWRIGHT_MODULE` kan peka på en befintlig Playwright-installation. `APP_URL` kan peka på en annan lokal server.
@@ -85,3 +98,5 @@ Nyckeln börjar med `sb_publishable_`. Använd aldrig en secret- eller service-r
 ## Senaste revision
 
 [Design- och lagringsrevision 2026-10-05](docs/revision-2026-10-05.md) · [Domarens verifiering](docs/revision-verification-2026-10-05.md). 109 webbläsarscenarier godkända i Chromium och WebKit. Mobilens statistikruta döljs så att korten får mer plats; senaste-cache-läsning och trevägsmerge skyddar vardagliga ändringar mellan flikar.
+
+[Verifiering av Home och Others, 6 oktober 2026](docs/others-verification-2026-10-06.md).

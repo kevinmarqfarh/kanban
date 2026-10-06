@@ -4,9 +4,11 @@
 
 Appen är färdig för lokal användning. Gästtavlan sparas i webbläsaren efter varje ändring och följer med vid omladdning. Exempelinnehållet kan ändras eller tas bort.
 
-Supabase-klienten pekar på `https://rucwlpzrumxejvhwazat.supabase.co`, men **molnet är inte anslutet**. Ingen klientnyckel har hämtats och `supabase/schema.sql` har inte körts i projektet. Den anslutna Supabase-integrationen saknade behörighet till projektet. Den alternativa CLI-kontrollen väntade på datorns säkra lagring och stoppades när lokal färdigställning valdes.
+Supabase-klienten är lokalt konfigurerad för `https://rucwlpzrumxejvhwazat.supabase.co` sedan 2026-10-06. CLI 2.120.0 är inloggat och projektmappen är kopplad till **App DB**. Den publika klientnyckeln finns i den Git-ignorerade `.env.local`. `supabase/schema.sql` och `supabase/debriefs.sql` har körts och skapat båda tabellerna med RLS och explicita rättigheter.
 
-Appen visar därför lokal sparning och förklarar att molnsynk saknas. Den anger aldrig att något har sparats i molnet när en anslutning saknas eller ett anrop misslyckas.
+Databastester med två tillfälliga användaridentiteter i en återställd transaktion verifierade sparning, versionsräkning, skydd mot gamla skrivningar, läst-/döljstatus och kontoisolering. Publika REST-anrop nekades för båda tabellerna. Auth-API:t svarar, e-postinloggning och registrering är aktiverade och e-postbekräftelse krävs. En verklig användares inloggning och synk mellan enheter återstår att verifiera. Supabases säkerhetskontroll gav ingen tabellvarning; projektets skydd mot läckta lösenord är avstängt.
+
+Webbläsartestet verifierade att inloggningsformuläret visas, att det anropar Supabase Auth och att felaktiga testuppgifter ger ett hanterat inloggningsfel utan JavaScript-krasch. Inga testkonton finns kvar. Gäster sparar fortsatt lokalt. Appen erbjuder inloggning för molnsynk och anger aldrig att något sparats i molnet när ett anrop misslyckas. Vercel behöver samma publika miljövariabler och ett nytt bygge. Produktionsadress och tillåtna Auth-omdirigeringar behöver kontrolleras när en publicerad adress finns.
 
 ## Data och synk
 
@@ -15,14 +17,16 @@ Appen visar därför lokal sparning och förklarar att molnsynk saknas. Den ange
 - Ett nytt konto får en tom tavla. Den lokala tavlan kan kopieras frivilligt till ett tomt konto; gästens original ligger kvar.
 - Molnet använder en JSON-rad per konto i `public.kanban_workspaces`. Row Level Security begränsar läsning, skapande och uppdatering till radens ägare. Gäster får inga databasrättigheter.
 - Varje lyckad serveruppdatering ökar `revision`. En skrivning kräver den senast inlästa revisionen, så att en annan enhets ändringar inte skrivs över automatiskt. Vid konflikt väljer användaren vilken version som ska behållas.
-- Vid nätverksfel finns ändringarna kvar lokalt. Återförsök läser serverversionen innan något sparas. Uppdateringar från en annan enhet hämtas när appen åter blir synlig, och konflikter behöver lösas av användaren.
+- Supabase är den enda molnlagringen. Vid offline sparas ändringar i kontots lokala cache och väntar på synk. Återanslutning startar synken automatiskt och läser serverversionen innan något sparas. Tillfälliga nätfel återförsöks var 15:e sekund medan appen är synlig; behörighets- och schemafel kräver åtgärd. Uppdateringar från en annan enhet hämtas vid fokus eller återkomst, och versionskonflikter behöver lösas av användaren.
+- Debriefimport och läst-/döljstatus köas lokalt även för inloggade konton utan internet. Import skickas före statusändringar vid återanslutning. Dubbletter kontrolleras mot innehåll och skapandetid så ett osäkert återförsök inte skriver över en annan rapport.
+- Produktionsbygget sparar appfiler i en service worker-cache efter första besöket och kan därefter laddas om offline. Supabase-anrop och användardata lagras aldrig i appfilscachen. Utvecklingsservern använder inte denna cache. En första inloggning kräver internet; offlineanvändning bygger på tidigare inloggning och lokalt sparad data.
 - Felaktiga lokala data bevaras under en nyckel med suffixet `:recovery:<timestamp>` innan en säker arbetsyta används. När molnversionen väljs vid konflikt sparas föregående lokalversion med suffixet `:backup`.
 
 Detta är avsiktligt en liten lösning för privat bruk. Lokal lagring hör till samma webbläsare och adress. Den delas inte automatiskt mellan iPhone och Mac, och kan försvinna om webbläsardata rensas. Molnsynk kräver stegen nedan.
 
-## Anslut det angivna projektet senare
+## Anslut en annan lokal installation
 
-Använd ett Supabase-konto som har åtkomst till projektet `rucwlpzrumxejvhwazat`. CLI 2.119.0 har verifierats via sina hjälpsidor. Kommandona nedan är **instruktioner för senare anslutning**, inte redan utförda ändringar.
+Använd ett Supabase-konto som har åtkomst till projektet `rucwlpzrumxejvhwazat`. Den här datorn är redan ansluten; nedanstående steg beskriver en ny installation. Kör inte schemafilerna igen mot de redan skapade tabellerna.
 
 1. Logga in och kontrollera att rätt projekt finns:
 
