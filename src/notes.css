@@ -99,3 +99,19 @@ html.note-focus-open :is(.topbar, .bottom-nav, .page-heading, .others-section-he
 .swipe-row.workout-swipe .swipe-row-content { background: transparent; }
 .swipe-row.workout-swipe .swipe-row-content > .others-record-row { background: var(--surface-solid); }
 .swipe-row.workout-swipe .swipe-row-action button { border-radius: 0 18px 18px 0; }
+
+/* Trash: notes are kept 30 days. */
+.notes-trash-open { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; margin-top: 14px; padding: 8px 11px; border-top: 1px solid var(--line); color: var(--ink-secondary); font-size: 12px; text-align: left; }
+.notes-trash-open span:first-of-type { flex: 1; }
+.notes-trash-open:hover { color: var(--ink); }
+.notes-trash-title { display: flex; align-items: center; gap: 8px; margin: 2px 0 4px; font-size: 15px; font-weight: 550; }
+.notes-trash-help { color: var(--ink-muted); font-size: 11px; line-height: 1.6; }
+.notes-trash .notes-list-heading .button { min-height: 40px; padding-inline: 8px; }
+.notes-trash-back { margin-left: -8px; }
+.notes-trash-row { padding: 2px 0 10px; border-bottom: 1px solid var(--line); }
+.notes-trash-row .note-list-item { min-height: 0; padding: 10px 2px 6px; cursor: default; }
+.notes-trash-row .note-list-item:hover { background: none; }
+.notes-trash-row time { color: var(--ink-muted); }
+.notes-trash-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.notes-trash-actions .button { min-height: 40px; }
+.notes-trash-confirm { margin-top: 10px; }

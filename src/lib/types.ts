@@ -128,6 +128,8 @@ export interface Note {
   font: NoteFont
   createdAt: string
   updatedAt: string
+  // Set when the note is moved to the trash; it is removed for good 30 days later.
+  deletedAt?: string | null
 }
 
 export interface DailyDebrief {

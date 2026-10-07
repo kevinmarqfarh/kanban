@@ -54,7 +54,8 @@ export function isWorkspace(value: unknown): value is Workspace {
   if (!optional('notes', entry => object(entry) && filled(entry.id) && filled(entry.title) && entry.title.length <= 160
     && typeof entry.content === 'string' && entry.content.length <= 200_000
     && typeof entry.font === 'string' && ['system', 'serif', 'mono'].includes(entry.font)
-    && timestamp(entry.createdAt) && timestamp(entry.updatedAt))) return false
+    && timestamp(entry.createdAt) && timestamp(entry.updatedAt)
+    && (entry.deletedAt === undefined || entry.deletedAt === null || timestamp(entry.deletedAt)))) return false
   if (!optional('birthdayNotifications', entry => object(entry) && filled(entry.birthdayId) && date(entry.date)
     && typeof entry.reminder === 'string' && reminders.includes(entry.reminder)
     && entry.id === birthdayNotificationId(entry.birthdayId, entry.date, entry.reminder as import('./types').BirthdayReminder)
@@ -91,5 +92,12 @@ export function separateProjectTasks(workspace: Workspace): Workspace {
 
 /** Every load path runs the same idempotent upgrades, so old caches and cloud copies stay compatible. */
 export function migrateWorkspace(workspace: Workspace, today: Date = new Date()): Workspace {
-  return normalizeBirthdays(separateProjectTasks(workspace), today)
+  return purgeNoteTrash(normalizeBirthdays(separateProjectTasks(workspace), today), today)
+}
+
+/** Notes in the trash are kept for 30 days and then removed for good. */
+export function purgeNoteTrash(workspace: Workspace, now: Date = new Date()): Workspace {
+  const limit = now.getTime() - 30 * 86_400_000
+  if (!workspace.notes?.some(note => note.deletedAt && Date.parse(note.deletedAt) <= limit)) return workspace
+  return { ...workspace, notes: workspace.notes.filter(note => !note.deletedAt || Date.parse(note.deletedAt) > limit) }
 }

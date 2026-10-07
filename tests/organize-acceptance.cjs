@@ -373,12 +373,15 @@ async function mouseDrag(page, fromName, target, position = 'top') {
       await swipe(-10, 80);
       assert.equal(await remove.isVisible(), false, 'A vertical gesture never reveals delete.');
       await swipe(-140); await remove.tap(); await pause(200);
-      assert.deepEqual((await cache(page)).notes.map(entry => entry.id), ['note-two']);
+      const afterDelete = (await cache(page)).notes;
+      assert.deepEqual(afterDelete.filter(entry => !entry.deletedAt).map(entry => entry.id), ['note-two'], 'Swipe-delete moves the note out of the list.');
+      assert.ok(afterDelete.find(entry => entry.id === 'note-one')?.deletedAt, 'and into the trash rather than erasing it.');
       assert.equal(await page.getByRole('button', { name: 'Öppna anteckning Idéer', exact: true }).count(), 0);
-      await page.getByRole('status').filter({ hasText: 'Anteckningen är borttagen.' }).getByRole('button', { name: 'Ångra', exact: true }).tap();
+      await page.getByRole('status').filter({ hasText: 'Flyttad till papperskorgen.' }).getByRole('button', { name: 'Ångra', exact: true }).tap();
       await item.waitFor();
       assert.deepEqual((await cache(page)).notes.map(entry => entry.id).sort(), ['note-one', 'note-two']);
       assert.equal((await cache(page)).notes.find(entry => entry.id === 'note-one').content, note.content, 'Undo restores the whole note.');
+      assert.ok(!(await cache(page)).notes.find(entry => entry.id === 'note-one').deletedAt, 'Undo takes the note back out of the trash.');
       await noOverflow(page);
     }, phone);
   });
@@ -803,6 +806,64 @@ async function mouseDrag(page, fromName, target, position = 'top') {
       await openOthers(page, 'Träning'); await page.getByRole('button', { name: 'Redigera pass Kondition', exact: true }).click(); await waitDialog(page);
       assert.ok((await dialog(page).boundingBox()).width < 700, 'On a laptop the session stays a centred dialog.');
     });
+  });
+
+  await check('Notes trash: deleting moves a note to Papperskorg for 30 days; restore, delete for good and empty work; expired notes vanish', async () => {
+    const day = 86_400_000, now = new Date(`${today}T21:00:00+02:00`).getTime();
+    const trashNotes = [
+      { id: 'keep', title: 'Inköp', content: '<div>Mjölk</div>', font: 'system', createdAt: stamp, updatedAt: '2026-10-05T09:00:00.000Z' },
+      { id: 'old-trash', title: 'Gammal', content: '<div>Snart borta</div>', font: 'system', createdAt: stamp, updatedAt: stamp, deletedAt: new Date(now - 28 * day).toISOString() },
+      { id: 'expired', title: 'Utgången', content: '', font: 'system', createdAt: stamp, updatedAt: stamp, deletedAt: new Date(now - 31 * day).toISOString() },
+      { id: 'idea', title: 'Idéer', content: '<div>Första raden.</div>', font: 'system', createdAt: stamp, updatedAt: '2026-10-06T09:00:00.000Z' },
+    ];
+    await withPage({ notes: trashNotes }, async page => {
+      await openOthers(page, 'Notes');
+      assert.deepEqual((await cache(page)).notes.map(entry => entry.id).sort(), ['idea', 'keep', 'old-trash'], 'A note trashed over 30 days ago is removed for good on load.');
+      assert.equal(await page.getByRole('button', { name: 'Öppna anteckning Gammal', exact: true }).count(), 0, 'Trashed notes are not in the list.');
+      assert.match(await page.locator('.notes-trash-open').textContent(), /Papperskorg1/);
+      await page.getByRole('button', { name: 'Öppna anteckning Idéer', exact: true }).click(); await page.locator('.note-editor').waitFor();
+      await page.getByRole('button', { name: 'Ta bort anteckning', exact: true }).click(); await waitDialog(page);
+      assert.match(await dialog(page).textContent(), /papperskorgen och kan återställas i 30 dagar/);
+      await dialog(page).getByRole('button', { name: 'Ta bort', exact: true }).click(); await page.locator('.note-editor').waitFor({ state: 'detached' });
+      const trashedIdea = (await cache(page)).notes.find(entry => entry.id === 'idea');
+      assert.ok(trashedIdea.deletedAt, 'Deleting keeps the note with a deletion time.'); assert.equal(trashedIdea.content, '<div>Första raden.</div>');
+      assert.match(await page.getByRole('status').filter({ hasText: 'Flyttad till papperskorgen.' }).textContent(), /Ångra/);
+      await page.getByRole('button', { name: /^Papperskorg/ }).click();
+      const trash = page.getByRole('complementary', { name: 'Papperskorg' });
+      assert.match(await trash.textContent(), /sparas i 30 dagar/);
+      assert.deepEqual(await trash.locator('[data-trash-note-id]').evaluateAll(rows => rows.map(row => `${row.dataset.trashNoteId}:${row.querySelector('time').textContent}`)), ['idea:30 dagar kvar', 'old-trash:2 dagar kvar']);
+      await trash.getByRole('button', { name: 'Återställ Idéer', exact: true }).click();
+      assert.equal((await cache(page)).notes.find(entry => entry.id === 'idea').deletedAt, null, 'Restore brings the note back.');
+      await trash.getByRole('button', { name: 'Radera Gammal', exact: true }).click();
+      await trash.getByRole('button', { name: 'Radera Gammal för alltid', exact: true }).click();
+      assert.deepEqual((await cache(page)).notes.map(entry => entry.id).sort(), ['idea', 'keep']);
+      assert.match(await trash.textContent(), /Papperskorgen är tom/);
+      await trash.getByRole('button', { name: 'Anteckningar', exact: true }).click();
+      await page.getByRole('button', { name: 'Öppna anteckning Idéer', exact: true }).waitFor();
+      await page.reload(); await openOthers(page, 'Notes');
+      assert.equal(await page.getByRole('button', { name: /^Öppna anteckning/ }).count(), 2);
+    });
+  });
+
+  if (engine === 'chromium') await check('Notes trash on iPhone: swipe-delete goes to the trash and Töm papperskorgen empties it after confirming', async () => {
+    const notes = [{ id: 'a', title: 'Alfa', content: '<div>A</div>', font: 'system', createdAt: stamp, updatedAt: '2026-10-06T09:00:00.000Z' }, { id: 'b', title: 'Beta', content: '<div>B</div>', font: 'system', createdAt: stamp, updatedAt: '2026-10-05T09:00:00.000Z' }];
+    await withPage({ notes }, async (page, context) => {
+      await openOthers(page, 'Notes');
+      const cdp = await context.newCDPSession(page);
+      for (const title of ['Alfa', 'Beta']) {
+        const box = await page.getByRole('button', { name: `Öppna anteckning ${title}`, exact: true }).boundingBox(); const point = { x: box.x + box.width - 20, y: box.y + box.height / 2, radiusX: 5, radiusY: 5, force: 1, id: 1 };
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
+        for (let step = 1; step <= 10; step++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ ...point, x: point.x - 14 * step }] }); await pause(16); }
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await pause(320);
+        await page.getByRole('button', { name: `Ta bort anteckning ${title}`, exact: true }).tap(); await pause(200);
+      }
+      assert.equal((await cache(page)).notes.filter(entry => entry.deletedAt).length, 2);
+      await page.getByRole('button', { name: /^Papperskorg/ }).tap();
+      await page.getByRole('button', { name: 'Töm papperskorgen', exact: true }).tap();
+      await screenshot(page, 'iphone-notes-trash.png'); await noOverflow(page);
+      await page.getByRole('button', { name: 'Radera', exact: true }).tap();
+      assert.deepEqual((await cache(page)).notes, []);
+    }, phone);
   });
 
   await check('No uncaught browser exceptions occur in the revised flows', async () => assert.deepEqual(errors, []));

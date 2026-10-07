@@ -16,7 +16,8 @@ async function module(path, dependencies = {}) {
 }
 const birthdays = await module('../src/lib/birthdays.ts')
 const others = await module('../src/lib/others.ts', { './birthdays': birthdays })
-const { isWorkspace, migrateWorkspace } = await module('../src/lib/workspaceValidation.ts', { './birthdays': birthdays, './others': others })
+const { isWorkspace, migrateWorkspace, purgeNoteTrash } = await module('../src/lib/workspaceValidation.ts', { './birthdays': birthdays, './others': others })
+const notesLib = await module('../src/lib/notes.ts')
 const { mergeWorkspaceChanges, mergeRecordChanges } = await module('../src/lib/workspaceMerge.ts')
 const {
   BIRTHDAY_TAGS, birthdayCountdownLabel, birthdayUrgency, birthdayGroupKey, birthdayTagOptions, cleanBirthdayTag, daysUntilBirthday, groupBirthdays,
@@ -170,4 +171,20 @@ const plannerTask = { id: 't', title: 'Kort', description: '', columnId: 'todo',
 for (const priority of [undefined, null, 'high', 'medium', 'low']) assert.ok(isWorkspace({ ...base, tasks: [{ ...plannerTask, ...(priority === undefined ? {} : { priority }) }] }), `Priority ${priority} is valid.`)
 for (const priority of ['urgent', '', 1, 'High']) assert.equal(isWorkspace({ ...base, tasks: [{ ...plannerTask, priority }] }), false, `Priority ${priority} is rejected.`)
 
-console.log('Tags and tracking passed: task priority, recipe images, birthday tags, grouping, manual order, countdown, one-time migration and merges; nutrition green/orange days; Nivå and recent exercises; recipe label options.')
+/* ---------- Notes trash (30 days) ---------- */
+const note = (id, deletedAt) => ({ id, title: id, content: '', font: 'system', createdAt: stamp, updatedAt: stamp, ...(deletedAt === undefined ? {} : { deletedAt }) })
+const now = new Date('2026-10-07T12:00:00.000Z')
+const trashed = { ...base, notes: [note('kept'), note('restored', null), note('fresh', '2026-10-06T12:00:00.000Z'), note('last-day', '2026-09-08T00:00:00.000Z'), note('expired', '2026-09-07T12:00:00.000Z'), note('ancient', '2026-01-01T00:00:00.000Z')] }
+assert.ok(isWorkspace(trashed), 'deletedAt may be missing, null or a timestamp.')
+assert.equal(isWorkspace({ ...base, notes: [note('x', 'igår')] }), false)
+assert.deepEqual(purgeNoteTrash(trashed, now).notes.map(entry => entry.id), ['kept', 'restored', 'fresh', 'last-day'], 'Trashed notes older than 30 days are removed for good.')
+assert.equal(purgeNoteTrash({ ...base, notes: [note('kept')] }, now).notes.length, 1)
+const unchanged = { ...base, notes: [note('fresh', '2026-10-06T12:00:00.000Z')] }
+assert.equal(purgeNoteTrash(unchanged, now), unchanged, 'Nothing to purge keeps the same workspace object.')
+assert.deepEqual(migrateWorkspace(trashed, now).notes.map(entry => entry.id), ['kept', 'restored', 'fresh', 'last-day'], 'Every load purges expired trash.')
+assert.equal(notesLib.trashDaysLeft(note('fresh', '2026-10-06T12:00:00.000Z'), now), 29)
+assert.equal(notesLib.trashDaysLeft(note('last-day', '2026-09-08T00:00:00.000Z'), now), 1)
+assert.equal(notesLib.trashDaysLeft(note('just', '2026-10-07T12:00:00.000Z'), now), 30)
+assert.equal(notesLib.isTrashed(note('a', null)), false); assert.equal(notesLib.isTrashed(note('b', stamp)), true)
+
+console.log('Tags and tracking passed: notes trash, task priority, recipe images, birthday tags, grouping, manual order, countdown, one-time migration and merges; nutrition green/orange days; Nivå and recent exercises; recipe label options.')

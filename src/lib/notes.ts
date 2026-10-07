@@ -1,4 +1,4 @@
-import type { NoteLinkKind, Workspace } from './types'
+import type { Note, NoteLinkKind, Workspace } from './types'
 
 export const noteLinkKinds: NoteLinkKind[] = ['task', 'project', 'workout', 'nutrition', 'recipe', 'birthday']
 export const noteLinkLabels: Record<NoteLinkKind, string> = {
@@ -52,4 +52,17 @@ export function notePlainText(html: string): string {
   for (const br of holder.querySelectorAll('br')) br.replaceWith(document.createTextNode('\n'))
   for (const item of holder.querySelectorAll('div,p,li,h1,h2,h3,blockquote')) item.appendChild(document.createTextNode('\n'))
   return (holder.textContent ?? '').replace(/\n{3,}/g, '\n\n').trim()
+}
+
+export const NOTE_TRASH_DAYS = 30
+const DAY = 86_400_000
+
+export const isTrashed = (note: Note) => !!note.deletedAt
+
+/** Whole days left before a trashed note is removed for good (0 on its last day). */
+export function trashDaysLeft(note: Note, now: Date = new Date()): number {
+  if (!note.deletedAt) return NOTE_TRASH_DAYS
+  const deleted = Date.parse(note.deletedAt)
+  if (!Number.isFinite(deleted)) return 0
+  return Math.max(0, Math.ceil((deleted + NOTE_TRASH_DAYS * DAY - now.getTime()) / DAY))
 }

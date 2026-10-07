@@ -39,14 +39,14 @@ const base = process.env.APP_URL || 'http://127.0.0.1:4180'
       throw new Error('Unexpected Supabase endpoint: ' + url.pathname)
     })
     await page.goto(base)
-    await page.locator('[data-sync-status="synced"]').waitFor()
+    await page.locator('[data-sync-status="synced"]').waitFor({ state: 'attached' })
     await page.evaluate(async () => {
       await navigator.serviceWorker.ready
       if (!navigator.serviceWorker.controller) await new Promise(resolve => navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true }))
     })
     offline = true
     await context.setOffline(true)
-    await page.locator('[data-sync-status="offline"]').waitFor()
+    await page.locator('[data-sync-status="offline"]').waitFor({ state: 'attached' })
     await page.getByRole('button', { name: 'Planner', exact: true }).click()
     await page.locator('[data-column-id="todo"]').getByRole('button', { name: 'Lägg till uppgift', exact: true }).click()
     await page.getByRole('dialog').getByLabel('Titel', { exact: true }).fill('Sparad utan internet')
@@ -54,13 +54,13 @@ const base = process.env.APP_URL || 'http://127.0.0.1:4180'
     assert.equal(await page.evaluate(key => JSON.parse(localStorage.getItem(key)).dirty, key), true)
     assert.equal(remote.data.tasks.length, 0)
     await page.reload()
-    await page.locator('[data-sync-status="offline"]').waitFor()
+    await page.locator('[data-sync-status="offline"]').waitFor({ state: 'attached' })
     await page.getByRole('button', { name: 'Planner', exact: true }).click()
     await page.getByRole('button', { name: 'Öppna Sparad utan internet', exact: true }).waitFor()
     offline = false
     await context.setOffline(false)
     await page.evaluate(() => window.dispatchEvent(new Event('online')))
-    await page.locator('[data-sync-status="synced"]').waitFor()
+    await page.locator('[data-sync-status="synced"]').waitFor({ state: 'attached' })
     assert.equal(remote.data.tasks[0].title, 'Sparad utan internet')
     assert.equal(await page.evaluate(key => JSON.parse(localStorage.getItem(key)).dirty, key), false)
     const cached = await page.evaluate(async () => {

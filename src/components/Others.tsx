@@ -7,7 +7,7 @@ import { Recipes } from './Recipes'
 import { Notes } from './Notes'
 
 type Section = 'workouts' | 'nutrition' | 'recipes' | 'notes'
-export function Others({ workspace, initialSection, initialRecord, initialNoteId, onBirthdays, onSaveWorkout, onDeleteWorkout, onRestoreWorkout, onSaveHabit, onToggleHabit, onDeleteHabit, onSaveRecipe, onDeleteRecipe, onSaveNote, onDeleteNote, onRestoreNote, onOpenNoteLink }: {
+export function Others({ workspace, initialSection, initialRecord, initialNoteId, onBirthdays, onSaveWorkout, onDeleteWorkout, onRestoreWorkout, onSaveHabit, onToggleHabit, onDeleteHabit, onSaveRecipe, onDeleteRecipe, onSaveNote, onDeleteNote, onRestoreNote, onPurgeNote, onEmptyNoteTrash, onOpenNoteLink }: {
   workspace: Workspace;
   initialSection?: Section | null;
   initialRecord?: { kind: NoteLinkKind; id: string } | null;
@@ -24,12 +24,14 @@ export function Others({ workspace, initialSection, initialRecord, initialNoteId
   onSaveNote: (edited: Note, original?: Note) => string | null;
   onDeleteNote: (id: string) => string | null;
   onRestoreNote: (note: Note) => string | null;
+  onPurgeNote: (id: string) => string | null;
+  onEmptyNoteTrash: () => string | null;
   onOpenNoteLink: (kind: NoteLinkKind, id: string, noteId?: string) => string | null;
 }) {
   const [section, setSection] = useState<Section | null>(initialSection ?? null)
   useEffect(() => { setSection(initialSection ?? null) }, [initialSection])
   if (!section) return <div className="others-module-list">
-    <button className="others-module-row" type="button" onClick={() => setSection('notes')}><span className="others-module-icon"><FileText size={21} strokeWidth={1.5} /></span><strong>Notes</strong><span className="count-badge">{workspace.notes?.length ?? 0}</span><ArrowRight size={17} /></button>
+    <button className="others-module-row" type="button" onClick={() => setSection('notes')}><span className="others-module-icon"><FileText size={21} strokeWidth={1.5} /></span><strong>Notes</strong><span className="count-badge">{workspace.notes?.filter(note => !note.deletedAt).length ?? 0}</span><ArrowRight size={17} /></button>
     <button className="others-module-row" type="button" onClick={onBirthdays}><span className="others-module-icon"><Cake size={21} strokeWidth={1.5} /></span><strong>Födelsedagar</strong><span className="count-badge">{workspace.birthdays?.length ?? 0}</span><ArrowRight size={17} /></button>
     <button className="others-module-row" type="button" onClick={() => setSection('workouts')}><span className="others-module-icon"><Dumbbell size={21} strokeWidth={1.5} /></span><strong>Träning</strong><span className="count-badge">{workspace.workouts?.length ?? 0}</span><ArrowRight size={17} /></button>
     <button className="others-module-row" type="button" onClick={() => setSection('nutrition')}><span className="others-module-icon"><Utensils size={21} strokeWidth={1.5} /></span><strong>Kost</strong><span className="count-badge">{workspace.nutritionHabits?.length ?? 0}</span><ArrowRight size={17} /></button>
@@ -40,6 +42,6 @@ export function Others({ workspace, initialSection, initialRecord, initialNoteId
     {section === 'workouts' && <Workouts workouts={workspace.workouts ?? []} initialId={initialRecord?.kind === 'workout' ? initialRecord.id : undefined} onSave={onSaveWorkout} onDelete={onDeleteWorkout} onRestore={onRestoreWorkout} />}
     {section === 'nutrition' && <Nutrition workspace={workspace} initialHabitId={initialRecord?.kind === 'nutrition' ? initialRecord.id : undefined} onSave={onSaveHabit} onDelete={onDeleteHabit} onToggle={onToggleHabit} />}
     {section === 'recipes' && <Recipes recipes={workspace.recipes ?? []} initialId={initialRecord?.kind === 'recipe' ? initialRecord.id : undefined} onSave={onSaveRecipe} onDelete={onDeleteRecipe} />}
-    {section === 'notes' && <Notes workspace={workspace} initialId={initialNoteId} onSave={onSaveNote} onDelete={onDeleteNote} onRestore={onRestoreNote} onOpenLink={onOpenNoteLink} />}
+    {section === 'notes' && <Notes workspace={workspace} initialId={initialNoteId} onSave={onSaveNote} onDelete={onDeleteNote} onRestore={onRestoreNote} onPurge={onPurgeNote} onEmptyTrash={onEmptyNoteTrash} onOpenLink={onOpenNoteLink} />}
   </section>
 }

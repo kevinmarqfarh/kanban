@@ -6,7 +6,11 @@ Notes ligger i Others. Anteckningar sparas vid ändringar i text, titel och typs
 
 **Fet och kursiv:** knapparna B och *I* i verktygsraden (eller ⌘B/⌘I) formaterar markerad text och visar om markören står i fet/kursiv text. När du markerar text visas en liten formateringsrad vid markeringen med fet, kursiv, punktlista och numrerad lista — ovanför på dator och under markeringen på telefon så att den inte krockar med iOS egen meny.
 
-**Svep för att ta bort:** svep en anteckning i listan från höger till vänster för att visa *Ta bort*. Ett kort svep fjädrar tillbaka, ett tryck på en öppen rad stänger den och vertikal scroll påverkas inte. Fungerar även med musen. Efter borttagning visas *Ångra* i sex sekunder.
+**Svep för att ta bort:** svep en anteckning i listan från höger till vänster för att visa *Ta bort*. Ett kort svep fjädrar tillbaka, ett tryck på en öppen rad stänger den och vertikal scroll påverkas inte. Fungerar även med musen. Anteckningen flyttas då till papperskorgen och *Ångra* visas i sex sekunder.
+
+**Papperskorg (30 dagar):** borttagna anteckningar — via svep eller *Ta bort* i editorn — hamnar i *Papperskorg* längst ned i listan (med antal). Där visas hur många dagar som återstår för varje anteckning (”12 dagar kvar”, ”Raderas idag”). *Återställ* lägger tillbaka anteckningen i listan med allt innehåll. *Radera* och sedan *Radera … för alltid* tar bort en anteckning direkt, och *Töm papperskorgen* tar bort alla efter en bekräftelse. Anteckningar som legat i papperskorgen i 30 dagar raderas automatiskt nästa gång appen laddas. Papperskorgen synkas mellan enheter och ingår i säkerhetskopian; sökning och antalet anteckningar räknar bara aktiva anteckningar.
+
+Datamodell: `Note.deletedAt` (ISO-tid, `null` eller saknas) markerar en anteckning som borttagen. `purgeNoteTrash` i `migrateWorkspace` rensar poster äldre än `NOTE_TRASH_DAYS` (30) och `trashDaysLeft` i `src/lib/notes.ts` räknar dagarna som återstår.
 
 Verktygsraden innehåller Standard, Serif och Monospace, fet, kursiv, punktlista, numrerad lista och + för textlänkar. Länkvalet söker bland Planner-kort, projekt, träningspass, kostvanor, recept och födelsedagar. Länkarna visas som understruken text. De öppnar rätt innehåll och erbjuder återgång till anteckningen.
 
