@@ -5,15 +5,18 @@ import type { useDebriefs } from '../hooks/useDebriefs'
 import { birthdayCountdownLabel, birthdayUrgency, birthdayGroupKey, currentAge, groupBirthdays, isValidBirthDate, nextBirthday, unreadBirthdayNotifications } from '../lib/birthdays'
 import { daysBetween, isoWeek, isNutritionComplete, nutritionDayStatus, parseLocalDate, weekDates } from '../lib/others'
 import { Summary } from './Summary'
+import { Briefing } from './Briefing'
+import type { GiftTaskDraft } from '../lib/briefing'
 
 const weekdays = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön']
 function dateText(date: string, today: string) {
   return parseLocalDate(date).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', ...(date.slice(0, 4) === today.slice(0, 4) ? {} : { year: 'numeric' }) })
 }
 
-export function Home({ workspace, today, reports, initialId, localOnly, onBirthdays, onNutrition, onToggleHabit, onReadNotification, onDismissNotification }: {
+export function Home({ workspace, today, reports, initialId, localOnly, onBirthdays, onNutrition, onOpenTask, onOpenPlanner, onCreateGiftTask, onToggleHabit, onReadNotification, onDismissNotification }: {
   workspace: Workspace; today: string; reports: ReturnType<typeof useDebriefs>; initialId?: string; localOnly: boolean;
   onBirthdays: () => void; onNutrition: () => void;
+  onOpenTask: (taskId: string) => void; onOpenPlanner: () => void; onCreateGiftTask: (draft: GiftTaskDraft) => string | null;
   onToggleHabit: (habitId: string, date: string) => string | null;
   onReadNotification: (id: string) => string | null; onDismissNotification: (id: string) => string | null;
 }) {
@@ -43,6 +46,7 @@ export function Home({ workspace, today, reports, initialId, localOnly, onBirthd
           </article>
         })}
       </section>}
+      <Briefing workspace={workspace} today={today} debriefs={reports.debriefs} onOpenTask={onOpenTask} onOpenPlanner={onOpenPlanner} onOpenBirthdays={onBirthdays} onCreateGiftTask={onCreateGiftTask} onSave={reports.importDebrief} />
       <div className="home-grid">
         <section className="home-panel" aria-labelledby="home-nutrition-title" data-testid="home-nutrition">
           <div className="home-panel-heading"><h2 id="home-nutrition-title"><Utensils size={18} />Dagens kost</h2><button className="icon-button" aria-label="Öppna kost" onClick={onNutrition}><ArrowRight size={18} /></button></div>

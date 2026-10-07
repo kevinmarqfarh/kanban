@@ -18,6 +18,7 @@ import { Others } from './components/Others'
 import { useLocalDay } from './hooks/useLocalDay'
 import { unreadBirthdayNotifications } from './lib/birthdays'
 import { nutritionCompletionId } from './lib/others'
+import { intakeColumn, type GiftTaskDraft } from './lib/briefing'
 
 type Page = 'home' | 'planner' | 'projects' | 'others'
 type OtherEntry = Workout | NutritionHabit | Recipe | Note
@@ -124,6 +125,21 @@ export default function App() {
   function openNotifications() {
     if (!birthdayUnread.length && debriefs.unread.length) openDebrief(debriefs.unread[0].id)
     else switchPage('home')
+  }
+  function openTaskFromHome(taskId: string) {
+    const task = workspace.tasks.find(item => item.id === taskId)
+    if (!task) { setActionError('Uppgiften har tagits bort.'); return }
+    setPage('planner'); setEditor({ type: 'task', task })
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }
+  function createGiftTask(draft: GiftTaskDraft): string | null {
+    return persistChange(current => {
+      if (current.tasks.some(task => task.id === draft.id)) return current
+      const column = intakeColumn(current)
+      if (!column) throw new Error('Planner saknar en kolumn för nya uppgifter.')
+      const task: Task = { id: draft.id, title: draft.title, description: draft.description, columnId: column.id, labels: ['Födelsedag'], checklist: [], deadline: draft.deadline, deadlineTime: null, priority: 'medium', comments: [], projectId: null, createdAt: new Date().toISOString() }
+      return { ...current, tasks: [...current.tasks, task] }
+    })
   }
   function closeTask() {
     if (editor?.type === 'project-task') setEditor({ type: 'project-detail', projectId: editor.projectId })
@@ -325,7 +341,7 @@ export default function App() {
         <div className="page-heading"><h1>{({ home: 'Home', planner: 'Planner', projects: 'Projects', others: 'Others' })[page]}</h1>{(page === 'planner' || page === 'projects') && <div className="page-actions"><button className="button primary" aria-label={page === 'planner' ? 'Ny uppgift' : 'Nytt projekt'} onClick={() => setEditor(page === 'planner' ? { type: 'task' } : { type: 'project' })}><Plus size={18} /><span>{page === 'planner' ? 'Ny uppgift' : 'Nytt projekt'}</span></button></div>}</div>
         {actionError && actionError !== data.syncError && <div className="sync-banner" role="alert"><HardDrive size={18} /><p>{actionError}</p><button className="icon-button" aria-label="Stäng meddelande" onClick={() => setActionError(null)}><X size={18} /></button></div>}
         {data.syncError && <div className="sync-banner" role="status">{data.user ? <Cloud size={18} /> : <HardDrive size={18} />}<p>{data.syncError}</p>{data.syncStatus === 'conflict' ? <><button className="button secondary small" onClick={() => data.resolveConflict('remote')}>Behåll molnets</button><button className="button primary small" onClick={() => data.resolveConflict('local')}>Behåll min</button></> : <button className="button secondary small" onClick={data.retrySync}>Försök igen</button>}</div>}
-        {page === 'home' && <Home key={summaryVisit} workspace={workspace} today={today} reports={debriefs} initialId={summaryInitialId} localOnly={!data.user} onBirthdays={openBirthdays} onNutrition={() => openOthers('nutrition')} onToggleHabit={toggleHabit} onReadNotification={id => updateNotification(id, 'read')} onDismissNotification={id => updateNotification(id, 'dismiss')} />}
+        {page === 'home' && <Home key={summaryVisit} workspace={workspace} today={today} reports={debriefs} initialId={summaryInitialId} localOnly={!data.user} onBirthdays={openBirthdays} onNutrition={() => openOthers('nutrition')} onOpenTask={openTaskFromHome} onOpenPlanner={() => switchPage('planner')} onCreateGiftTask={createGiftTask} onToggleHabit={toggleHabit} onReadNotification={id => updateNotification(id, 'read')} onDismissNotification={id => updateNotification(id, 'dismiss')} />}
         {page === 'planner' && <>
           {debriefs.error && <div className="sync-banner" role="status"><NotebookText size={18} /><p>{debriefs.error}</p><button className="button secondary small" onClick={debriefs.retry}>Försök igen</button></div>}
           {debriefs.unread[0] && <DebriefNotice debrief={debriefs.unread[0]} onRead={() => openDebrief(debriefs.unread[0].id)} onDismiss={() => debriefs.dismiss(debriefs.unread[0].id)} />}
