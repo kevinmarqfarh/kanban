@@ -635,6 +635,77 @@ async function mouseDrag(page, fromName, target, position = 'top') {
     }, phone);
   });
 
+  /* ---------------- Planner drag on phones ---------------- */
+  const boardCard = (id, columnId) => ({ id, title: `Kort ${id}`, description: 'Lite text på kortet', columnId, labels: ['Hem'], checklist: [], deadline: null, comments: [], projectId: null, createdAt: stamp });
+  const boardColumns = [{ id: 'todo', title: 'Att göra', color: 'gray' }, { id: 'doing', title: 'Pågår', color: 'blue' }, { id: 'done', title: 'Klart', color: 'green' }, { id: 'finalized', title: 'Finalized', color: 'green' }];
+  const boardTasks = [boardCard('a', 'todo'), boardCard('b', 'todo'), boardCard('c', 'todo'), boardCard('d', 'doing'), boardCard('e', 'doing')];
+  const columnsOf = page => page.locator('[data-column-id]').evaluateAll(columns => columns.map(column => `${column.dataset.columnId}:${[...column.querySelectorAll('[data-task-id]')].map(card => card.dataset.taskId).join('')}`).join(' '));
+  const savedColumns = async page => { const tasks = (await cache(page)).tasks; return boardColumns.map(column => `${column.id}:${tasks.filter(task => task.columnId === column.id).map(task => task.id).join('')}`).join(' '); };
+
+  if (engine === 'chromium') await check('iPhone planner drag: the card follows the finger smoothly, moves into the next column live and pages exactly one column at the edge', async () => {
+    await withPage({ columns: boardColumns, tasks: boardTasks }, async (page, context) => {
+      await nav(page, 'Planner'); await pause(300);
+      await page.evaluate(() => { window.__pages = 0; const original = Element.prototype.scrollTo; Element.prototype.scrollTo = function (...args) { if (this.classList?.contains('board')) window.__pages++; return original.apply(this, args) }; window.__gaps = []; let last = performance.now(); const tick = now => { window.__gaps.push(now - last); last = now; window.__frame = requestAnimationFrame(tick) }; window.__frame = requestAnimationFrame(tick); });
+      const handle = await page.getByRole('button', { name: 'Dra Kort b', exact: true }).boundingBox();
+      const cdp = await context.newCDPSession(page);
+      const start = { x: handle.x + handle.width / 2, y: handle.y + handle.height / 2, radiusX: 5, radiusY: 5, force: 1, id: 1 };
+      const move = (x, y) => cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ ...start, x, y }] });
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [start] }); await pause(220);
+      assert.equal(await page.locator('.board.board-dragging').count(), 1, 'A short hold on the handle lifts the card.');
+      assert.equal(await page.locator('.board').evaluate(element => getComputedStyle(element).scrollSnapType), 'none', 'Scroll snapping is paused while dragging.');
+      const offsets = [];
+      for (let step = 1; step <= 10; step++) { const x = start.x + (330 - start.x) * step / 10; await move(x, start.y); await pause(16); const box = await page.locator('.drag-overlay').boundingBox(); offsets.push([x - box.x, start.y - box.y]); }
+      const spreadX = Math.max(...offsets.map(o => o[0])) - Math.min(...offsets.map(o => o[0])), spreadY = Math.max(...offsets.map(o => o[1])) - Math.min(...offsets.map(o => o[1]));
+      assert.ok(spreadX < 24 && spreadY < 2, `The card stays under the finger (drift ${spreadX.toFixed(1)}/${spreadY.toFixed(1)} px).`);
+      // Hold at the right edge until exactly one page happens, then leave the edge.
+      await move(410, start.y); await page.waitForFunction(() => window.__pages >= 1, null, { timeout: 3000 }); await move(200, start.y + 40);
+      await pause(1200);
+      assert.equal(await page.evaluate(() => window.__pages), 1, 'Leaving the edge stops paging after one column.');
+      assert.equal(await page.locator('.column-tab.active').evaluate(element => element.textContent.replace(/\d+$/, '')), 'Pågår');
+      assert.match(await columnsOf(page), /doing:[de]*b[de]*/, 'The card is shown in Pågår while it is still being dragged.');
+      await screenshot(page, 'iphone-planner-drag.png');
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await pause(400);
+      assert.match(await savedColumns(page), /^todo:ac doing:(?=.*b)[bde]{3} done: finalized:$/);
+      assert.equal(await page.locator('.board').evaluate(element => getComputedStyle(element).scrollSnapType), 'x mandatory', 'Snapping returns after the drop.');
+      const gaps = await page.evaluate(() => { cancelAnimationFrame(window.__frame); return window.__gaps.slice(3) });
+      assert.ok(Math.max(...gaps) < 120, `No long frame stalls during the drag (max ${Math.round(Math.max(...gaps))} ms).`);
+    }, phone);
+  });
+
+  if (engine === 'chromium') await check('iPhone planner drag reorders inside a column and a tap still opens the card', async () => {
+    await withPage({ columns: boardColumns, tasks: boardTasks }, async (page, context) => {
+      await nav(page, 'Planner'); await pause(300);
+      const handle = await page.getByRole('button', { name: 'Dra Kort c', exact: true }).boundingBox();
+      const first = await page.locator('[data-task-id="a"]').boundingBox();
+      const cdp = await context.newCDPSession(page);
+      const start = { x: handle.x + handle.width / 2, y: handle.y + handle.height / 2, radiusX: 5, radiusY: 5, force: 1, id: 1 };
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [start] }); await pause(220);
+      for (let step = 1; step <= 12; step++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ ...start, y: start.y + (first.y + 12 - start.y) * step / 12 }] }); await pause(20); }
+      await pause(200); await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await pause(400);
+      assert.equal(await savedColumns(page), 'todo:cab doing:de done: finalized:');
+      await page.getByRole('button', { name: 'Öppna Kort b', exact: true }).tap(); await waitDialog(page);
+      assert.equal(await dialog(page).getByLabel('Titel', { exact: true }).inputValue(), 'Kort b');
+    }, phone);
+  });
+
+  await check('Desktop mouse drag drops a card exactly between two cards in another column', async () => {
+    await withPage({ columns: boardColumns, tasks: boardTasks }, async page => {
+      await nav(page, 'Planner'); await pause(300);
+      const handle = await page.getByRole('button', { name: 'Dra Kort a', exact: true }).boundingBox();
+      const target = await page.locator('[data-task-id="e"]').boundingBox();
+      await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2); await page.mouse.down();
+      await page.mouse.move(handle.x + 10, handle.y + 30, { steps: 4 });
+      await page.mouse.move(target.x + target.width / 2, target.y + target.height / 2, { steps: 20 }); await pause(150);
+      const live = await page.locator('[data-task-id="e"]').boundingBox();
+      await page.mouse.move(live.x + live.width / 2, live.y + 10, { steps: 6 }); await pause(150);
+      await page.mouse.move(live.x + live.width / 2, live.y + 12, { steps: 2 }); await pause(150);
+      assert.equal(await columnsOf(page), 'todo:bc doing:dae done: finalized:', 'The gap opens between Kort d and Kort e while dragging.');
+      await page.mouse.up(); await pause(400);
+      assert.equal(await savedColumns(page), 'todo:bc doing:dae done: finalized:');
+      assert.match(await page.locator('.toast').textContent(), /Flyttad till Pågår/);
+    });
+  });
+
   await check('No uncaught browser exceptions occur in the revised flows', async () => assert.deepEqual(errors, []));
   fs.writeFileSync(path.join(out, 'results.json'), JSON.stringify({ baseURL, engine, today, results, errors }, null, 2));
   await browser.close();

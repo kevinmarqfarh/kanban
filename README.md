@@ -14,7 +14,7 @@ npm run dev
 ## Det som fungerar
 
 - Skapa, redigera och ta bort uppgifter och kolumner. *Ta bort kolumn* finns i kolumnens redigering för alla kolumner utom Finalized; har kolumnen kort väljer du först vart de ska flyttas.
-- Dra kort mellan kolumner med mus eller genom att hålla i kortets handtag på mobilen. Status uppdateras direkt. Tangentbord: fokusera handtaget, tryck mellanslag, använd pilarna och släpp med mellanslag. Status kan också ändras i uppgiften.
+- Dra kort mellan kolumner med mus eller genom att hålla kort i kortets handtag på mobilen. Kortet följer fingret, och luckan visar live var det hamnar, även mellan kort i en annan kolumn. Håll kortet mot skärmkanten så glider tavlan exakt en kolumn i taget (en gång per knappt sekund); flytta bort från kanten för att stanna. Status uppdateras direkt. Tangentbord: fokusera handtaget, tryck mellanslag, använd pilarna och släpp med mellanslag. Status kan också ändras i uppgiften.
 - Uppgifter med titel, beskrivning, status, etiketter, checklista, deadline och kommentarer.
 - Projects med egna huvuduppgifter, deluppgifter och status. Kanban och Projects är separata funktioner; ändringar eller borttagning i den ena påverkar inte den andra. Tidigare delade uppgifter bevaras som fristående kopior i båda funktionerna.
 - Redigera huvuduppgifter och deluppgifter även efter skapandet. Pennan vid en deluppgift öppnar dess textfält direkt; projektvyn använder två kolumner på större skärmar.
