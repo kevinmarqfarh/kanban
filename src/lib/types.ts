@@ -17,6 +17,8 @@ export interface Comment {
   createdAt: string
 }
 
+export type TaskPriority = 'high' | 'medium' | 'low'
+
 export interface Task {
   id: string
   title: string
@@ -26,6 +28,8 @@ export interface Task {
   checklist: ChecklistItem[]
   deadline: string | null
   deadlineTime?: string | null
+  // High (red), medium (yellow) or low (green). Missing on cards saved before priorities existed.
+  priority?: TaskPriority | null
   comments: Comment[]
   projectId: string | null
   createdAt: string

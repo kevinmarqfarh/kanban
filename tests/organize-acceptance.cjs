@@ -44,6 +44,8 @@ const noOverflow = async page => { const size = await page.evaluate(() => ({ wid
 const noDialogOverflow = async page => { const size = await dialog(page).locator('.modal-content').evaluate(element => ({ client: element.clientWidth, scroll: element.scrollWidth })); assert.ok(size.scroll <= size.client + 1, `Sheet overflows sideways: ${size.scroll} > ${size.client}`); };
 const screenshot = async (page, name) => { await page.evaluate(() => document.fonts.ready); await pause(200); await page.screenshot({ path: path.join(out, name), animations: 'disabled' }); };
 async function mouseDrag(page, fromName, target, position = 'top') {
+  if (typeof target === 'string') await birthdayRow(page, target).scrollIntoViewIfNeeded();
+  await page.getByRole('button', { name: `Flytta ${fromName}`, exact: true }).scrollIntoViewIfNeeded();
   const handle = await page.getByRole('button', { name: `Flytta ${fromName}`, exact: true }).boundingBox();
   const box = typeof target === 'string' ? await birthdayRow(page, target).boundingBox() : target;
   await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2); await page.mouse.down();
@@ -703,6 +705,103 @@ async function mouseDrag(page, fromName, target, position = 'top') {
       await page.mouse.up(); await pause(400);
       assert.equal(await savedColumns(page), 'todo:bc doing:dae done: finalized:');
       assert.match(await page.locator('.toast').textContent(), /Flyttad till Pågår/);
+    });
+  });
+
+  await check('Planner priority: High/Medium/Low chips colour the card red/yellow/green and can be cleared', async () => {
+    await withPage({ columns: boardColumns, tasks: boardTasks }, async page => {
+      await nav(page, 'Planner'); await page.getByRole('button', { name: 'Ny uppgift' }).click(); await waitDialog(page);
+      assert.deepEqual(await dialog(page).getByRole('group', { name: 'Prioritet' }).getByRole('button').allTextContents(), ['Ingen', 'High', 'Medium', 'Low']);
+      await dialog(page).getByLabel('Titel', { exact: true }).fill('Viktigt kort');
+      await dialog(page).getByRole('button', { name: 'High', exact: true }).click();
+      await dialog(page).getByRole('button', { name: 'Skapa uppgift', exact: true }).click(); await dialog(page).waitFor({ state: 'hidden' });
+      const saved = (await cache(page)).tasks.find(task => task.title === 'Viktigt kort');
+      assert.equal(saved.priority, 'high');
+      const card = page.locator(`[data-task-id="${saved.id}"]`);
+      assert.equal(await card.getByLabel('Prioritet High').textContent(), 'High');
+      assert.equal(await card.evaluate(element => getComputedStyle(element).borderLeftColor), 'rgb(207, 74, 60)');
+      await page.getByRole('button', { name: 'Öppna Viktigt kort', exact: true }).click(); await waitDialog(page);
+      assert.equal(await dialog(page).getByRole('button', { name: 'High', exact: true }).getAttribute('aria-pressed'), 'true');
+      await dialog(page).getByRole('button', { name: 'Medium', exact: true }).click(); await dialog(page).getByRole('button', { name: 'Spara ändringar', exact: true }).click(); await dialog(page).waitFor({ state: 'hidden' });
+      assert.equal(await card.evaluate(element => getComputedStyle(element).borderLeftColor), 'rgb(214, 162, 30)');
+      await page.getByRole('button', { name: 'Öppna Viktigt kort', exact: true }).click(); await waitDialog(page);
+      await dialog(page).getByRole('button', { name: 'Low', exact: true }).click(); await dialog(page).getByRole('button', { name: 'Spara ändringar', exact: true }).click(); await dialog(page).waitFor({ state: 'hidden' });
+      assert.equal(await card.evaluate(element => getComputedStyle(element).borderLeftColor), 'rgb(63, 154, 104)');
+      await page.getByRole('button', { name: 'Öppna Viktigt kort', exact: true }).click(); await waitDialog(page);
+      await dialog(page).getByRole('button', { name: 'Ingen', exact: true }).click(); await dialog(page).getByRole('button', { name: 'Spara ändringar', exact: true }).click(); await dialog(page).waitFor({ state: 'hidden' });
+      assert.equal((await cache(page)).tasks.find(task => task.id === saved.id).priority, null);
+      assert.equal(await card.getByLabel(/^Prioritet/).count(), 0);
+    });
+  });
+
+  await check('Planner: dropping in the upper half of a card places above it, the lower half below it (mouse and keyboard)', async () => {
+    await withPage({ columns: boardColumns, tasks: boardTasks }, async page => {
+      await nav(page, 'Planner'); await pause(300);
+      const dragTo = async (name, targetId, part) => {
+        const handle = await page.getByRole('button', { name: `Dra ${name}`, exact: true }).boundingBox();
+        await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2); await page.mouse.down();
+        await page.mouse.move(handle.x + 10, handle.y + 30, { steps: 4 });
+        for (let i = 0; i < 3; i++) { const box = await page.locator(`[data-task-id="${targetId}"]`).boundingBox(); await page.mouse.move(box.x + box.width / 2, box.y + box.height * part, { steps: 8 }); await pause(120); }
+        await page.mouse.up(); await pause(350);
+      };
+      await dragTo('Kort a', 'c', 0.8);
+      assert.equal(await savedColumns(page), 'todo:bca doing:de done: finalized:', 'Lower half of the last card → below it.');
+      await dragTo('Kort a', 'b', 0.2);
+      assert.equal(await savedColumns(page), 'todo:abc doing:de done: finalized:', 'Upper half of the first card → above it.');
+      await dragTo('Kort c', 'a', 0.75);
+      assert.equal(await savedColumns(page), 'todo:acb doing:de done: finalized:', 'Lower half of a card → directly below it.');
+      await page.getByRole('button', { name: 'Dra Kort a', exact: true }).focus();
+      await page.keyboard.press('Space'); await pause(150); await page.keyboard.press('ArrowDown'); await pause(200); await page.keyboard.press('Space'); await pause(350);
+      assert.equal(await savedColumns(page), 'todo:cab doing:de done: finalized:', 'Keyboard: one arrow press moves one step.');
+    });
+  });
+
+  await check('Birthdays show an Upcoming · 30 dagar overview at the top, soonest first, with colours, opening the person on tap', async () => {
+    const people = [person('far', 'Långt bort', '1962-12-03', 'Familj'), person('g', 'Grön', '1980-11-05', null), person('r', 'Röd', '1988-10-13', 'Vänner'), person('y', 'Gul', '1990-10-20', null)];
+    await withPage({ birthdays: people }, async page => {
+      await openBirthdays(page);
+      const section = dialog(page).getByRole('region', { name: 'Upcoming · 30 dagar' });
+      assert.ok((await section.boundingBox()).y < (await dialog(page).locator('.birthday-toolbar').boundingBox()).y, 'The overview sits above the list.');
+      assert.deepEqual(await section.locator('[data-upcoming-id]').evaluateAll(rows => rows.map(row => `${row.dataset.upcomingId}:${row.dataset.urgency}`)), ['r:red', 'y:yellow', 'g:green']);
+      assert.match(await section.locator('[data-upcoming-id="r"]').textContent(), /7 dagar kvar/);
+      assert.match(await section.locator('[data-upcoming-id="r"] small').textContent(), /Vänner/);
+      await section.locator('[data-upcoming-id="y"]').click();
+      assert.equal(await dialog(page).getByLabel('Namn', { exact: true }).inputValue(), 'Gul');
+    });
+    await withPage({ birthdays: [person('far', 'Långt bort', '1962-12-03', null)] }, async page => {
+      await openBirthdays(page);
+      assert.match(await dialog(page).getByRole('region', { name: 'Upcoming · 30 dagar' }).textContent(), /Inga födelsedagar de närmaste 30 dagarna/);
+    });
+  });
+
+  if (engine === 'chromium') await check('Training on iPhone: swipe a session to reveal Ta bort with Ångra, and a tapped session opens fullscreen', async () => {
+    await withPage({ workouts: history }, async (page, context) => {
+      await openOthers(page, 'Träning');
+      const card = page.getByRole('button', { name: 'Redigera pass Kondition', exact: true });
+      const remove = page.getByRole('button', { name: 'Ta bort pass Kondition', exact: true });
+      assert.equal(await remove.isVisible(), false);
+      const cdp = await context.newCDPSession(page);
+      const box = await card.boundingBox(); const point = { x: box.x + box.width - 30, y: box.y + box.height / 2, radiusX: 5, radiusY: 5, force: 1, id: 1 };
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
+      for (let step = 1; step <= 10; step++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ ...point, x: point.x - 14 * step }] }); await pause(16); }
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await pause(350);
+      await remove.waitFor(); assert.equal(await dialog(page).count(), 0, 'Swiping does not open the session.');
+      await screenshot(page, 'iphone-workout-swipe.png');
+      await remove.tap(); await pause(200);
+      assert.deepEqual((await cache(page)).workouts.map(workout => workout.id), ['w-old']);
+      await page.getByRole('status').filter({ hasText: 'Passet är borttaget.' }).getByRole('button', { name: 'Ångra', exact: true }).tap();
+      await card.waitFor(); assert.equal((await cache(page)).workouts.length, 2);
+      await card.tap(); await waitDialog(page);
+      const sheet = await dialog(page).boundingBox(); const viewport = page.viewportSize();
+      assert.ok(sheet.y <= 1 && sheet.height >= viewport.height - 2 && sheet.width >= viewport.width - 1, `The session fills the screen (${Math.round(sheet.y)}, ${Math.round(sheet.height)}).`);
+      assert.equal(await dialog(page).getByRole('heading', { name: 'Redigera pass', exact: true }).count(), 1);
+      const footer = await dialog(page).locator('.modal-footer').boundingBox();
+      assert.ok(footer.y + footer.height >= viewport.height - 2, 'Save and cancel sit at the bottom of the screen.');
+      await screenshot(page, 'iphone-workout-fullscreen.png');
+    }, phone);
+    await withPage({ workouts: history }, async page => {
+      await openOthers(page, 'Träning'); await page.getByRole('button', { name: 'Redigera pass Kondition', exact: true }).click(); await waitDialog(page);
+      assert.ok((await dialog(page).boundingBox()).width < 700, 'On a laptop the session stays a centred dialog.');
     });
   });
 

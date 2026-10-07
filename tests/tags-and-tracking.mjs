@@ -165,4 +165,9 @@ assert.ok(isWorkspace({ ...base, recipes: [recipe] }), 'Recipes without an image
 assert.ok(isWorkspace({ ...base, recipes: [{ ...recipe, image: jpeg }] }))
 assert.equal(isWorkspace({ ...base, recipes: [{ ...recipe, image: 'javascript:alert(1)' }] }), false)
 
-console.log('Tags and tracking passed: recipe images, birthday tags, grouping, manual order, countdown, one-time migration and merges; nutrition green/orange days; Nivå and recent exercises; recipe label options.')
+/* ---------- Task priority ---------- */
+const plannerTask = { id: 't', title: 'Kort', description: '', columnId: 'todo', labels: [], checklist: [], deadline: null, comments: [], projectId: null, createdAt: stamp }
+for (const priority of [undefined, null, 'high', 'medium', 'low']) assert.ok(isWorkspace({ ...base, tasks: [{ ...plannerTask, ...(priority === undefined ? {} : { priority }) }] }), `Priority ${priority} is valid.`)
+for (const priority of ['urgent', '', 1, 'High']) assert.equal(isWorkspace({ ...base, tasks: [{ ...plannerTask, priority }] }), false, `Priority ${priority} is rejected.`)
+
+console.log('Tags and tracking passed: task priority, recipe images, birthday tags, grouping, manual order, countdown, one-time migration and merges; nutrition green/orange days; Nivå and recent exercises; recipe label options.')

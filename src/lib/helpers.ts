@@ -1,4 +1,4 @@
-import type { Task, Workspace } from './types'
+import type { Task, TaskPriority, Workspace } from './types'
 
 export function newId() {
   if (typeof crypto.randomUUID === 'function') return crypto.randomUUID()
@@ -32,3 +32,10 @@ export function projectProgress(projectId: string, workspace: Workspace) {
   const complete = tasks.filter(task => task.completed).length
   return { tasks, complete, percent: tasks.length ? Math.round(complete / tasks.length * 100) : 0 }
 }
+
+export const TASK_PRIORITIES: { value: TaskPriority; label: string }[] = [
+  { value: 'high', label: 'High' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'low', label: 'Low' },
+]
+export const priorityLabel = (priority?: TaskPriority | null) => TASK_PRIORITIES.find(option => option.value === priority)?.label ?? null

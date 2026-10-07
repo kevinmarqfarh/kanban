@@ -1,9 +1,9 @@
 import { useEffect, useRef, type ReactNode, type RefObject } from 'react'
 import { X } from 'lucide-react'
 
-export function Modal({ title, subtitle, children, onClose, footer, error, wide = false, initialFocusRef }: {
+export function Modal({ title, subtitle, children, onClose, footer, error, wide = false, phoneFullscreen = false, initialFocusRef }: {
   title: string; subtitle?: string; children: ReactNode; onClose: () => void; footer?: ReactNode; error?: string | null;
-  wide?: boolean; initialFocusRef?: RefObject<HTMLInputElement | null>;
+  wide?: boolean; phoneFullscreen?: boolean; initialFocusRef?: RefObject<HTMLInputElement | null>;
 }) {
   const ref = useRef<HTMLDialogElement>(null)
   const closeRef = useRef(onClose)
@@ -64,7 +64,7 @@ export function Modal({ title, subtitle, children, onClose, footer, error, wide 
     return event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom
   }
   const pressedOutside = useRef(false)
-  return <dialog ref={ref} className={`modal-panel${wide ? ' modal-wide' : ''}`} aria-labelledby="modal-title" onCancel={event => {
+  return <dialog ref={ref} className={`modal-panel${wide ? ' modal-wide' : ''}${phoneFullscreen ? ' modal-phone-fullscreen' : ''}`} aria-labelledby="modal-title" onCancel={event => {
     event.preventDefault(); closeRef.current()
   }} onPointerDown={event => { pressedOutside.current = outside(event) }} onClick={event => {
     const started = pressedOutside.current

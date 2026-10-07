@@ -93,3 +93,9 @@ html.note-focus-open :is(.topbar, .bottom-nav, .page-heading, .others-section-he
   .notes-search input, .note-toolbar select { font-size: 16px; }
   .note-link-picker > button { grid-template-columns: 70px minmax(0, 1fr) 18px; gap: 7px; }
 }
+
+/* Workout cards use the same swipe row with their own rounded card. */
+.swipe-row.workout-swipe, .swipe-row.workout-swipe .swipe-row-content { border-radius: 18px; }
+.swipe-row.workout-swipe .swipe-row-content { background: transparent; }
+.swipe-row.workout-swipe .swipe-row-content > .others-record-row { background: var(--surface-solid); }
+.swipe-row.workout-swipe .swipe-row-action button { border-radius: 0 18px 18px 0; }

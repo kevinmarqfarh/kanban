@@ -271,6 +271,18 @@ export function Birthdays({ birthdays, onSave, onDelete, onReorder, onClose }: {
       <p className="birthday-help" id="birthday-reminder-help">Påminnelser visas i Home och i notiser när appen är öppen.</p>
     </form> : <div className="birthday-manager" ref={managerRef}>
       {birthdays.length === 0 ? <div className="birthday-empty"><span className="birthday-empty-icon"><Cake size={24} strokeWidth={1.4} /></span><h3>Inga födelsedagar ännu.</h3></div> : <>
+        {(() => {
+          const soon = birthdays.filter(person => isValidBirthDate(person.birthDate) && daysUntilBirthday(person.birthDate) <= 30)
+            .map(person => ({ person, days: daysUntilBirthday(person.birthDate), occasion: nextBirthday(person.birthDate) }))
+            .sort((a, b) => a.days - b.days || a.person.name.localeCompare(b.person.name, 'sv'))
+          return <section className="birthday-upcoming" aria-labelledby="birthday-upcoming-title">
+            <div className="birthday-upcoming-heading"><h3 id="birthday-upcoming-title">Upcoming · 30 dagar</h3><span className="count-badge">{soon.length}</span></div>
+            {soon.length ? <ul>{soon.map(({ person, days, occasion }) => <li key={person.id}><button type="button" className="birthday-upcoming-row" data-upcoming-id={person.id} data-urgency={birthdayUrgency(days) ?? undefined} aria-label={`${person.name}, ${birthdayCountdownLabel(days).toLocaleLowerCase('sv')}, fyller ${occasion.age} år`} onClick={() => openForm(person)}>
+              <span className="birthday-upcoming-name"><strong>{person.name}</strong><small>fyller {occasion.age} · {occasionLabel(occasion.date, today)}{person.tag ? ` · ${person.tag}` : ''}</small></span>
+              <span className="birthday-upcoming-when">{birthdayCountdownLabel(days)}</span>
+            </button></li>)}</ul> : <p className="birthday-upcoming-empty">Inga födelsedagar de närmaste 30 dagarna.</p>}
+          </section>
+        })()}
         <div className="birthday-toolbar"><p><span>{birthdays.length === 1 ? '1 födelsedag' : `${birthdays.length} födelsedagar`}</span>{birthdays.length > 1 && <span className="birthday-drag-tip">Dra i <GripVertical size={12} aria-label="handtaget" /> för att ändra ordning eller tagg</span>}</p>{birthdays.length > 1 && <button className="button ghost small" type="button" onClick={sortByDate}><ArrowDownUp size={14} />Sortera efter datum</button>}</div>
         <DndContext sensors={sensors} collisionDetection={collision} onDragStart={startDrag} onDragOver={dragOver} onDragEnd={finishDrag} onDragCancel={() => setGroups(null)} accessibility={{
           screenReaderInstructions: { draggable: 'Tryck mellanslag för att lyfta. Använd upp- och nedpilarna för att flytta, även till en annan tagg. Tryck mellanslag för att släppa eller Escape för att avbryta.' },

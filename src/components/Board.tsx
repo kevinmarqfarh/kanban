@@ -4,13 +4,18 @@ import {
   useDroppable, closestCorners, pointerWithin, type CollisionDetection, type DragEndEvent, type DragMoveEvent, type DragOverEvent, type DragStartEvent,
   type DropAnimation, type KeyboardCoordinateGetter, type UniqueIdentifier, defaultDropAnimationSideEffects,
 } from '@dnd-kit/core'
-import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
+import { SortableContext, defaultAnimateLayoutChanges, useSortable, sortableKeyboardCoordinates, type AnimateLayoutChanges, type SortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Plus, GripVertical, CalendarDays, ListChecks, MessageSquare, Pencil, CircleCheck } from 'lucide-react'
 import type { Column, Task, Workspace } from '../lib/types'
-import { dateLabel, isTaskDone, overdue } from '../lib/helpers'
+import { dateLabel, isTaskDone, overdue, priorityLabel } from '../lib/helpers'
 
 type Layout = Record<string, string[]>
+
+// Cards are reordered in the live layout itself, so siblings need no extra sorting offsets; instead every
+// position change glides into place.
+const liveLayoutStrategy: SortingStrategy = () => null
+const animateLayoutChanges: AnimateLayoutChanges = args => defaultAnimateLayoutChanges({ ...args, wasDragging: true })
 
 const dropAnimation: DropAnimation = {
   duration: 220,
@@ -21,7 +26,7 @@ const dropAnimation: DropAnimation = {
 function CardContent({ task, workspace }: { task: Task; workspace: Workspace }) {
   const checklistDone = task.checklist.filter(item => item.completed).length
   return <>
-    {task.labels.length > 0 && <div className="task-labels">{task.labels.slice(0, 3).map(label => <span className="label-chip" key={label}>{label}</span>)}</div>}
+    {(task.priority || task.labels.length > 0) && <div className="task-labels">{task.priority && <span className="priority-chip" data-priority={task.priority} aria-label={`Prioritet ${priorityLabel(task.priority)}`}>{priorityLabel(task.priority)}</span>}{task.labels.slice(0, 3).map(label => <span className="label-chip" key={label}>{label}</span>)}</div>}
     <h3 className="task-title">{task.title}</h3>
     {task.description && <p className="task-description">{task.description}</p>}
     {(task.deadline || task.checklist.length > 0 || task.comments.length > 0) && <div className="task-meta">
@@ -33,8 +38,8 @@ function CardContent({ task, workspace }: { task: Task; workspace: Workspace }) 
 }
 
 const TaskCard = memo(function TaskCard({ task, workspace, onOpen }: { task: Task; workspace: Workspace; onOpen: (task: Task) => void }) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: task.id, data: { columnId: task.columnId, type: 'task' } })
-  return <article ref={setNodeRef} className={`task-card ${isTaskDone(task, workspace) ? 'task-complete' : ''} ${isDragging ? 'is-dragging' : ''}`} data-task-id={task.id} style={{ transform: CSS.Translate.toString(transform), transition }}>
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: task.id, data: { columnId: task.columnId, type: 'task' }, animateLayoutChanges, transition: { duration: 180, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' } })
+  return <article ref={setNodeRef} className={`task-card ${isTaskDone(task, workspace) ? 'task-complete' : ''} ${isDragging ? 'is-dragging' : ''}`} data-task-id={task.id} data-priority={task.priority ?? undefined} style={{ transform: CSS.Translate.toString(transform), transition }}>
     <button className="task-open" onClick={() => onOpen(task)} aria-label={`Öppna ${task.title}`}><CardContent task={task} workspace={workspace} /></button>
     <button ref={setActivatorNodeRef} className="drag-handle" {...attributes} {...listeners} aria-label={`Dra ${task.title}`} title="Dra för att flytta · mellanslag + piltangenter"><GripVertical size={16} /></button>
   </article>
@@ -46,7 +51,7 @@ function BoardColumn({ column, tasks, workspace, onOpen, onAdd, onEdit, onToggle
   const { setNodeRef, isOver } = useDroppable({ id: column.id, data: { type: 'column' } })
   return <section ref={setNodeRef} className={`column ${isOver ? 'column-over' : ''}`} data-column-id={column.id} aria-label={column.title}>
     <div className="column-header"><div className="column-title"><span className="status-dot" data-status={column.id} /><h2>{column.title}</h2><span className="count-badge">{tasks.length}</span></div><div className="column-actions">{column.id === 'finalized' && <button className="button ghost small" aria-label={column.collapsed ? 'Show Finalized' : 'Hide Finalized'} aria-expanded={!column.collapsed} onClick={onToggleHide}>{column.collapsed ? 'Show' : 'Hide'}</button>}<button className="icon-button" aria-label={`Redigera kolumn ${column.title}`} onClick={onEdit}><Pencil size={14} /></button></div></div>
-    {column.collapsed ? <div className="column-empty"><CircleCheck size={22} strokeWidth={1.25} /><p>{tasks.length} kort dolda.</p><p>Dra kort hit för att avsluta.</p></div> : <><SortableContext items={tasks.map(task => task.id)} strategy={verticalListSortingStrategy}>
+    {column.collapsed ? <div className="column-empty"><CircleCheck size={22} strokeWidth={1.25} /><p>{tasks.length} kort dolda.</p><p>Dra kort hit för att avsluta.</p></div> : <><SortableContext items={tasks.map(task => task.id)} strategy={liveLayoutStrategy}>
       <div className="task-list">{tasks.map(task => <TaskCard key={task.id} task={task} workspace={workspace} onOpen={onOpen} />)}
         {tasks.length === 0 && <div className="column-empty"><CircleCheck size={22} strokeWidth={1.25} /><p>Inga uppgifter.</p></div>}
       </div>
@@ -136,45 +141,44 @@ export function Board({ workspace, tasks, onOpen, onAdd, onEditColumn, onAddColu
     setActiveId(String(active.id))
     if (typeof navigator.vibrate === 'function') navigator.vibrate(8)
   }
-  function dragOver({ active, over }: DragOverEvent) {
+  /**
+   * Place the dragged card in the column under the finger/cursor. For pointer drags the slot is the number of
+   * other cards whose middle lies above the pointer, so moving above or below a card is decided by its midpoint
+   * and re-checked on every movement (not only when the hovered card changes). Keyboard drags step card by card.
+   */
+  function reposition(activeKey: UniqueIdentifier, overKey: UniqueIdentifier | undefined) {
     const current = layoutRef.current
-    if (!current || !over) return
-    const from = columnOf(active.id, current), to = columnOf(over.id, current)
+    if (!current || overKey === undefined) return
+    const id = String(activeKey)
+    if (String(overKey) === id) return // Over its own slot: nothing to do (and never loop).
+    const from = columnOf(id, current), to = columnOf(overKey, current)
     if (!from || !to) return
-    const id = String(active.id)
-    if (from === to) {
-      // Live reorder inside a column for pointer drags: the gap follows the finger/cursor.
-      if (!pointer.current || String(over.id) === id || !current[to].includes(String(over.id))) return
-      const box = boardRef.current?.querySelector(`[data-task-id="${String(over.id)}"]`)?.getBoundingClientRect()
-      if (!box) return
-      const without = current[to].filter(item => item !== id)
-      const index = without.indexOf(String(over.id)) + (pointer.current.y > box.top + box.height / 2 ? 1 : 0)
-      const next = [...without.slice(0, index), id, ...without.slice(index)]
-      if (next.join() !== current[to].join()) setDragLayout({ ...current, [to]: next })
-      return
+    const without = current[to].filter(item => item !== id)
+    let index: number
+    if (pointer.current) {
+      const cards = Array.from(boardRef.current?.querySelectorAll<HTMLElement>(`[data-column-id="${to}"] [data-task-id]`) ?? []).filter(card => card.dataset.taskId !== id)
+      index = cards.filter(card => { const box = card.getBoundingClientRect(); return box.top + box.height / 2 < pointer.current!.y }).length
+    } else {
+      const overIndex = without.indexOf(String(overKey))
+      const activeIndex = current[to].indexOf(id)
+      index = overIndex < 0 ? without.length : from === to && activeIndex >= 0 && activeIndex <= overIndex ? overIndex + 1 : overIndex
     }
-    const targetIndex = current[to].indexOf(String(over.id))
-    const overBox = targetIndex >= 0 ? boardRef.current?.querySelector(`[data-task-id="${String(over.id)}"]`)?.getBoundingClientRect() : undefined
-    const translated = active.rect.current.translated
-    const y = pointer.current?.y ?? (translated ? translated.top + translated.height / 2 : 0)
-    const below = !!overBox && y > overBox.top + overBox.height / 2
-    const index = targetIndex >= 0 ? targetIndex + (below ? 1 : 0) : current[to].length
-    setDragLayout({ ...current, [from]: current[from].filter(item => item !== id), [to]: [...current[to].slice(0, index), id, ...current[to].slice(index)] })
+    const nextTo = [...without.slice(0, index), id, ...without.slice(index)]
+    if (from === to && nextTo.join() === current[to].join()) return
+    setDragLayout({ ...current, ...(from === to ? {} : { [from]: current[from].filter(item => item !== id) }), [to]: nextTo })
   }
+  function dragOver({ active, over }: DragOverEvent) { reposition(active.id, over?.id) }
   function endDrag({ active, over }: DragEndEvent) {
     keyboardColumn.current = null
     stopEdge()
-    let current = layoutRef.current
+    const current = layoutRef.current
     const original = startColumn.current
     setActiveId(null); setDragLayout(null); startColumn.current = null
     if (!current || !over) return
     const id = String(active.id)
     const column = columnOf(id, current)
     if (!column) return
-    // Keyboard drags reorder on drop; pointer drags already show their final order live.
-    const overIndex = current[column].indexOf(String(over.id))
-    const activeIndex = current[column].indexOf(id)
-    if (!pointer.current && overIndex >= 0 && overIndex !== activeIndex) current = { ...current, [column]: arrayMove(current[column], activeIndex, overIndex) }
+    // The live layout is exactly what is shown, for pointer and keyboard drags alike.
     const list = current[column]
     const position = list.indexOf(id)
     const before = list[position + 1]
@@ -199,7 +203,8 @@ export function Board({ workspace, tasks, onOpen, onAdd, onEditColumn, onAddColu
     board.scrollTo({ left: target, behavior: 'smooth' })
     setVisibleColumn(columns[Math.max(0, Math.min(columns.length - 1, current + side))].dataset.columnId!)
   }
-  function dragMove(_event: DragMoveEvent) {
+  function dragMove({ active, over }: DragMoveEvent) {
+    if (pointer.current && over) reposition(active.id, over.id)
     const board = boardRef.current
     // Raw finger position from hit-testing; dnd-kit's delta also counts the board's own scroll.
     if (!board || !pointer.current || board.scrollWidth <= board.clientWidth + 4) return
@@ -246,7 +251,7 @@ export function Board({ workspace, tasks, onOpen, onAdd, onEditColumn, onAddColu
         {workspace.columns.map(column => <BoardColumn key={column.id} column={column} tasks={(view[column.id] ?? []).map(id => byId.get(id)).filter((task): task is Task => !!task)} workspace={workspace} onOpen={onOpen} onAdd={() => onAdd(column.id)} onEdit={() => onEditColumn(column)} onToggleHide={() => onToggleHide(column.id)} />)}
         <button className="add-column" onClick={onAddColumn}><Plus size={20} /><span>Ny kolumn</span></button>
       </div>
-      <DragOverlay dropAnimation={dropAnimation}>{activeTask && <div className="task-card drag-overlay"><CardContent task={activeTask} workspace={workspace} /></div>}</DragOverlay>
+      <DragOverlay dropAnimation={dropAnimation}>{activeTask && <div className="task-card drag-overlay" data-priority={activeTask.priority ?? undefined}><CardContent task={activeTask} workspace={workspace} /></div>}</DragOverlay>
     </DndContext>
     <p className="board-hint"><GripVertical size={13} />Dra kort mellan kolumner.</p>
   </>

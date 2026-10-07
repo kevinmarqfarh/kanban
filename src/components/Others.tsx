@@ -7,7 +7,7 @@ import { Recipes } from './Recipes'
 import { Notes } from './Notes'
 
 type Section = 'workouts' | 'nutrition' | 'recipes' | 'notes'
-export function Others({ workspace, initialSection, initialRecord, initialNoteId, onBirthdays, onSaveWorkout, onDeleteWorkout, onSaveHabit, onToggleHabit, onDeleteHabit, onSaveRecipe, onDeleteRecipe, onSaveNote, onDeleteNote, onRestoreNote, onOpenNoteLink }: {
+export function Others({ workspace, initialSection, initialRecord, initialNoteId, onBirthdays, onSaveWorkout, onDeleteWorkout, onRestoreWorkout, onSaveHabit, onToggleHabit, onDeleteHabit, onSaveRecipe, onDeleteRecipe, onSaveNote, onDeleteNote, onRestoreNote, onOpenNoteLink }: {
   workspace: Workspace;
   initialSection?: Section | null;
   initialRecord?: { kind: NoteLinkKind; id: string } | null;
@@ -15,6 +15,7 @@ export function Others({ workspace, initialSection, initialRecord, initialNoteId
   onBirthdays: () => void;
   onSaveWorkout: (edited: Workout, original?: Workout) => string | null;
   onDeleteWorkout: (id: string) => string | null;
+  onRestoreWorkout: (workout: Workout) => string | null;
   onSaveHabit: (edited: NutritionHabit, original?: NutritionHabit) => string | null;
   onToggleHabit: (habitId: string, date: string) => string | null;
   onDeleteHabit: (id: string) => string | null;
@@ -36,7 +37,7 @@ export function Others({ workspace, initialSection, initialRecord, initialNoteId
   </div>
   const title = section === 'workouts' ? 'Träning' : section === 'nutrition' ? 'Kost' : section === 'notes' ? 'Notes' : 'Recept'
   return <section className="others-section" aria-label={title} data-others-section={section}><div className="others-section-heading"><button className="button ghost" type="button" onClick={() => setSection(null)}><ArrowLeft size={16} />Till Others</button><h2>{title}</h2></div>
-    {section === 'workouts' && <Workouts workouts={workspace.workouts ?? []} initialId={initialRecord?.kind === 'workout' ? initialRecord.id : undefined} onSave={onSaveWorkout} onDelete={onDeleteWorkout} />}
+    {section === 'workouts' && <Workouts workouts={workspace.workouts ?? []} initialId={initialRecord?.kind === 'workout' ? initialRecord.id : undefined} onSave={onSaveWorkout} onDelete={onDeleteWorkout} onRestore={onRestoreWorkout} />}
     {section === 'nutrition' && <Nutrition workspace={workspace} initialHabitId={initialRecord?.kind === 'nutrition' ? initialRecord.id : undefined} onSave={onSaveHabit} onDelete={onDeleteHabit} onToggle={onToggleHabit} />}
     {section === 'recipes' && <Recipes recipes={workspace.recipes ?? []} initialId={initialRecord?.kind === 'recipe' ? initialRecord.id : undefined} onSave={onSaveRecipe} onDelete={onDeleteRecipe} />}
     {section === 'notes' && <Notes workspace={workspace} initialId={initialNoteId} onSave={onSaveNote} onDelete={onDeleteNote} onRestore={onRestoreNote} onOpenLink={onOpenNoteLink} />}

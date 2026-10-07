@@ -5,6 +5,7 @@ import { newId } from '../lib/helpers'
 import { isValidBirthDate, localDateString } from '../lib/birthdays'
 import { exerciseSuggestions, exerciseSummary, findExercise, recentExercises, workoutLoadUnits, workoutRawText, type ExerciseHistory } from '../lib/others'
 import { Modal } from './Modal'
+import { SwipeRow } from './SwipeRow'
 
 function newRow(): WorkoutRow {
   return { id: newId(), title: '', amount: '', amountUnit: 'sets', load: '', loadUnit: 'kg', bpm: '' }
@@ -90,7 +91,7 @@ export function WorkoutEditor({ workout, history = [], onSave, onDelete, onClose
     setDraft(current => ({ ...current, rows: [...current.rows, row] }))
     setFocusRow(row.id)
   }
-  return <Modal title={workout ? 'Redigera pass' : 'Nytt pass'} onClose={onClose} error={error} footer={<>
+  return <Modal phoneFullscreen title={workout ? 'Redigera pass' : 'Nytt pass'} onClose={onClose} error={error} footer={<>
     {workout && <button className="icon-button danger" type="button" aria-label="Ta bort pass" onClick={() => setConfirmDelete(true)}><Trash2 size={18} /></button>}
     <button className="button secondary" type="button" onClick={onClose}>Avbryt</button><button className="button primary" form="workout-form" type="submit"><Check size={16} />Spara pass</button>
   </>}>
@@ -120,12 +121,28 @@ export function WorkoutEditor({ workout, history = [], onSave, onDelete, onClose
   </Modal>
 }
 
-export function Workouts({ workouts, onSave, onDelete, initialId }: {
+export function Workouts({ workouts, onSave, onDelete, onRestore, initialId }: {
   workouts: Workout[];
   initialId?: string;
   onSave: (edited: Workout, original?: Workout) => string | null;
   onDelete: (id: string) => string | null;
+  onRestore: (workout: Workout) => string | null;
 }) {
+  const [swiped, setSwiped] = useState<string | null>(null)
+  const [removed, setRemoved] = useState<Workout | null>(null)
+  const [listError, setListError] = useState<string | null>(null)
+  useEffect(() => { if (!removed) return; const timer = setTimeout(() => setRemoved(null), 6000); return () => clearTimeout(timer) }, [removed])
+  function removeWorkout(workout: Workout) {
+    const failure = onDelete(workout.id)
+    setSwiped(null); setListError(failure)
+    if (!failure) setRemoved(workout)
+  }
+  function undoRemove() {
+    if (!removed) return
+    const failure = onRestore(removed)
+    setListError(failure)
+    if (!failure) setRemoved(null)
+  }
   const [editing, setEditing] = useState<Workout | null | undefined>(() => initialId ? workouts.find(workout => workout.id === initialId) : undefined)
   const [rawText, setRawText] = useState<string | null>(null)
   const [copyStatus, setCopyStatus] = useState('')
@@ -145,7 +162,9 @@ export function Workouts({ workouts, onSave, onDelete, initialId }: {
   }
   return <div className="others-content">
     <div className="others-list-toolbar"><span>{workouts.length} pass</span><button className="button primary" type="button" onClick={() => setEditing(null)}><Plus size={16} />Nytt pass</button></div>
-    <div className="others-record-list">{ordered.map(workout => <article className="others-record-row" key={workout.id} data-workout-id={workout.id}><button className="others-record-open" type="button" aria-label={`Redigera pass ${workout.title || workout.date}`} onClick={() => setEditing(workout)}><span className="others-record-icon"><Dumbbell size={19} strokeWidth={1.5} /></span><span className="others-record-copy"><strong>{workout.title || 'Träningspass'}</strong><span><time dateTime={workout.date}>{new Date(`${workout.date}T12:00:00`).toLocaleDateString('sv-SE', { day: 'numeric', month: 'long', year: 'numeric' })}</time> · {workout.rows.length} övningar</span></span><Pencil size={15} /></button><button className="icon-button" type="button" disabled={copying} aria-label={`Kopiera råtext för ${workout.title || 'träningspass'}`} onClick={() => { void copy(workout) }}><Copy size={17} /></button></article>)}</div>
+    {removed && <div className="notes-undo" role="status"><span>Passet är borttaget.</span><button className="button ghost small" type="button" onClick={undoRemove}>Ångra</button></div>}
+    {listError && <p className="others-error" role="alert">{listError}</p>}
+    <div className="others-record-list">{ordered.map(workout => <SwipeRow key={workout.id} className="workout-swipe" open={swiped === workout.id} onOpenChange={open => setSwiped(open ? workout.id : current => current === workout.id ? null : current)} onDelete={() => removeWorkout(workout)} deleteLabel={`Ta bort pass ${workout.title || workout.date}`}><article className="others-record-row" data-workout-id={workout.id}><button className="others-record-open" type="button" aria-label={`Redigera pass ${workout.title || workout.date}`} onClick={() => setEditing(workout)}><span className="others-record-icon"><Dumbbell size={19} strokeWidth={1.5} /></span><span className="others-record-copy"><strong>{workout.title || 'Träningspass'}</strong><span><time dateTime={workout.date}>{new Date(`${workout.date}T12:00:00`).toLocaleDateString('sv-SE', { day: 'numeric', month: 'long', year: 'numeric' })}</time> · {workout.rows.length} övningar</span></span><Pencil size={15} /></button><button className="icon-button" type="button" disabled={copying} aria-label={`Kopiera råtext för ${workout.title || 'träningspass'}`} onClick={() => { void copy(workout) }}><Copy size={17} /></button></article></SwipeRow>)}</div>
     {ordered.length === 0 && <p className="others-empty">Inga träningspass ännu.</p>}
     {copyStatus && <p className="others-status" role="status"><Check size={14} />{copyStatus}</p>}
     {rawText !== null && <div className="others-copy-fallback"><div className="others-copy-heading"><p>Kopiera texten manuellt.</p><button className="icon-button" type="button" aria-label="Dölj kopiering" onClick={() => setRawText(null)}><X size={17} /></button></div><textarea className="textarea" rows={6} readOnly autoFocus aria-label="Råtext för träningspass" value={rawText} onFocus={event => event.currentTarget.select()} /></div>}

@@ -8,12 +8,13 @@ const OPEN_THRESHOLD = 44
  * A list row that reveals a delete button when swiped from right to left (touch, pen or mouse drag).
  * Vertical scrolling is left to the browser; a tap on an open row closes it instead of opening it.
  */
-export function SwipeRow({ open, onOpenChange, onDelete, deleteLabel, children }: {
+export function SwipeRow({ open, onOpenChange, onDelete, deleteLabel, children, className = '' }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDelete: () => void;
   deleteLabel: string;
   children: ReactNode;
+  className?: string;
 }) {
   const start = useRef<{ x: number; y: number; base: number; id: number } | null>(null)
   const mode = useRef<'idle' | 'swiping' | 'scrolling'>('idle')
@@ -62,7 +63,7 @@ export function SwipeRow({ open, onOpenChange, onDelete, deleteLabel, children }
   }
   function cancel() { start.current = null; mode.current = 'idle'; setDrag(null) }
 
-  return <div className={`swipe-row${offset < 0 ? ' is-revealed' : ''}${drag !== null ? ' is-dragging' : ''}`}
+  return <div className={`swipe-row${className ? ` ${className}` : ''}${offset < 0 ? ' is-revealed' : ''}${drag !== null ? ' is-dragging' : ''}`}
     onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={cancel}
     onClickCapture={event => { if (suppressClick.current) { suppressClick.current = false; event.preventDefault(); event.stopPropagation() } }}
     onKeyDown={event => { if (event.key === 'Escape' && open) { event.stopPropagation(); onOpenChange(false) } }}>

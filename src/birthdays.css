@@ -1,5 +1,19 @@
 .birthday-manager { display: flex; flex-direction: column; gap: 16px; }
 .birthday-intro { color: var(--ink-secondary); font-size: 12px; line-height: 1.7; }
+.birthday-upcoming { padding: 12px 14px 8px; border: 1px solid var(--line); border-radius: 17px; background: var(--surface-solid); }
+.birthday-upcoming-heading { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.birthday-upcoming-heading h3 { color: var(--ink); font-size: 13px; font-weight: 600; }
+.birthday-upcoming ul { margin: 0; padding: 0; list-style: none; }
+.birthday-upcoming li + li { border-top: 1px solid var(--line); }
+.birthday-upcoming-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 8px 2px 8px 12px; border-left: 3px solid var(--line-strong); text-align: left; }
+.birthday-upcoming-row[data-urgency='green'] { border-left-color: var(--urgency-green); }
+.birthday-upcoming-row[data-urgency='yellow'] { border-left-color: var(--urgency-yellow); }
+.birthday-upcoming-row[data-urgency='red'] { border-left-color: var(--urgency-red); }
+.birthday-upcoming-name { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.birthday-upcoming-name strong { color: var(--ink); font-size: 13px; font-weight: 550; overflow-wrap: anywhere; }
+.birthday-upcoming-name small { color: var(--ink-muted); font-size: 10px; }
+.birthday-upcoming-when { flex-shrink: 0; padding: 3px 8px; border-radius: 7px; background: var(--surface-muted); color: var(--ink); font-size: 11px; font-weight: 550; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.birthday-upcoming-empty { padding: 6px 0 8px; color: var(--ink-muted); font-size: 12px; }
 .birthday-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: -4px; }
 .birthday-toolbar > p { min-width: 0; color: var(--ink-muted); font-size: 11px; line-height: 1.6; }
 .birthday-drag-tip::before { content: ' · '; }

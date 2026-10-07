@@ -181,6 +181,15 @@ button, input, textarea, select { transition: background-color 160ms ease, borde
 .label-chip { display: inline-flex; align-items: center; gap: 5px; min-height: 21px; padding: 3px 7px; border-radius: 6px; background: var(--surface-muted); color: var(--ink-secondary); font-size: 9px; font-weight: 500; line-height: 1.4; white-space: nowrap; }
 .label-chip::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: currentColor; opacity: 0.65; }
 .label-chip:nth-child(2n) { background: var(--accent-soft); }
+/* Priority: high red, medium yellow, low green — a chip on the card and a coloured side line. */
+[data-priority='high'] { --priority: var(--urgency-red); }
+[data-priority='medium'] { --priority: var(--urgency-yellow); }
+[data-priority='low'] { --priority: var(--urgency-green); }
+.priority-chip { display: inline-flex; align-items: center; gap: 5px; min-height: 21px; padding: 3px 7px; border-radius: 6px; background: color-mix(in srgb, var(--priority) 16%, transparent); color: var(--ink); font-size: 9px; font-weight: 600; line-height: 1.4; white-space: nowrap; }
+.priority-chip::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--priority); }
+.task-card[data-priority] { border-left: 3px solid var(--priority); }
+.priority-option::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--priority); }
+.priority-option.active { border-color: var(--priority); background: color-mix(in srgb, var(--priority) 14%, var(--bg)); }
 .task-title { color: var(--ink); font-size: 14px; font-weight: 550; line-height: 1.45; letter-spacing: -0.3px; overflow-wrap: anywhere; }
 .task-description { display: -webkit-box; margin-top: 6px; overflow: hidden; color: var(--ink-secondary); font-size: 11px; line-height: 1.65; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
 .task-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 17px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--ink-muted); }
@@ -530,6 +539,10 @@ input[type='checkbox']:checked { border-color: var(--accent); background: var(--
   .nav-item svg, .nav-icon svg, svg.nav-icon { width: 17px; height: 17px; }
   .modal-backdrop { align-items: flex-end; padding: 0; }
   .modal-panel { inset: auto 0 0; width: 100%; max-width: 100%; max-height: calc(100svh - 25px); margin: 0; border-bottom: 0; border-radius: 26px 26px 0 0; }
+  .modal-panel.modal-phone-fullscreen { inset: 0 0 var(--modal-bottom-inset, 0px); width: 100%; max-width: 100%; height: auto; max-height: none; max-block-size: none; margin: 0; border-radius: 0; border: 0; }
+  .modal-panel.modal-phone-fullscreen::before { display: none; }
+  .modal-panel.modal-phone-fullscreen .modal-content { flex: 1 1 auto; }
+  .modal-panel.modal-phone-fullscreen .modal-header { padding-top: max(14px, env(safe-area-inset-top)); }
   .modal-panel::before { content: ''; display: block; align-self: center; width: 34px; min-height: 4px; margin-top: 10px; border-radius: 4px; background: var(--line-strong); }
   .modal-header { padding: 9px 22px 11px; }
   .modal-header h2 { font-size: 19px; }

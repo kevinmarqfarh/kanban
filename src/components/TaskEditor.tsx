@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Plus, Trash2, Send, Check, MessageSquare } from 'lucide-react'
 import type { Task, Workspace } from '../lib/types'
-import { newId } from '../lib/helpers'
+import { TASK_PRIORITIES, newId } from '../lib/helpers'
 import { Modal } from './Modal'
 
 export function TaskEditor({ task, columnId, workspace, onSave, onDelete, onClose }: {
@@ -48,6 +48,10 @@ export function TaskEditor({ task, columnId, workspace, onSave, onDelete, onClos
       <label className="field">Titel<input className="input title-input" autoFocus required maxLength={160} value={draft.title} onChange={event => setDraft({ ...draft, title: event.target.value })} /></label>
       <label className="field">Beskrivning<textarea className="textarea" rows={3} value={draft.description} onChange={event => setDraft({ ...draft, description: event.target.value })} /></label>
       <label className="field">Status<select className="select" value={draft.columnId} onChange={event => setDraft({ ...draft, columnId: event.target.value })}>{workspace.columns.map(column => <option key={column.id} value={column.id}>{column.title}</option>)}</select></label>
+      <fieldset className="tag-field priority-field"><legend>Prioritet</legend><div className="tag-options">
+        <button className={`tag-chip${draft.priority ? '' : ' active'}`} type="button" aria-pressed={!draft.priority} onClick={() => setDraft({ ...draft, priority: null })}>Ingen</button>
+        {TASK_PRIORITIES.map(option => <button key={option.value} className={`tag-chip priority-option${draft.priority === option.value ? ' active' : ''}`} data-priority={option.value} type="button" aria-pressed={draft.priority === option.value} onClick={() => setDraft({ ...draft, priority: option.value })}>{option.label}</button>)}
+      </div></fieldset>
       <div className="field-row"><label className="field">Deadline<input className="input" type="date" value={draft.deadline ?? ''} onChange={event => setDraft({ ...draft, deadline: event.target.value || null, deadlineTime: event.target.value ? draft.deadlineTime : null })} /></label><label className="field">Tid (valfri)<input className="input" type="time" disabled={!draft.deadline} value={draft.deadlineTime ?? ''} onChange={event => setDraft({ ...draft, deadlineTime: event.target.value || null })} /></label></div>
       <label className="field">Etiketter<input className="input" placeholder="Privat, Idé" value={labels} onChange={event => setLabels(event.target.value)} /><span className="field-help">Separera med kommatecken</span></label>
       <div className="section-label"><span>Checklista</span><span>{completed}/{draft.checklist.length}</span></div>
