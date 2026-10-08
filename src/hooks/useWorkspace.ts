@@ -1,3 +1,4 @@
+import { cloudErrorMessage, isRetryableNetworkError } from '../lib/cloud'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SetStateAction } from 'react'
 import type { User } from '@supabase/supabase-js'
@@ -78,15 +79,7 @@ function initialContext(ownerId: string | null): Context {
 }
 
 function errorMessage(error: unknown): string {
-  if (!navigator.onLine) return 'Du är offline. Dina ändringar finns kvar på enheten och synkas när du är online.'
-  const message = object(error) && typeof error.message === 'string' ? error.message : ''
-  if (/fetch|network|timeout/i.test(message)) return 'Molnet svarar inte just nu. Dina ändringar finns kvar på enheten.'
-  if (/kanban_workspaces|schema cache|permission denied|relation.*does not exist/i.test(message)) return 'Molntavlan är inte klar ännu. Databastabellen och dess behörigheter behöver anslutas.'
-  if (/invalid login credentials/i.test(message)) return 'E-postadressen eller lösenordet stämmer inte.'
-  if (/email not confirmed/i.test(message)) return 'Bekräfta din e-postadress innan du loggar in.'
-  if (/user already registered/i.test(message)) return 'Det finns redan ett konto med den e-postadressen.'
-  if (/rate limit|too many requests|security purposes/i.test(message)) return 'För många försök på kort tid. Vänta en stund och försök igen.'
-  return message || 'Något gick fel. Dina ändringar finns kvar på enheten.'
+  return cloudErrorMessage(error, navigator.onLine)
 }
 
 const conflictMessage = 'Tavlan har ändrats på en annan enhet. Välj vilken version du vill behålla.'
@@ -271,7 +264,7 @@ export function useWorkspace() {
         setSyncTick(tick => tick + 1)
       } catch (error) {
         if (!alive || run !== generation.current) return
-        retryNetwork.current = !navigator.onLine || /fetch|network|timeout|load failed/i.test(object(error) && typeof error.message === 'string' ? error.message : '')
+        retryNetwork.current = isRetryableNetworkError(error, navigator.onLine)
         setSyncError(storageFailure.current ?? errorMessage(error))
         setSyncStatus(storageFailure.current || !retryNetwork.current ? 'error' : 'offline')
       } finally {
@@ -342,7 +335,7 @@ export function useWorkspace() {
         } catch (error) {
           if (run !== generation.current) return
           // Retry temporary connection failures after re-reading the server revision.
-          retryNetwork.current = !navigator.onLine || /fetch|network|timeout|load failed/i.test(object(error) && typeof error.message === 'string' ? error.message : '')
+          retryNetwork.current = isRetryableNetworkError(error, navigator.onLine)
           hydrated.current = false
           setSyncError(storageFailure.current ?? errorMessage(error))
           setSyncStatus(storageFailure.current || !retryNetwork.current ? 'error' : 'offline')

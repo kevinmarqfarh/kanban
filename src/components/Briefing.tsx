@@ -4,6 +4,7 @@ import {
   Layers, Leaf, ListPlus, Moon, PartyPopper, Play, Cake, Sunrise, Zap, type LucideIcon,
 } from 'lucide-react'
 import type { DailyDebrief, Workspace } from '../lib/types'
+import { useNow } from '../hooks/useNow'
 import { briefingDebriefPayload, briefingToText, buildDailyBriefing, type BriefingTip, type GiftTaskDraft, type TipKind } from '../lib/briefing'
 
 const tipIcons: Record<TipKind, LucideIcon> = {
@@ -11,16 +12,6 @@ const tipIcons: Record<TipKind, LucideIcon> = {
   'birthday-today': PartyPopper, 'birthday-soon': Gift, 'birthday-plan': Cake, evening: Moon, stale: Archive, calm: Leaf, empty: ListPlus,
 }
 const PREVIEW_TIPS = 3
-
-/** Re-render every minute so timed deadlines turn overdue and the greeting follows the clock. */
-function useMinute(): Date {
-  const [now, setNow] = useState(() => new Date())
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), 60_000)
-    return () => window.clearInterval(timer)
-  }, [])
-  return now
-}
 
 export function Briefing({ workspace, today, debriefs, onOpenTask, onOpenPlanner, onOpenBirthdays, onCreateGiftTask, onSave }: {
   workspace: Workspace
@@ -32,7 +23,7 @@ export function Briefing({ workspace, today, debriefs, onOpenTask, onOpenPlanner
   onCreateGiftTask: (draft: GiftTaskDraft) => string | null
   onSave: (payload: unknown) => Promise<string | null>
 }) {
-  const now = useMinute()
+  const now = useNow()
   const briefing = useMemo(() => buildDailyBriefing(workspace, today, now), [workspace, today, now])
   const [showAllTips, setShowAllTips] = useState(false)
   const [status, setStatus] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null)

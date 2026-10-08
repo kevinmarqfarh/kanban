@@ -1,0 +1,152 @@
+/*
+ * Hemskärm — Home as a single glanceable screen for a docked tablet (designed on iPad mini 4: 1024×768 / 768×1024).
+ * The page itself never scrolls; long lists scroll inside their own card. Big type, 56–60 px touch rows.
+ */
+.app-shell.is-homescreen { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+.is-homescreen .topbar { width: calc(100% - 40px); height: 56px; }
+.is-homescreen .main-content { width: calc(100% - 40px); }
+.is-homescreen .bottom-nav { bottom: calc(14px + env(safe-area-inset-bottom)); }
+.is-homescreen-home { min-height: 0; }
+.is-homescreen-home .main-content { padding-top: 12px; }
+
+.homescreen {
+  --hs-gap: 14px;
+  --hs-chrome: calc(56px + 12px + 88px + env(safe-area-inset-bottom));
+  position: relative;
+  display: grid;
+  gap: var(--hs-gap);
+  height: calc(100vh - var(--hs-chrome));
+  min-height: 520px;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas: 'today food upcoming';
+}
+@supports (height: 100dvh) {
+  .homescreen { height: calc(100dvh - var(--hs-chrome)); }
+}
+.homescreen-error { position: absolute; z-index: 5; top: -6px; left: 50%; display: flex; align-items: center; gap: 8px; transform: translateX(-50%); box-shadow: var(--shadow-popover); }
+
+.hs-card { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; padding: 18px 18px 16px; border: 1px solid var(--line); border-radius: 22px; background: var(--surface); box-shadow: var(--shadow-card); }
+.hs-today { grid-area: today; gap: 14px; }
+.hs-food { grid-area: food; }
+.hs-upcoming { grid-area: upcoming; }
+.hs-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.hs-title { display: flex; align-items: center; gap: 8px; color: var(--ink); font-size: 15px; font-weight: 550; letter-spacing: -0.2px; }
+.hs-title svg { color: var(--ink-secondary); }
+
+/* Today: clock, day, state and the three things to do first */
+.hs-now { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.hs-clock-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.hs-clock { color: var(--ink); font-size: clamp(46px, 6.2vw, 68px); font-weight: 400; line-height: 0.95; letter-spacing: -2.5px; font-variant-numeric: tabular-nums; }
+.hs-sync { display: inline-flex; align-items: center; gap: 5px; margin-top: 6px; padding: 4px 8px; border-radius: 8px; background: var(--surface-muted); color: var(--ink-muted); font-size: 11px; white-space: nowrap; }
+.hs-sync[data-status='offline'], .hs-sync[data-status='error'], .hs-sync[data-status='conflict'] { color: var(--status-incomplete-ink); }
+.hs-date { display: flex; justify-content: space-between; gap: 10px; color: var(--ink-secondary); font-size: 14px; }
+.hs-date span:first-child::first-letter { text-transform: uppercase; }
+.hs-date span:last-child { color: var(--ink-muted); }
+.hs-headline { margin-top: 8px; color: var(--ink); font-size: 22px; font-weight: 500; line-height: 1.2; letter-spacing: -0.6px; }
+.hs-summary { color: var(--ink-secondary); font-size: 14px; line-height: 1.55; }
+.hs-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 6px 0 0; padding: 0; }
+.hs-stat { display: flex; flex-direction: column-reverse; gap: 1px; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); }
+.hs-stat dt { overflow: hidden; color: var(--ink-muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.hs-stat dd { margin: 0; color: var(--ink); font-size: 20px; font-weight: 500; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.hs-stat.is-zero dd { color: var(--ink-muted); }
+.hs-stat.is-alert { border-color: var(--urgency-red); }
+.hs-stat.is-alert dd { color: var(--urgency-red); }
+
+.hs-focus-area { display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.hs-focus { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.hs-focus-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); text-align: left; }
+.hs-focus-row:active { background: var(--accent-soft); }
+.hs-rank { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 28px; height: 28px; border-radius: 9px; background: var(--accent-soft); color: var(--ink); font-size: 13px; font-weight: 600; }
+.hs-focus li:first-child .hs-rank { background: var(--accent); color: var(--accent-ink); }
+.hs-focus-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.hs-focus-copy strong { overflow: hidden; color: var(--ink); font-size: 15px; font-weight: 500; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.hs-focus-copy small { color: var(--ink-muted); font-size: 12px; }
+.hs-focus-copy small.is-late { color: var(--urgency-red); font-weight: 550; }
+.hs-focus-copy small.is-today { color: var(--status-incomplete-ink); font-weight: 550; }
+.hs-tip { display: flex; gap: 9px; padding: 10px 12px; border-radius: 14px; background: var(--surface-muted); color: var(--ink-secondary); font-size: 13px; line-height: 1.5; }
+.hs-tip svg { flex-shrink: 0; margin-top: 2px; color: var(--ink-muted); }
+.hs-tip strong { color: var(--ink); font-weight: 550; }
+.hs-debrief-link { align-self: flex-start; min-height: 44px; margin-left: -12px; }
+.hs-empty-action { align-self: flex-start; min-height: 48px; }
+
+/* Food and supplements: big rows you can hit while walking past */
+.hs-count { padding: 4px 10px; border-radius: 9px; background: var(--surface-muted); color: var(--ink-secondary); font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.hs-count.is-complete { background: var(--status-complete-soft); color: var(--status-complete-ink); }
+.hs-habits { display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+.hs-habit { display: flex; align-items: center; gap: 14px; flex-shrink: 0; width: 100%; min-height: 60px; padding: 10px 14px; border: 1.5px solid var(--line-strong); border-radius: 16px; background: var(--bg); text-align: left; transition: background 140ms ease, border-color 140ms ease; }
+.hs-habit:active { transform: scale(0.99); }
+.hs-check { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 32px; height: 32px; border: 2px solid var(--ink-muted); border-radius: 50%; color: #ffffff; }
+.hs-habit.is-complete { border-color: var(--status-complete-line); background: var(--status-complete-soft); }
+.hs-habit.is-complete .hs-check { border-color: var(--status-complete); background: var(--status-complete); }
+.hs-habit-copy { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex: 1; min-width: 0; }
+.hs-habit-copy strong { overflow: hidden; color: var(--ink); font-size: 16px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.hs-habit-copy small { flex-shrink: 0; color: var(--ink-muted); font-size: 13px; }
+.hs-habit.is-complete .hs-habit-copy strong { color: var(--status-complete-ink); }
+.hs-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.hs-week-day { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 0; border: 1px solid transparent; border-radius: 10px; color: var(--ink); font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.hs-week-day small { color: var(--ink-muted); font-size: 10px; font-weight: 500; }
+.hs-week-day.is-today { border-color: var(--line-strong); background: var(--accent-soft); }
+.hs-week-day.status-complete { border-color: var(--status-complete-line); background: var(--status-complete-soft); color: var(--status-complete-ink); }
+.hs-week-day.status-incomplete { border-color: var(--status-incomplete-line); background: var(--status-incomplete-soft); color: var(--status-incomplete-ink); }
+.hs-empty { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; color: var(--ink-muted); font-size: 14px; line-height: 1.55; }
+.hs-empty .button { min-height: 48px; }
+
+/* Upcoming: reminders, next seven days and a quick task */
+.hs-scroll { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.hs-notices { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.hs-notice { display: flex; align-items: center; gap: 10px; padding: 4px 4px 4px 12px; border: 1px solid var(--status-incomplete-line); border-radius: 14px; background: var(--status-incomplete-soft); }
+.hs-notice > svg { flex-shrink: 0; color: var(--status-incomplete-ink); }
+.hs-notice > span { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.hs-notice strong { color: var(--ink); font-size: 14px; font-weight: 550; }
+.hs-notice small { color: var(--ink-secondary); font-size: 12px; }
+.hs-agenda { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.hs-agenda > li { padding: 8px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); }
+.hs-agenda > li.is-today { border-color: var(--line-strong); background: var(--accent-soft); }
+.hs-agenda time { color: var(--ink-muted); font-size: 11px; font-weight: 600; letter-spacing: 0.2px; }
+.hs-agenda ul { margin: 2px 0 0; padding: 0; list-style: none; }
+.hs-agenda-item { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 40px; color: var(--ink); font-size: 14px; line-height: 1.35; text-align: left; }
+.hs-agenda-item.is-birthday svg { flex-shrink: 0; color: var(--status-incomplete-ink); }
+.hs-agenda-item.is-high::before { content: ''; flex-shrink: 0; width: 7px; height: 7px; border-radius: 50%; background: var(--urgency-red); }
+.hs-time { flex-shrink: 0; color: var(--ink-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.hs-quiet { color: var(--ink-muted); font-size: 14px; line-height: 1.55; }
+.hs-quick { display: flex; gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.hs-quick .input { flex: 1; min-width: 0; min-height: 48px; font-size: 16px; }
+.hs-today-toggle { flex-shrink: 0; min-width: 60px; min-height: 48px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 12px; color: var(--ink-muted); font-size: 13px; font-weight: 550; }
+.hs-today-toggle.active { border-color: var(--ink-secondary); background: var(--accent-soft); color: var(--ink); }
+.hs-add { flex-shrink: 0; width: 48px; min-height: 48px; padding: 0; justify-content: center; }
+.hs-added { display: flex; align-items: center; gap: 6px; margin-top: 6px; color: var(--status-complete-ink); font-size: 12px; }
+
+/* Portrait (768×1024): today across the top, food and upcoming side by side below. */
+@media (orientation: portrait) {
+  .homescreen { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: 'today today' 'food upcoming'; }
+  .hs-today { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: 'now focus' 'tip focus'; align-items: start; gap: 14px 18px; }
+  .hs-now { grid-area: now; }
+  .hs-focus-area { grid-area: focus; max-height: 300px; }
+  .hs-tip { grid-area: tip; }
+}
+
+/* Short landscape viewports (Safari toolbar visible): trim the generous parts first. */
+@media (orientation: landscape) and (max-height: 720px) {
+  .hs-tip { display: none; }
+  .hs-summary { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hs-habit { transition: none; }
+  .hs-habit:active { transform: none; }
+}
+
+/* The tip is a nudge, not an essay: clamp it so lists keep their room. */
+.hs-tip p { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+@media (orientation: portrait) {
+  .hs-tip p { -webkit-line-clamp: 2; }
+  .hs-summary { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+}
+@media (orientation: portrait) {
+  .hs-habits { gap: 6px; }
+  .hs-habit { min-height: 52px; padding-block: 7px; }
+  .hs-check { width: 28px; height: 28px; }
+}
+
+/* Never disabled: a disabled default button silently blocks Enter-to-submit while React catches up. */
+.hs-add.is-empty { opacity: 0.45; }

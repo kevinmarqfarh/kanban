@@ -1,0 +1,27 @@
+/*
+ * Older Safari (iPadOS/iOS 15 — e.g. iPad mini 4 / A1538, iPad Air 2, iPad 5th gen).
+ * Loaded last. Everything here only applies where modern CSS is missing, so newer devices are untouched.
+ *
+ * color-mix() arrived in Safari 16.2. A declaration that combines color-mix() with var() is not rejected
+ * at parse time on older Safari; it becomes "invalid at computed-value time" and falls back to nothing,
+ * so an ordinary fallback declaration would not help. @supports is the reliable switch.
+ */
+@supports not (color: color-mix(in srgb, red, blue)) {
+  /* Solid surfaces and no live blur: much smoother on the A8/A9 GPUs of iPads that stop at iPadOS 15. */
+  :root, [data-theme='dark'] { --surface: var(--surface-solid); }
+  *, *::before, *::after, .modal-panel::backdrop { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+
+  .priority-chip { background: var(--surface-muted); box-shadow: inset 0 0 0 1.5px var(--priority); }
+  .priority-option.active { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--priority); }
+  .summary-card.feature { background: var(--accent); }
+  .note-format-bubble button:hover, .note-format-bubble button.is-active { background: rgba(127, 127, 127, 0.28); }
+  .briefing-stat.is-alert { border-color: var(--urgency-red); background: var(--bg); }
+  .briefing-reason.is-high { background: transparent; }
+}
+
+/* Container queries arrived in Safari 16. Fall back to the viewport for the narrow workout rows. */
+@supports not (container-type: inline-size) {
+  @media (max-width: 340px) {
+    .workout-measures { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+}

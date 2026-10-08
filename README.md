@@ -27,6 +27,14 @@ npm run dev
 
 Lokal lagring är separat för varje webbläsare och enhet. Rensa inte webbläsarens lagring om du vill behålla tavlan. Ändringar mellan flikar bevaras när du sparar och andra öppna flikar uppdateras. Om lagringen är full visas ett fel och dialogen förblir öppen för ett nytt försök. Exportera gärna en kopia under Profil. JSON-exporten är en kopia av innehållet; appen har ingen importfunktion för backupfiler ännu.
 
+**iPad i köket (hemskärm):** På en iPad blir Home en hemskärm som får plats på en enda skärm, liggande och stående. Den visar:
+- en stor klocka med dagens läge och *Gör först*
+- stora rader för att bocka av kost och tillskott med ett tryck
+- kommande 7 dagar med födelsedagspåminnelser
+- ett snabbfält för nya uppgifter
+
+Efter tre minuter utan beröring går appen tillbaka till Home, men ett öppet formulär stängs aldrig. Inloggad hämtar den ändringar från dina andra enheter varje minut. Läget styrs under Inställningar → Hemskärm (Auto/På/Av, per enhet). Appen fungerar även på iPads som stannat på iPadOS 15, till exempel iPad mini 4. Se [docs/ipad.md](docs/ipad.md).
+
 **Dagens briefing:** Överst på Home sammanfattar Forma dagen utifrån Planner och födelsedagar. Du får dagens läge, siffror för försenat, idag, veckan, pågående och födelsedagar, de tre kort du bör göra först med skälen, konkreta förslag och de kommande sju dagarna. Tryck på ett kort för att öppna det i Planner. Vid en kommande födelsedag kan du med en knapp lägga *Present till …* i Planner. Briefingen kan kopieras som text eller sparas under Daglig sammanfattning. Den räknas fram på enheten utan AI och följer klockan, så en passerad tid blir försenad. Reglerna beskrivs i [docs/briefing.md](docs/briefing.md).
 
 **Daily debriefing:** Under Home kan du läsa in en sammanfattning som JSON-fil, eller flera dagars sammanfattningar i en lista. Lässtatus och dolda notiser sparas lokalt. En identisk fil skapar inga dubbletter. Ingen automatisk AI-summering körs i den lokala versionen. Den förberedda molninkorgen är separat från kanbantavlan och kan fyllas av dina framtida automationer när Supabase är anslutet. Format och anslutning beskrivs i [docs/debriefs.md](docs/debriefs.md). Notiserna visas inne i appen; iOS-push är inte aktiverat.

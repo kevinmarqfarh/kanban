@@ -6,6 +6,8 @@ import { birthdayCountdownLabel, birthdayUrgency, birthdayGroupKey, currentAge, 
 import { daysBetween, isoWeek, isNutritionComplete, nutritionDayStatus, parseLocalDate, weekDates } from '../lib/others'
 import { Summary } from './Summary'
 import { Briefing } from './Briefing'
+import { HomeScreen } from './HomeScreen'
+import type { SyncStatus } from '../lib/types'
 import type { GiftTaskDraft } from '../lib/briefing'
 
 const weekdays = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön']
@@ -13,8 +15,9 @@ function dateText(date: string, today: string) {
   return parseLocalDate(date).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', ...(date.slice(0, 4) === today.slice(0, 4) ? {} : { year: 'numeric' }) })
 }
 
-export function Home({ workspace, today, reports, initialId, localOnly, onBirthdays, onNutrition, onOpenTask, onOpenPlanner, onCreateGiftTask, onToggleHabit, onReadNotification, onDismissNotification }: {
+export function Home({ workspace, today, reports, initialId, localOnly, homeScreen = false, syncStatus = 'local', onQuickAdd, onOpenDebriefs, onBirthdays, onNutrition, onOpenTask, onOpenPlanner, onCreateGiftTask, onToggleHabit, onReadNotification, onDismissNotification }: {
   workspace: Workspace; today: string; reports: ReturnType<typeof useDebriefs>; initialId?: string; localOnly: boolean;
+  homeScreen?: boolean; syncStatus?: SyncStatus; onQuickAdd?: (title: string, dueToday: boolean) => string | null; onOpenDebriefs?: () => void;
   onBirthdays: () => void; onNutrition: () => void;
   onOpenTask: (taskId: string) => void; onOpenPlanner: () => void; onCreateGiftTask: (draft: GiftTaskDraft) => string | null;
   onToggleHabit: (habitId: string, date: string) => string | null;
@@ -33,6 +36,10 @@ export function Home({ workspace, today, reports, initialId, localOnly, onBirthd
     .map(entry => ({ ...entry, days: daysBetween(today, entry.date) }))
     .sort((a, b) => a.date.localeCompare(b.date) || a.person.name.localeCompare(b.person.name, 'sv'))
   function run(action: () => string | null) { setError(action()) }
+  // Docked tablet: one glanceable screen. Reading a debrief still uses the full reader below.
+  if (homeScreen && !reading && onQuickAdd && onOpenDebriefs) return <HomeScreen workspace={workspace} today={today} syncStatus={syncStatus} signedIn={!localOnly} unreadDebriefs={reports.unread.length}
+    onOpenTask={onOpenTask} onOpenPlanner={onOpenPlanner} onOpenBirthdays={onBirthdays} onOpenNutrition={onNutrition} onOpenDebriefs={onOpenDebriefs}
+    onToggleHabit={onToggleHabit} onQuickAdd={onQuickAdd} onReadNotification={onReadNotification} onDismissNotification={onDismissNotification} />
   return <div className="home-page" data-testid="home-overview">
     {error && <p className="form-message error" role="alert">{error}</p>}
     {!reading && <>

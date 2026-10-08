@@ -16,6 +16,7 @@ import { DebriefNotice } from './components/Summary'
 import { Home } from './components/Home'
 import { Others } from './components/Others'
 import { useLocalDay } from './hooks/useLocalDay'
+import { HOME_SCREEN_REFRESH_MS, IDLE_RETURN_MS, useHomeScreen } from './hooks/useHomeScreen'
 import { unreadBirthdayNotifications } from './lib/birthdays'
 import { nutritionCompletionId } from './lib/others'
 import { intakeColumn, type GiftTaskDraft } from './lib/briefing'
@@ -59,6 +60,7 @@ export default function App() {
   const { workspace, setWorkspace } = data
   const debriefs = useDebriefs(data.user?.id ?? null, !data.loading)
   const today = useLocalDay()
+  const homeScreen = useHomeScreen()
   const [othersSection, setOthersSection] = useState<'workouts' | 'nutrition' | 'recipes' | 'notes' | null>(null)
   const [othersVisit, setOthersVisit] = useState(0)
   const [noteTarget, setNoteTarget] = useState<{ kind: NoteLinkKind; id: string } | null>(null)
@@ -104,6 +106,34 @@ export default function App() {
   const birthdayUnread = unreadBirthdayNotifications(workspace)
   const unreadCount = birthdayUnread.length + debriefs.unread.length
   const statusText = { local: 'Sparas på enheten', synced: 'Allt är synkat', syncing: 'Synkar…', offline: 'Offline · sparat lokalt', error: 'Sparandet behöver hjälp', conflict: 'Välj version' }[data.syncStatus]
+  // Docked tablet: drift back to Home after a few untouched minutes, but never close an open form.
+  const pageRef = useRef(page); pageRef.current = page
+  const editorRef = useRef(editor); editorRef.current = editor
+  useEffect(() => {
+    if (!homeScreen.active) return
+    let timer = 0
+    const arm = () => {
+      window.clearTimeout(timer)
+      timer = window.setTimeout(() => {
+        if (pageRef.current !== 'home' && !editorRef.current) { setPage('home'); setSummaryInitialId(undefined); setSummaryVisit(value => value + 1); window.scrollTo({ top: 0, behavior: 'instant' }) }
+        else arm()
+      }, IDLE_RETURN_MS)
+    }
+    const events = ['pointerdown', 'keydown', 'wheel', 'touchstart'] as const
+    for (const name of events) window.addEventListener(name, arm, { passive: true })
+    arm()
+    return () => { window.clearTimeout(timer); for (const name of events) window.removeEventListener(name, arm) }
+  }, [homeScreen.active])
+  // Docked tablet: pull changes from other devices (a phone ticking off supplements) every minute.
+  const retrySyncRef = useRef(data.retrySync); retrySyncRef.current = data.retrySync
+  const syncStatusRef = useRef(data.syncStatus); syncStatusRef.current = data.syncStatus
+  useEffect(() => {
+    if (!homeScreen.active || !data.user) return
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible' && navigator.onLine && syncStatusRef.current !== 'syncing' && syncStatusRef.current !== 'conflict') retrySyncRef.current()
+    }, HOME_SCREEN_REFRESH_MS)
+    return () => window.clearInterval(timer)
+  }, [homeScreen.active, data.user])
   function switchPage(next: Page) {
     setPage(next); setEditor(null); setNoteTarget(null); setNoteReturn(null); setInitialNoteId(undefined)
     if (next === 'others') { setOthersSection(null); setOthersVisit(value => value + 1) }
@@ -138,6 +168,14 @@ export default function App() {
       const column = intakeColumn(current)
       if (!column) throw new Error('Planner saknar en kolumn för nya uppgifter.')
       const task: Task = { id: draft.id, title: draft.title, description: draft.description, columnId: column.id, labels: ['Födelsedag'], checklist: [], deadline: draft.deadline, deadlineTime: null, priority: 'medium', comments: [], projectId: null, createdAt: new Date().toISOString() }
+      return { ...current, tasks: [...current.tasks, task] }
+    })
+  }
+  function quickAddTask(title: string, dueToday: boolean): string | null {
+    return persistChange(current => {
+      const column = intakeColumn(current)
+      if (!column) throw new Error('Planner saknar en kolumn för nya uppgifter.')
+      const task: Task = { id: newId(), title, description: '', columnId: column.id, labels: [], checklist: [], deadline: dueToday ? today : null, deadlineTime: null, comments: [], projectId: null, createdAt: new Date().toISOString() }
       return { ...current, tasks: [...current.tasks, task] }
     })
   }
@@ -333,15 +371,15 @@ export default function App() {
     setToast('Din säkerhetskopia är nedladdad')
   }
   return <>
-    <div className="app-shell" aria-busy={data.loading}>
+    <div className={`app-shell${homeScreen.active ? ' is-homescreen' : ''}${homeScreen.active && page === 'home' ? ' is-homescreen-home' : ''}`} aria-busy={data.loading}>
       <header className="topbar"><div className="topbar-left"><button className="brand" onClick={() => switchPage('home')} aria-label="Forma — till Home"><span className="brand-mark"><i /><i /><i /><i /></span>forma<span className="brand-period">.</span></button></div><div className="topbar-right"><span className="sr-only" role="status" data-sync-status={data.syncStatus}>{statusText}</span><button className="icon-button debrief-bell" aria-label="Öppna notiser" aria-describedby="notification-unread-count" disabled={data.loading} onClick={openNotifications}><Bell size={18} />{unreadCount > 0 && <span className="debrief-bell-dot" aria-hidden="true" />}</button><span id="notification-unread-count" className="sr-only" role="status">{unreadCount ? `${unreadCount} nya notiser` : 'Inga nya notiser'}</span><button className="icon-button settings-button" aria-label="Öppna inställningar" onClick={() => setEditor({ type: 'profile' })}><Settings size={19} /></button></div></header>
       {data.loading && <div className="loading-notice" role="status">Laddar Forma…</div>}
       <main className="main-content" inert={data.loading}>
         {noteReturn && <button className="button ghost note-return-link" onClick={returnToNote}>Till anteckningen</button>}
-        <div className="page-heading"><h1>{({ home: 'Home', planner: 'Planner', projects: 'Projects', others: 'Others' })[page]}</h1>{(page === 'planner' || page === 'projects') && <div className="page-actions"><button className="button primary" aria-label={page === 'planner' ? 'Ny uppgift' : 'Nytt projekt'} onClick={() => setEditor(page === 'planner' ? { type: 'task' } : { type: 'project' })}><Plus size={18} /><span>{page === 'planner' ? 'Ny uppgift' : 'Nytt projekt'}</span></button></div>}</div>
+        {!(homeScreen.active && page === 'home') && <div className="page-heading"><h1>{({ home: 'Home', planner: 'Planner', projects: 'Projects', others: 'Others' })[page]}</h1>{(page === 'planner' || page === 'projects') && <div className="page-actions"><button className="button primary" aria-label={page === 'planner' ? 'Ny uppgift' : 'Nytt projekt'} onClick={() => setEditor(page === 'planner' ? { type: 'task' } : { type: 'project' })}><Plus size={18} /><span>{page === 'planner' ? 'Ny uppgift' : 'Nytt projekt'}</span></button></div>}</div>}
         {actionError && actionError !== data.syncError && <div className="sync-banner" role="alert"><HardDrive size={18} /><p>{actionError}</p><button className="icon-button" aria-label="Stäng meddelande" onClick={() => setActionError(null)}><X size={18} /></button></div>}
         {data.syncError && <div className="sync-banner" role="status">{data.user ? <Cloud size={18} /> : <HardDrive size={18} />}<p>{data.syncError}</p>{data.syncStatus === 'conflict' ? <><button className="button secondary small" onClick={() => data.resolveConflict('remote')}>Behåll molnets</button><button className="button primary small" onClick={() => data.resolveConflict('local')}>Behåll min</button></> : <button className="button secondary small" onClick={data.retrySync}>Försök igen</button>}</div>}
-        {page === 'home' && <Home key={summaryVisit} workspace={workspace} today={today} reports={debriefs} initialId={summaryInitialId} localOnly={!data.user} onBirthdays={openBirthdays} onNutrition={() => openOthers('nutrition')} onOpenTask={openTaskFromHome} onOpenPlanner={() => switchPage('planner')} onCreateGiftTask={createGiftTask} onToggleHabit={toggleHabit} onReadNotification={id => updateNotification(id, 'read')} onDismissNotification={id => updateNotification(id, 'dismiss')} />}
+        {page === 'home' && <Home key={summaryVisit} workspace={workspace} today={today} reports={debriefs} initialId={summaryInitialId} localOnly={!data.user} homeScreen={homeScreen.active} syncStatus={data.syncStatus} onQuickAdd={quickAddTask} onOpenDebriefs={() => openDebrief(debriefs.unread[0]?.id)} onBirthdays={openBirthdays} onNutrition={() => openOthers('nutrition')} onOpenTask={openTaskFromHome} onOpenPlanner={() => switchPage('planner')} onCreateGiftTask={createGiftTask} onToggleHabit={toggleHabit} onReadNotification={id => updateNotification(id, 'read')} onDismissNotification={id => updateNotification(id, 'dismiss')} />}
         {page === 'planner' && <>
           {debriefs.error && <div className="sync-banner" role="status"><NotebookText size={18} /><p>{debriefs.error}</p><button className="button secondary small" onClick={debriefs.retry}>Försök igen</button></div>}
           {debriefs.unread[0] && <DebriefNotice debrief={debriefs.unread[0]} onRead={() => openDebrief(debriefs.unread[0].id)} onDismiss={() => debriefs.dismiss(debriefs.unread[0].id)} />}
@@ -355,7 +393,7 @@ export default function App() {
       </main>
       <nav className="bottom-nav" aria-label="Huvudnavigation">{([{ id: 'home', label: 'Home', Icon: House }, { id: 'planner', label: 'Planner', Icon: Columns3 }, { id: 'projects', label: 'Projects', Icon: Folder }, { id: 'others', label: 'Others', Icon: LayoutList }] as const).map(({ id, label, Icon }) => <button key={id} className={`nav-item ${page === id ? 'active' : ''}`} aria-label={label} aria-current={page === id ? 'page' : undefined} onClick={() => switchPage(id)}><Icon className="nav-icon" size={18} /><span className="nav-label">{label}</span>{id === 'home' && unreadCount > 0 && <span className="nav-unread" aria-hidden="true">{unreadCount > 9 ? '9+' : unreadCount}</span>}</button>)}</nav>
     </div>
-    {editor?.type === 'profile' && <Modal title="Inställningar" onClose={() => setEditor(null)} footer={<button className="button secondary" onClick={() => setEditor(null)}>Stäng</button>}><div className="settings-content"><Profile data={data} theme={theme} onTheme={setTheme} onExport={exportWorkspace} syncText={statusText} /></div></Modal>}
+    {editor?.type === 'profile' && <Modal title="Inställningar" onClose={() => setEditor(null)} footer={<button className="button secondary" onClick={() => setEditor(null)}>Stäng</button>}><div className="settings-content"><Profile data={data} theme={theme} onTheme={setTheme} onExport={exportWorkspace} syncText={statusText} homeScreen={homeScreen} /></div></Modal>}
     {editor?.type === 'birthdays' && <Birthdays birthdays={workspace.birthdays ?? []} onClose={() => setEditor(null)} onSave={saveBirthday} onReorder={reorderBirthdays} onDelete={id => persistChange(current => ({ ...current, birthdays: (current.birthdays ?? []).filter(person => person.id !== id), birthdayNotifications: (current.birthdayNotifications ?? []).filter(note => note.birthdayId !== id) }), 'Födelsedagen är borttagen. Uppgifterna finns kvar.')} />}
     {editor?.type === 'task' && <TaskEditor key={editor.task?.id ?? 'new-task'} task={editor.task} columnId={editor.columnId} workspace={workspace} onClose={closeTask} onSave={saveTask} onDelete={id => persistChange(current => ({ ...current, tasks: current.tasks.filter(task => task.id !== id) }), 'Uppgiften är borttagen', closeTask)} />}
     {editor?.type === 'project-task' && <ProjectTaskEditor key={editor.task?.id ?? 'new-project-task'} task={editor.task} focusSubtaskId={editor.focusSubtaskId} onClose={closeTask} onSave={saveProjectTask} onDelete={id => persistChange(current => {

@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from 'react'
-import { Sun, Moon, Monitor, Cloud, HardDrive, LogOut, Download, Smartphone, ArrowRight, Check, ChevronDown } from 'lucide-react'
+import { Sun, Moon, Monitor, Cloud, HardDrive, LogOut, Download, Smartphone, ArrowRight, Check, ChevronDown, Tablet } from 'lucide-react'
+import type { useHomeScreen } from '../hooks/useHomeScreen'
 import { useWorkspace } from '../hooks/useWorkspace'
 import { supabaseConfigured } from '../lib/supabase'
 
 export type ThemePreference = 'light' | 'dark' | 'system'
-export function Profile({ data, theme, onTheme, onExport, syncText }: {
+export function Profile({ data, theme, onTheme, onExport, syncText, homeScreen }: {
   data: ReturnType<typeof useWorkspace>; theme: ThemePreference; onTheme: (theme: ThemePreference) => void; onExport: () => void; syncText: string;
+  homeScreen?: ReturnType<typeof useHomeScreen>;
 }) {
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin')
   const [email, setEmail] = useState('')
@@ -42,6 +44,15 @@ export function Profile({ data, theme, onTheme, onExport, syncText }: {
     </section>
 
     <section className="profile-card"><div className="profile-section-heading"><Sun size={18} /><h2>Tema</h2></div><div className="theme-picker" aria-label="Välj tema">{([{ id: 'light', label: 'Ljust', Icon: Sun }, { id: 'dark', label: 'Mörkt', Icon: Moon }, { id: 'system', label: 'System', Icon: Monitor }] as const).map(({ id, label, Icon }) => <button key={id} className={`theme-option ${theme === id ? 'active' : ''}`} aria-pressed={theme === id} onClick={() => onTheme(id)}><Icon size={19} strokeWidth={1.5} /><span>{label}</span></button>)}</div></section>
+    {homeScreen && <section className="profile-card profile-homescreen" aria-labelledby="homescreen-title"><div className="profile-section-heading"><Tablet size={18} /><h2 id="homescreen-title">Hemskärm</h2></div>
+      <p className="profile-description">Home visar dagen på en enda skärm: klockan, Gör först, kost och tillskott att bocka av, kommande dagar och en snabbuppgift. Appen går tillbaka till Home efter tre minuter utan beröring och hämtar ändringar från dina andra enheter varje minut. Valet gäller bara den här enheten.</p>
+      <div className="segmented-control homescreen-options" role="group" aria-label="Hemskärm">{([{ id: 'auto', label: homeScreen.tablet ? 'Auto (på)' : 'Auto (av)' }, { id: 'on', label: 'På' }, { id: 'off', label: 'Av' }] as const).map(option => <button key={option.id} type="button" className={homeScreen.mode === option.id ? 'active' : ''} aria-pressed={homeScreen.mode === option.id} onClick={() => homeScreen.setMode(option.id)}>{option.label}</button>)}</div>
+      <details className="profile-tips"><summary>Tips för en dockad iPad<ChevronDown size={15} /></summary><ul>
+        <li>Lägg till Forma på hemskärmen (Dela → Lägg till på hemskärmen) så öppnas appen i helskärm utan Safaris verktygsfält.</li>
+        <li>Inställningar → Skärm och ljusstyrka → Autolås → Aldrig, så att skärmen är tänd när den står i laddaren.</li>
+        <li>Vill du låsa iPaden till Forma: Inställningar → Hjälpmedel → Guidad åtkomst, och starta den med tre tryck på hemknappen.</li>
+      </ul></details>
+    </section>}
     <section className="profile-card"><div className="profile-section-heading"><Download size={18} /><h2>Säkerhetskopia</h2></div><p className="profile-description">Ladda ned en kopia av allt ditt innehåll.</p><button className="button secondary" aria-label="Exportera säkerhetskopia" onClick={onExport}><Download size={16} />Ladda ned</button></section>
     <details className="profile-install"><summary><Smartphone size={17} /><span>Lägg till på hemskärmen</span><ChevronDown size={15} /></summary><p>Öppna appen i Safari på din iPhone. Tryck på Dela och välj Lägg till på hemskärmen.</p></details>
   </div>

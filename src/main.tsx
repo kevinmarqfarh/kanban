@@ -7,10 +7,12 @@ import './birthdays.css'
 import './debriefs.css'
 import './home.css'
 import './briefing.css'
+import './homescreen.css'
 import './others.css'
 import './notes.css'
 import './tags.css'
 import './responsive.css'
+import './compat.css'
 
 // A reload starts on Home, so a previous tab's scroll position must not carry over.
 window.history.scrollRestoration = 'manual'

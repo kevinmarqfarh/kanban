@@ -27,8 +27,9 @@ const debriefs = await module('../src/lib/debriefs.ts')
 const others = await module('../src/lib/others.ts', { './birthdays': birthdays })
 const validation = await module('../src/lib/workspaceValidation.ts', { './birthdays': birthdays, './others': others })
 const merge = await module('../src/lib/workspaceMerge.ts')
+const cloudHelpers = await module('../src/lib/cloud.ts')
 const backend = { supabase: null, supabaseConfigurationError: 'Molnet är inte anslutet.' }
-const { useWorkspace } = await module('../src/hooks/useWorkspace.ts', { react, '../lib/seed': seed, '../lib/supabase': backend, '../lib/workspaceValidation': validation, '../lib/birthdays': birthdays, '../lib/workspaceMerge': merge })
+const { useWorkspace } = await module('../src/hooks/useWorkspace.ts', { react, '../lib/seed': seed, '../lib/supabase': backend, '../lib/workspaceValidation': validation, '../lib/birthdays': birthdays, '../lib/workspaceMerge': merge, '../lib/cloud': cloudHelpers })
 const { useDebriefs } = await module('../src/hooks/useDebriefs.ts', { react, '../lib/supabase': backend, '../lib/debriefs': debriefs, '../lib/workspaceMerge': merge, '../lib/workspaceValidation': validation })
 
 const sameDeps = (a, b) => a && b && a.length === b.length && a.every((value, index) => Object.is(value, b[index]))
