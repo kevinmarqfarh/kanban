@@ -26,7 +26,7 @@ type OtherEntry = Workout | NutritionHabit | Recipe | Note
 type OtherCollection = 'workouts' | 'nutritionHabits' | 'recipes' | 'notes'
 type Editor = { type: 'task'; task?: Task; columnId?: string }
   | { type: 'project-task'; task?: ProjectTask; projectId: string; focusSubtaskId?: string }
-  | { type: 'project'; project?: Project } | { type: 'project-detail'; projectId: string }
+  | { type: 'project'; project?: Project }
   | { type: 'column'; column?: Column } | { type: 'birthdays' } | { type: 'profile' } | null
 
 function ColumnEditor({ column, count, columns, onSave, onDelete, onClose }: {
@@ -70,6 +70,8 @@ export default function App() {
   const [summaryInitialId, setSummaryInitialId] = useState<string | undefined>()
   const [summaryVisit, setSummaryVisit] = useState(0)
   const [editor, setEditor] = useState<Editor>(null)
+  // An open project is a page of its own (with Back), not a dialog, so task editors can sit on top of it.
+  const [openProjectId, setOpenProjectId] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [toast, setToast] = useState('')
   const [actionError, setActionError] = useState<string | null>(null)
@@ -93,7 +95,7 @@ export default function App() {
     return () => media.removeEventListener('change', apply)
   }, [theme])
   useEffect(() => { if (!toast) return; const timer = setTimeout(() => setToast(''), 3500); return () => clearTimeout(timer) }, [toast])
-  useEffect(() => { setEditor(null); setQuery(''); setSummaryInitialId(undefined); setSummaryVisit(value => value + 1); setOthersSection(null); setOthersVisit(value => value + 1); setNoteTarget(null); setNoteReturn(null); setInitialNoteId(undefined); setPage('home'); setActionError(null) }, [data.user?.id])
+  useEffect(() => { setEditor(null); setQuery(''); setSummaryInitialId(undefined); setSummaryVisit(value => value + 1); setOthersSection(null); setOthersVisit(value => value + 1); setNoteTarget(null); setNoteReturn(null); setInitialNoteId(undefined); setPage('home'); setOpenProjectId(null); setActionError(null) }, [data.user?.id])
   const done = workspace.tasks.filter(task => isTaskDone(task, workspace)).length
   useEffect(() => {
     if (data.loading || workspace.columns.some(column => column.id === 'finalized')) return
@@ -102,7 +104,7 @@ export default function App() {
   const ongoing = workspace.tasks.filter(task => task.columnId === 'doing').length
   const active = workspace.tasks.length - done
   const visibleTasks = workspace.tasks.filter(task => (!query.trim() || `${task.title} ${task.description} ${task.labels.join(' ')}`.toLocaleLowerCase('sv').includes(query.trim().toLocaleLowerCase('sv'))))
-  const project = editor?.type === 'project-detail' ? workspace.projects.find(project => project.id === editor.projectId) : undefined
+  const project = page === 'projects' && openProjectId ? workspace.projects.find(project => project.id === openProjectId) : undefined
   const birthdayUnread = unreadBirthdayNotifications(workspace)
   const unreadCount = birthdayUnread.length + debriefs.unread.length
   const statusText = { local: 'Sparas på enheten', synced: 'Allt är synkat', syncing: 'Synkar…', offline: 'Offline · sparat lokalt', error: 'Sparandet behöver hjälp', conflict: 'Välj version' }[data.syncStatus]
@@ -134,8 +136,26 @@ export default function App() {
     }, HOME_SCREEN_REFRESH_MS)
     return () => window.clearInterval(timer)
   }, [homeScreen.active, data.user])
+  function openProject(id: string) {
+    setOpenProjectId(id)
+    // Browser Back and Safari's swipe-back return to the project list.
+    try { if (window.history.state?.formaProject !== id) window.history.pushState({ ...(window.history.state ?? {}), formaProject: id }, '') } catch { /* Navigation still works with the Back button. */ }
+  }
+  function closeProject() {
+    const id = openProjectId
+    setOpenProjectId(null)
+    try { if (window.history.state?.formaProject) window.history.back() } catch { /* Already closed above. */ }
+    window.setTimeout(() => document.querySelector<HTMLElement>(`.project-card[data-project-id="${id}"]`)?.focus({ preventScroll: false }), 0)
+  }
+  useEffect(() => {
+    const popped = (event: PopStateEvent) => { if (!event.state?.formaProject) setOpenProjectId(null); else setOpenProjectId(event.state.formaProject) }
+    window.addEventListener('popstate', popped)
+    return () => window.removeEventListener('popstate', popped)
+  }, [])
+  // A project deleted on another device or tab closes its page instead of leaving it blank.
+  useEffect(() => { if (openProjectId && !data.loading && !workspace.projects.some(item => item.id === openProjectId)) setOpenProjectId(null) }, [openProjectId, workspace.projects, data.loading])
   function switchPage(next: Page) {
-    setPage(next); setEditor(null); setNoteTarget(null); setNoteReturn(null); setInitialNoteId(undefined)
+    setPage(next); setEditor(null); setOpenProjectId(null); setNoteTarget(null); setNoteReturn(null); setInitialNoteId(undefined)
     if (next === 'others') { setOthersSection(null); setOthersVisit(value => value + 1) }
     if (next === 'home') { setSummaryInitialId(undefined); setSummaryVisit(value => value + 1) }
     window.scrollTo({ top: 0, behavior: 'instant' })
@@ -180,7 +200,7 @@ export default function App() {
     })
   }
   function closeTask() {
-    if (editor?.type === 'project-task') setEditor({ type: 'project-detail', projectId: editor.projectId })
+    if (editor?.type === 'project-task') setEditor(null)
     else setEditor(null)
   }
   function persistChange(update: (current: Workspace) => Workspace, message?: string, after?: () => void, onApplied?: (next: Workspace) => void): string | null {
@@ -302,7 +322,7 @@ export default function App() {
         ...current,
         projects: latest ? current.projects.map(existing => existing.id === project.id ? nextProject : existing) : [...current.projects, nextProject],
       }
-    }, 'Projektet är sparat', () => setEditor({ type: 'project-detail', projectId: project.id }), next => {
+    }, 'Projektet är sparat', () => { setEditor(null); openProject(project.id) }, next => {
       if (!original) creationSnapshots.current.projects.set(project.id, structuredClone(next.projects.find(existing => existing.id === project.id)!))
       if (!originalTask && initialTask) creationSnapshots.current.initialTasks.set(project.id, structuredClone(next.projects.find(existing => existing.id === project.id)!.tasks!.find(task => task.id === initialTask.id)!))
       if (!initialTask) creationSnapshots.current.initialTasks.delete(project.id)
@@ -350,7 +370,7 @@ export default function App() {
       : workspace.birthdays?.find(item => item.id === id)
     if (!record) return 'Innehållet har tagits bort. Länktexten finns kvar i anteckningen.'
     if (kind === 'task') { setPage('planner'); setEditor({ type: 'task', task: record as Task }) }
-    else if (kind === 'project') { setPage('projects'); setEditor({ type: 'project-detail', projectId: id }) }
+    else if (kind === 'project') { setPage('projects'); setEditor(null); openProject(id) }
     else if (kind === 'birthday') setEditor({ type: 'birthdays' })
     else {
       openOthers(kind === 'workout' ? 'workouts' : kind === 'recipe' ? 'recipes' : 'nutrition')
@@ -376,7 +396,7 @@ export default function App() {
       {data.loading && <div className="loading-notice" role="status">Laddar Forma…</div>}
       <main className="main-content" inert={data.loading}>
         {noteReturn && <button className="button ghost note-return-link" onClick={returnToNote}>Till anteckningen</button>}
-        {!(homeScreen.active && page === 'home') && <div className="page-heading"><h1>{({ home: 'Home', planner: 'Planner', projects: 'Projects', others: 'Others' })[page]}</h1>{(page === 'planner' || page === 'projects') && <div className="page-actions"><button className="button primary" aria-label={page === 'planner' ? 'Ny uppgift' : 'Nytt projekt'} onClick={() => setEditor(page === 'planner' ? { type: 'task' } : { type: 'project' })}><Plus size={18} /><span>{page === 'planner' ? 'Ny uppgift' : 'Nytt projekt'}</span></button></div>}</div>}
+        {!(homeScreen.active && page === 'home') && !project && <div className="page-heading"><h1>{({ home: 'Home', planner: 'Planner', projects: 'Projects', others: 'Others' })[page]}</h1>{(page === 'planner' || page === 'projects') && <div className="page-actions"><button className="button primary" aria-label={page === 'planner' ? 'Ny uppgift' : 'Nytt projekt'} onClick={() => setEditor(page === 'planner' ? { type: 'task' } : { type: 'project' })}><Plus size={18} /><span>{page === 'planner' ? 'Ny uppgift' : 'Nytt projekt'}</span></button></div>}</div>}
         {actionError && actionError !== data.syncError && <div className="sync-banner" role="alert"><HardDrive size={18} /><p>{actionError}</p><button className="icon-button" aria-label="Stäng meddelande" onClick={() => setActionError(null)}><X size={18} /></button></div>}
         {data.syncError && <div className="sync-banner" role="status">{data.user ? <Cloud size={18} /> : <HardDrive size={18} />}<p>{data.syncError}</p>{data.syncStatus === 'conflict' ? <><button className="button secondary small" onClick={() => data.resolveConflict('remote')}>Behåll molnets</button><button className="button primary small" onClick={() => data.resolveConflict('local')}>Behåll min</button></> : <button className="button secondary small" onClick={data.retrySync}>Försök igen</button>}</div>}
         {page === 'home' && <Home key={summaryVisit} workspace={workspace} today={today} reports={debriefs} initialId={summaryInitialId} localOnly={!data.user} homeScreen={homeScreen.active} syncStatus={data.syncStatus} onQuickAdd={quickAddTask} onOpenDebriefs={() => openDebrief(debriefs.unread[0]?.id)} onBirthdays={openBirthdays} onNutrition={() => openOthers('nutrition')} onOpenTask={openTaskFromHome} onOpenPlanner={() => switchPage('planner')} onCreateGiftTask={createGiftTask} onToggleHabit={toggleHabit} onReadNotification={id => updateNotification(id, 'read')} onDismissNotification={id => updateNotification(id, 'dismiss')} />}
@@ -388,7 +408,12 @@ export default function App() {
           {query && <p className="filter-caption">{visibleTasks.length} uppgifter visas<button className="button ghost small" onClick={() => { setQuery('') }}>Rensa filter<X size={13} /></button></p>}
           <Board workspace={workspace} tasks={visibleTasks} onOpen={task => setEditor({ type: 'task', task })} onAdd={columnId => setEditor({ type: 'task', columnId })} onAddColumn={() => setEditor({ type: 'column' })} onEditColumn={column => setEditor({ type: 'column', column })} onMove={moveTask} onToggleHide={columnId => persistChange(current => ({ ...current, columns: current.columns.map(column => column.id === columnId ? { ...column, collapsed: !column.collapsed } : column) }))} />
         </>}
-        {page === 'projects' && <Projects workspace={workspace} onOpen={project => setEditor({ type: 'project-detail', projectId: project.id })} onAdd={() => setEditor({ type: 'project' })} />}
+        {page === 'projects' && (project ? null : <Projects workspace={workspace} onOpen={project => openProject(project.id)} onAdd={() => setEditor({ type: 'project' })} />)}
+        {project && <ProjectDetail project={project} workspace={workspace} onClose={closeProject} onEdit={() => setEditor({ type: 'project', project })} onAddTask={() => setEditor({ type: 'project-task', projectId: project.id })} onOpenTask={(task, focusSubtaskId) => setEditor({ type: 'project-task', task, projectId: project.id, focusSubtaskId })} onToggleSubtask={(taskId, itemId) => persistChange(current => {
+      const task = current.projects.find(existing => existing.id === project.id)?.tasks?.find(task => task.id === taskId)
+      if (!task?.checklist.some(item => item.id === itemId)) throw new Error('Deluppgiften har tagits bort i en annan flik.')
+      return { ...current, projects: current.projects.map(existing => existing.id === project.id ? { ...existing, tasks: existing.tasks?.map(task => task.id === taskId ? { ...task, checklist: task.checklist.map(item => item.id === itemId ? { ...item, completed: !item.completed } : item) } : task) } : existing) }
+    })} onDelete={() => persistChange(current => ({ ...current, projects: current.projects.filter(existing => existing.id !== project.id) }), 'Projektet är borttaget.', () => { setEditor(null); closeProject() })} />}
         {page === 'others' && <Others key={othersVisit} workspace={workspace} initialSection={othersSection} initialRecord={noteTarget} initialNoteId={initialNoteId} onBirthdays={openBirthdays} onSaveWorkout={(entry, base) => saveOther('workouts', entry, base)} onDeleteWorkout={id => deleteOther('workouts', id)} onRestoreWorkout={entry => persistChange(current => ({ ...current, workouts: [...(current.workouts ?? []).filter(item => item.id !== entry.id), entry] }), 'Passet är återställt')} onSaveHabit={(entry, base) => saveOther('nutritionHabits', entry, base)} onToggleHabit={toggleHabit} onDeleteHabit={id => deleteOther('nutritionHabits', id)} onSaveRecipe={(entry, base) => saveOther('recipes', entry, base)} onDeleteRecipe={id => deleteOther('recipes', id)} onSaveNote={(entry, base) => saveOther('notes', entry, base, true)} onDeleteNote={id => persistChange(current => { const stamp = new Date().toISOString(); return { ...current, notes: (current.notes ?? []).map(note => note.id === id ? { ...note, deletedAt: stamp } : note) } })} onPurgeNote={id => persistChange(current => ({ ...current, notes: (current.notes ?? []).filter(note => note.id !== id) }), 'Anteckningen är raderad')} onEmptyNoteTrash={() => persistChange(current => ({ ...current, notes: (current.notes ?? []).filter(note => !note.deletedAt) }), 'Papperskorgen är tömd')} onRestoreNote={note => persistChange(current => { const existing = current.notes?.find(entry => entry.id === note.id); const { deletedAt: _deleted, ...restored } = existing ?? note; return { ...current, notes: existing ? current.notes!.map(entry => entry.id === note.id ? { ...restored, deletedAt: null } : entry) : [...(current.notes ?? []), { ...restored, deletedAt: null }] } }, 'Anteckningen är återställd')} onOpenNoteLink={openNoteLink} />}
       </main>
       <nav className="bottom-nav" aria-label="Huvudnavigation">{([{ id: 'home', label: 'Home', Icon: House }, { id: 'planner', label: 'Planner', Icon: Columns3 }, { id: 'projects', label: 'Projects', Icon: Folder }, { id: 'others', label: 'Others', Icon: LayoutList }] as const).map(({ id, label, Icon }) => <button key={id} className={`nav-item ${page === id ? 'active' : ''}`} aria-label={label} aria-current={page === id ? 'page' : undefined} onClick={() => switchPage(id)}><Icon className="nav-icon" size={18} /><span className="nav-label">{label}</span>{id === 'home' && unreadCount > 0 && <span className="nav-unread" aria-hidden="true">{unreadCount > 9 ? '9+' : unreadCount}</span>}</button>)}</nav>
@@ -408,11 +433,6 @@ export default function App() {
       return { ...current, columns: current.columns.filter(column => column.id !== removed), tasks: cards.length ? current.tasks.map(task => task.columnId === removed ? { ...task, columnId: moveTo! } : task) : current.tasks }
     }, moveTo ? `Kolumnen är borttagen. Korten flyttades till ${workspace.columns.find(column => column.id === moveTo)?.title}.` : 'Kolumnen är borttagen', () => setEditor(null)) : undefined} onSave={saveColumn} />}
     {editor?.type === 'project' && <ProjectEditor project={editor.project} onClose={() => setEditor(null)} onSave={saveProject} />}
-    {project && <ProjectDetail project={project} workspace={workspace} onClose={() => setEditor(null)} onEdit={() => setEditor({ type: 'project', project })} onAddTask={() => setEditor({ type: 'project-task', projectId: project.id })} onOpenTask={(task, focusSubtaskId) => setEditor({ type: 'project-task', task, projectId: project.id, focusSubtaskId })} onToggleSubtask={(taskId, itemId) => persistChange(current => {
-      const task = current.projects.find(existing => existing.id === project.id)?.tasks?.find(task => task.id === taskId)
-      if (!task?.checklist.some(item => item.id === itemId)) throw new Error('Deluppgiften har tagits bort i en annan flik.')
-      return { ...current, projects: current.projects.map(existing => existing.id === project.id ? { ...existing, tasks: existing.tasks?.map(task => task.id === taskId ? { ...task, checklist: task.checklist.map(item => item.id === itemId ? { ...item, completed: !item.completed } : item) } : task) } : existing) }
-    })} onDelete={() => persistChange(current => ({ ...current, projects: current.projects.filter(existing => existing.id !== project.id) }), 'Projektet är borttaget.', () => { setEditor(null) })} /> }
     {toast && <div className="toast" role="status"><Check size={16} />{toast}</div>}
   </>
 }

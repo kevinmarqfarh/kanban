@@ -307,9 +307,10 @@ const noSuccessToast = async page => assert.doesNotMatch((await page.locator('.t
         assert.equal(tasks[0].title, 'En enda huvuduppgift');
         assert.deepEqual(tasks[0].checklist.map(item => item.title), ['Ett delsteg', 'Ett annat delsteg']);
         await page.getByRole('button', { name: 'Öppna projekt Projekt att sparas en gång', exact: true }).click();
-        await dialog(page).getByText('En enda huvuduppgift', { exact: true }).waitFor();
-        await dialog(page).getByLabel('Ett delsteg', { exact: true }).waitFor();
-        await dialog(page).getByLabel('Ett annat delsteg', { exact: true }).waitFor();
+        const projectPage = page.getByTestId('project-page');
+        await projectPage.getByText('En enda huvuduppgift', { exact: true }).waitFor();
+        await projectPage.getByLabel('Ett delsteg', { exact: true }).waitFor();
+        await projectPage.getByLabel('Ett annat delsteg', { exact: true }).waitFor();
       } finally { await context.close(); }
     });
   }

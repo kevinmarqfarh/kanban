@@ -1,5 +1,5 @@
-import { useRef, useState, type FormEvent } from 'react'
-import { ArrowUpRight, Plus, CalendarDays, Check, Pencil, Trash2, type LucideIcon,
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { ArrowLeft, ArrowUpRight, Plus, CalendarDays, Check, Pencil, Trash2, type LucideIcon,
   Folder, Leaf, Home, Compass, Sparkles, Target, Flag, Star, Lightbulb, Calendar, PiggyBank,
   Users, Baby, PawPrint, Hammer, Wrench, Sprout, ShoppingBag, Gift,
   HeartPulse, Dumbbell, Bike, Utensils, Coffee,
@@ -30,7 +30,7 @@ export function ProjectIcon({ name, size = 22 }: { name: string; size?: number }
 export function Projects({ workspace, onOpen, onAdd }: { workspace: Workspace; onOpen: (project: Project) => void; onAdd: () => void }) {
   return <div className="project-grid">{workspace.projects.map(project => {
     const { tasks, complete, percent } = projectProgress(project.id, workspace)
-    return <button className="project-card" key={project.id} onClick={() => onOpen(project)} aria-label={`Öppna projekt ${project.title}`}>
+    return <button className="project-card" key={project.id} data-project-id={project.id} onClick={() => onOpen(project)} aria-label={`Öppna projekt ${project.title}`}>
       <div className="project-card-top"><span className="project-icon"><ProjectIcon name={project.icon} /></span><ArrowUpRight size={18} /></div>
       <h2>{project.title}</h2>{project.description && <p className="project-description">{project.description}</p>}
       <div className="project-progress"><div className="progress-caption"><span>{complete}/{tasks.length} klara</span><span>{percent}%</span></div><div className="progress-track"><span style={{ width: `${percent}%` }} /></div></div>
@@ -70,11 +70,33 @@ export function ProjectDetail({ project, workspace, onClose, onEdit, onDelete, o
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const headingRef = useRef<HTMLHeadingElement>(null)
   const { tasks, complete, percent } = projectProgress(project.id, workspace)
-  return <Modal wide title={project.title} error={saveError} onClose={onClose} footer={<><button className="icon-button danger" aria-label="Ta bort projekt" onClick={() => setConfirmDelete(true)}><Trash2 size={18} /></button><button className="button secondary" onClick={onEdit}><Pencil size={15} /> Redigera projekt</button><button className="button primary" onClick={onAddTask}><Plus size={17} /> Huvuduppgift</button></>}>
+  const subtasks = tasks.reduce((sum, task) => sum + task.checklist.length, 0)
+  const subtasksDone = tasks.reduce((sum, task) => sum + task.checklist.filter(item => item.completed).length, 0)
+  // A full page, not a quick look: move focus and scroll to its top when it opens.
+  useEffect(() => { headingRef.current?.focus({ preventScroll: true }); window.scrollTo({ top: 0, behavior: 'instant' }) }, [project.id])
+  return <article className="project-page" data-testid="project-page" data-project-id={project.id} aria-labelledby="project-page-title">
+    <div className="project-page-top">
+      <button className="button ghost project-back" type="button" onClick={onClose}><ArrowLeft size={16} />Alla projekt</button>
+      <div className="project-page-actions">
+        <button className="icon-button danger" type="button" aria-label="Ta bort projekt" onClick={() => setConfirmDelete(true)}><Trash2 size={18} /></button>
+        <button className="button secondary" type="button" aria-label="Redigera projekt" onClick={onEdit}><Pencil size={15} /><span>Redigera projekt</span></button>
+        <button className="button primary" type="button" aria-label="Ny huvuduppgift" onClick={onAddTask}><Plus size={17} /><span>Huvuduppgift</span></button>
+      </div>
+    </div>
+    <header className="project-page-header">
+      <span className="project-icon project-page-icon"><ProjectIcon name={project.icon} size={28} /></span>
+      <div className="project-page-heading">
+        <h1 id="project-page-title" ref={headingRef} tabIndex={-1}>{project.title}</h1>
+        <p>{project.description || 'Samla projektets huvuduppgifter och deluppgifter här.'}</p>
+      </div>
+    </header>
+    {saveError && <p className="form-message error" role="alert">{saveError}</p>}
+    {confirmDelete && <div className="form-message delete-confirm" role="group" aria-label="Ta bort projektet"><p>Ta bort projektet och dess uppgifter?</p><button className="button secondary" type="button" onClick={() => setConfirmDelete(false)}>Behåll</button><button className="button primary danger" type="button" onClick={() => { const failure = onDelete(); if (failure) setSaveError(failure) }}>Ta bort projekt</button></div>}
     <div className="project-detail-layout">
-      <aside className="project-overview">
-        <div className="project-detail-intro"><span className="project-icon"><ProjectIcon name={project.icon} size={26} /></span><p>{project.description || 'Samla projektets huvuduppgifter och deluppgifter här.'}</p></div>
+      <aside className="project-overview" aria-label="Översikt">
+        <div className="project-detail-intro"><p>{tasks.length ? `${tasks.length} ${tasks.length === 1 ? 'huvuduppgift' : 'huvuduppgifter'}${subtasks ? ` · ${subtasksDone}/${subtasks} deluppgifter klara` : ''}` : 'Inga uppgifter ännu'}</p></div>
         {project.deadline && <span className="task-meta-item"><CalendarDays size={15} />Deadline {dateLabel(project.deadline)}</span>}
         <div className="project-progress"><div className="progress-caption"><span>{complete}/{tasks.length} klara</span><span>{percent}%</span></div><div className="progress-track"><span style={{ width: `${percent}%` }} /></div></div>
       </aside>
@@ -88,8 +110,7 @@ export function ProjectDetail({ project, workspace, onClose, onEdit, onDelete, o
         {tasks.length === 0 && <div className="empty-state"><Folder size={26} strokeWidth={1.2} /><h3>Inga uppgifter ännu.</h3><button className="button secondary" onClick={onAddTask}><Plus size={16} />Lägg till huvuduppgift</button></div>}
       </section>
     </div>
-    {confirmDelete && <div className="form-message delete-confirm"><p>Ta bort projektet och dess uppgifter?</p><button className="button secondary" onClick={() => setConfirmDelete(false)}>Behåll</button><button className="button primary danger" onClick={() => { const failure = onDelete(); if (failure) setSaveError(failure) }}>Ta bort projekt</button></div>}
-  </Modal>
+  </article>
 }
 
 export function ProjectTaskEditor({ task, focusSubtaskId, onSave, onDelete, onClose }: {

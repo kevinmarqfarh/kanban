@@ -39,7 +39,7 @@ async function run(browser, viewport, label) {
   await page.getByRole('button', { name: 'Skapa projekt', exact: true }).click();
   const saved = (await cache(page)).projects.find(project => project.title === title);
   assert.equal(saved.icon, 'rocket', `${label}: chosen icon is persisted.`);
-  assert.equal(await page.locator('.project-detail-intro .project-icon svg.lucide-rocket').count(), 1, `${label}: detail view renders the chosen icon.`);
+  assert.equal(await page.locator('[data-testid="project-page"] .project-page-icon svg.lucide-rocket').count(), 1, `${label}: the project page renders the chosen icon.`);
 
   await page.reload();
   assert.equal((await cache(page)).projects.find(project => project.title === title).icon, 'rocket', `${label}: icon survives reload.`);

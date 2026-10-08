@@ -82,8 +82,13 @@ const insert = async (page, title) => {
       for (const [title, modalTitle] of [['Planera läshörnan','Uppgift'],['Mitt hem','Mitt hem'],['Styrkepass','Redigera pass'],['Min frukost','Min frukost']]) {
         await insert(page, title); const anchor = text(page).locator('a').filter({ hasText: title });
         assert.equal(await anchor.getAttribute('contenteditable'), 'false'); await anchor.click();
-        await page.getByRole('dialog').getByRole('heading', { name: modalTitle, exact: true }).waitFor();
-        await page.getByRole('dialog').getByRole('button', { name: 'Stäng', exact: true }).first().click();
+        if (title === 'Mitt hem') {
+          // Projects open as a full page; the note link stays available above it.
+          await page.getByTestId('project-page').getByRole('heading', { level: 1, name: modalTitle, exact: true }).waitFor();
+        } else {
+          await page.getByRole('dialog').getByRole('heading', { name: modalTitle, exact: true }).waitFor();
+          await page.getByRole('dialog').getByRole('button', { name: 'Stäng', exact: true }).first().click();
+        }
         await page.getByRole('button', { name: 'Till anteckningen', exact: true }).click();
         assert.equal(await page.getByLabel('Anteckningens titel').inputValue(), 'Länkar');
       }

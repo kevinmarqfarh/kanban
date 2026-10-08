@@ -11,7 +11,7 @@
     "test": "node tests/data-integrity.mjs && node tests/birthdays.mjs && node tests/debriefs.mjs && node tests/persistence.mjs && node tests/others.mjs && node tests/project-icons.mjs && node tests/tags-and-tracking.mjs && node tests/briefing.mjs && node tests/cloud.mjs",
     "test:ipad": "node tests/homescreen-acceptance.cjs && node tests/legacy-safari-login.cjs && BROWSER_ENGINE=chromium node tests/homescreen-acceptance.cjs",
     "test:briefing": "node tests/briefing-acceptance.cjs && BROWSER_ENGINE=webkit node tests/briefing-acceptance.cjs",
-    "test:projects": "node tests/projects-editing.cjs && node tests/project-icons-acceptance.cjs",
+    "test:projects": "node tests/projects-editing.cjs && node tests/project-icons-acceptance.cjs && node tests/project-page-acceptance.cjs && BROWSER_ENGINE=chromium node tests/project-page-acceptance.cjs",
     "test:e2e": "node tests/acceptance.cjs",
     "test:offline": "node tests/offline-acceptance.cjs",
     "test:birthdays": "node tests/birthday-acceptance.cjs",

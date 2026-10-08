@@ -155,33 +155,39 @@ const title = 'QA – planera nästa helg';
     await dialog(page).getByLabel('Huvuduppgift', { exact: true }).fill('Planera projektets första steg');
     await dialog(page).getByLabel('Deluppgifter').fill('Skriv ner målet\nVälj en deadline');
     await dialog(page).getByRole('button', { name: 'Skapa projekt', exact: true }).click();
-    await dialog(page).getByText('Planera projektets första steg', { exact: true }).waitFor();
-    await dialog(page).getByLabel('Skriv ner målet', { exact: true }).check();
-    await dialog(page).getByRole('button', { name: 'Stäng', exact: true }).click();
+    // A new project opens directly as its own page, not a dialog.
+    const projectPage = page.getByTestId('project-page');
+    await projectPage.getByText('Planera projektets första steg', { exact: true }).waitFor();
+    assert.equal(await page.getByRole('dialog').count(), 0);
+    assert.equal(await projectPage.getByRole('heading', { level: 1 }).textContent(), 'QA – ett eget projekt');
+    await projectPage.getByLabel('Skriv ner målet', { exact: true }).check();
+    await projectPage.getByRole('button', { name: 'Alla projekt', exact: true }).click();
     await page.reload();
     await nav(page, 'Projects');
     await page.getByRole('button', { name: 'Öppna projekt QA – ett eget projekt', exact: true }).click();
-    assert.equal(await dialog(page).getByLabel('Skriv ner målet', { exact: true }).isChecked(), true);
-    await dialog(page).getByRole('button', { name: 'Stäng', exact: true }).click();
+    assert.equal(await projectPage.getByLabel('Skriv ner målet', { exact: true }).isChecked(), true);
+    await projectPage.getByRole('button', { name: 'Alla projekt', exact: true }).click();
   });
 
   await check('Projects have independent tasks, status and deletion', async () => {
     const before = structuredClone((await cache(page)).tasks);
     await page.getByRole('button', { name: 'Öppna projekt QA – ett eget projekt', exact: true }).click();
-    await dialog(page).getByRole('button', { name: /Planera projektets första steg/ }).click();
+    await page.getByTestId('project-page').getByRole('button', { name: /Planera projektets första steg/ }).click();
     await dialog(page).getByLabel('Titel', { exact: true }).fill('Projektets eget steg');
     await dialog(page).getByLabel(/^Status/).selectOption('done');
     await dialog(page).getByRole('button', { name: 'Spara uppgift', exact: true }).click();
     assert.deepEqual((await cache(page)).tasks, before);
     assert.equal((await cache(page)).projects.find(project => project.title === 'QA – ett eget projekt').tasks[0].completed, true);
-    await dialog(page).getByRole('button', { name: 'Stäng', exact: true }).click();
+    // Saving a task returns to the project page underneath.
+    await page.getByTestId('project-page').getByText('Projektets eget steg', { exact: true }).waitFor();
     await nav(page, 'Planner');
     assert.equal(await page.getByRole('button', { name: 'Öppna Projektets eget steg', exact: true }).count(), 0);
     await nav(page, 'Projects');
     await page.getByRole('button', { name: 'Öppna projekt QA – ett eget projekt', exact: true }).click();
-    await dialog(page).getByRole('button', { name: 'Ta bort projekt', exact: true }).click();
-    await dialog(page).locator('.delete-confirm').getByRole('button', { name: 'Ta bort projekt', exact: true }).click();
+    await page.getByTestId('project-page').getByRole('button', { name: 'Ta bort projekt', exact: true }).click();
+    await page.getByTestId('project-page').locator('.delete-confirm').getByRole('button', { name: 'Ta bort projekt', exact: true }).click();
     assert.deepEqual((await cache(page)).tasks, before);
+    await page.locator('.new-project-card').waitFor();
     await nav(page, 'Planner');
   });
 

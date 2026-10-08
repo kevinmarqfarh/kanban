@@ -20,7 +20,10 @@ const cache = page => page.evaluate(() => JSON.parse(localStorage.getItem('forma
     await page.getByLabel('Deluppgifter', { exact: true }).fill('Skriv ner målet\nVälj en deadline');
     await page.getByRole('button', { name: 'Skapa projekt', exact: true }).click();
     const before = structuredClone((await cache(page)).tasks);
-    const box = await page.getByRole('dialog').boundingBox();
+    // The project opens as a full page (no dialog) using the content width.
+    await page.getByTestId('project-page').waitFor();
+    assert.equal(await page.getByRole('dialog').count(), 0, 'A project is a page, not a dialog.');
+    const box = await page.getByTestId('project-page').boundingBox();
     assert.ok(box.width >= 1000 && box.width <= 1432, `Desktop project width: ${box.width}`);
     const overview = await page.locator('.project-overview').boundingBox();
     const work = await page.locator('.project-work').boundingBox();
@@ -58,9 +61,9 @@ const cache = page => page.evaluate(() => JSON.parse(localStorage.getItem('forma
     await page.getByRole('button', { name: 'Avbryt', exact: true }).click();
     for (const width of [834, 440, 320]) {
       await page.setViewportSize({ width, height: 900 });
-      const bounds = await page.getByRole('dialog').boundingBox();
+      const bounds = await page.getByTestId('project-page').boundingBox();
       assert.ok(bounds.width <= width && bounds.x >= 0);
-      assert.ok(await page.getByRole('dialog').evaluate(el => el.scrollWidth <= el.clientWidth + 1));
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `No sideways scroll at ${width}px`);
       await page.screenshot({ path: path.join(out, `project-${width}.png`), animations: 'disabled' });
       await page.getByRole('button', { name: 'Redigera deluppgift Boka en tid', exact: true }).click();
       assert.ok(await page.getByRole('dialog').evaluate(el => el.scrollWidth <= el.clientWidth + 1));
@@ -73,6 +76,6 @@ const cache = page => page.evaluate(() => JSON.parse(localStorage.getItem('forma
       await page.getByRole('button', { name: 'Spara uppgift', exact: true }).click();
     }
     assert.deepEqual(errors, []);
-    console.log('PASS Project editing: rename main/subtasks, focused entry, add/remove, cancel, validation, reload, independent Kanban and 1512/834/440/320 px layouts.');
+    console.log('PASS Project editing: full-page project, rename main/subtasks, focused entry, add/remove, cancel, validation, reload, independent Kanban and 1512/834/440/320 px layouts.');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
