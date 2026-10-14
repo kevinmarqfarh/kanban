@@ -35,6 +35,27 @@ Liggande visas tre kolumner. Stående visas Idag överst och de två andra korte
 
 Koden finns i `src/components/HomeScreen.tsx`, `src/hooks/useHomeScreen.ts`, `src/hooks/useNow.ts` och `src/homescreen.css`. Återgången till Home och minuthämtningen ligger i `src/App.tsx`.
 
+## Veckoväder
+
+Hemskärmen visar vädret för måndag–söndag i en remsa överst. Varje dag har dagens namn (”Idag” för i dag), en färgad ikon i stil med Apples Väder-app, högsta och lägsta temperatur och regnrisk i blått när det är blött väder och risken är minst 30 %. Tidigare dagar i veckan visas tonade. Ikonerna är egna SVG-ikoner: sol, mest sol, sol och moln, mulet, dimma, duggregn, regn, regnskurar (sol, moln och regn), snöblandat, snö och åska. Färgerna anpassas till ljust och mörkt tema.
+
+- **Källa:** [Open-Meteo](https://open-meteo.com/) (gratis, ingen nyckel, CC BY 4.0, källan anges under remsan). Ett anrop hämtar hela veckan med `start_date` = måndag och `end_date` = söndag i tidszonen Europe/Stockholm.
+- **Ort:** Göteborg som standard. Under Inställningar → Hemskärm söker du en annan ort, till exempel Angered. Valet sparas per enhet i `forma-weather-place`, och hemskärmen byter direkt.
+- **Uppdatering:** vädret hämtas när hemskärmen öppnas, var 30:e minut medan den syns, när iPaden blir synlig igen och när nätet kommer tillbaka. Veckan sparas i `forma-weather-cache`. Utan nät visas den sparade veckan med ”Sparat hh:mm · offline”. Utan sparad vecka visas ”Vädret kunde inte hämtas” med *Försök igen*. Samtidiga anrop slås ihop till ett.
+- **Layout:** remsan går över hela bredden i båda orienteringarna. För att allt ska få plats utan scroll är klockan mindre, dagens råd gömt (det finns i briefingen) och tillskottsraderna tätare. Gör först, snabbuppgiften och navigeringen syns alltid helt.
+
+Koden finns i `src/lib/weather.ts` (tolkning, väderkoder, cache), `src/hooks/useWeather.ts`, `src/components/WeatherWeek.tsx`, `src/components/WeatherIcon.tsx` och `src/components/WeatherPlacePicker.tsx`.
+
+## Morgon och kväll för kosttillskott
+
+Varje kostvana har valet **När: Morgon, Kväll eller Hela dagen**, som sätts när du skapar eller redigerar den. Nya vanor börjar på Morgon. Vanor som sparats tidigare räknas som Hela dagen (fältet `time` saknas eller är `null`).
+
+- **Kost (Others):** vanorna grupperas under Morgon, Kväll och Hela dagen, med antal klara per grupp för vald dag.
+- **Dagens kost (Home och hemskärmen):** en växel *Morgon | Kväll* visar dagsdelens tillskott plus Hela dagen-vanorna, med hur många som är klara i varje del. Växeln följer klockan: morgon kl 05–14, annars kväll. Trycker du på den andra delen gäller ditt val tills klockan går över till nästa dagsdel. Växeln visas bara när minst en vana är kopplad till morgon eller kväll.
+- **Veckoöversikten** räknar fortfarande alla vanor. En dag är grön först när både morgon och kväll är klara.
+
+Koden finns i `src/lib/nutritionTime.ts`, `src/hooks/useNutritionTime.ts` och `src/components/NutritionTimeToggle.tsx`.
+
 ## Äldre iPads (iPadOS 15)
 
 iPad mini 4, iPad Air 2 och iPad (5:e generationen) kan inte uppdateras förbi **iPadOS 15.8**, som har Safari 15.6. Forma kräver Safari 15.4 eller senare.
@@ -78,6 +99,14 @@ iPad mini 4, iPad Air 2 och iPad (5:e generationen) kan inte uppdateras förbi *
   - Inställningarna Auto, På och Av.
   - Hämtning varje minut, med kontroll att telefonens ändring aldrig skrivs över.
   - Mörkt tema och tvingad Safari 15-rendering.
+
+- `tests/weather-and-nutrition-time.mjs` (ingår i `npm test`): väderkoder, måndag–söndag även över årsskifte, tolkning av ofullständiga svar, regnrisk, cache och ortsökning, samt morgon/kväll-gränserna, gruppering och framsteg.
+- `tests/weather-nutrition-acceptance.cjs` (WebKit och Chromium):
+  - veckoväder i båda orienteringarna utan scroll
+  - offline med sparad vecka och nytt försök
+  - ortsbyte
+  - Morgon/Kväll i formulär, Kost, Home och hemskärmen
+  - luftigare Home på telefon
 
 Kör testerna med:
 

@@ -621,3 +621,11 @@ input[type='checkbox']:checked { border-color: var(--accent); background: var(--
   .project-page-heading p { font-size: 13px; }
   .project-page .project-detail-layout { padding: 18px 16px; border-radius: 22px; }
 }
+
+/* Morgon | Kväll in Dagens kost */
+.nutrition-time-toggle { display: grid; grid-template-columns: 1fr 1fr; }
+.nutrition-time-toggle button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; font-size: 12px; font-weight: 550; }
+.nutrition-time-toggle button[data-time='morning'] svg { color: var(--urgency-yellow); }
+.nutrition-time-toggle small { color: var(--ink-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.nutrition-time-toggle small.is-complete { color: var(--status-complete-ink); }
+.home-time-toggle { margin-bottom: 12px; }

@@ -45,7 +45,8 @@ export function isWorkspace(value: unknown): value is Workspace {
       && isNonnegativeDecimal(row.amount, true) && typeof row.amountUnit === 'string' && ['sets', 'min'].includes(row.amountUnit)
       && isNonnegativeDecimal(row.load, true) && typeof row.loadUnit === 'string' && ['time', 'kg', 'level'].includes(row.loadUnit) && isNonnegativeInteger(row.bpm, true)))) return false
   if (!optional('nutritionHabits', entry => object(entry) && filled(entry.id) && filled(entry.title)
-    && isNonnegativeDecimal(entry.amount) && typeof entry.unit === 'string' && ['st', 'ml', 'l', 'g', 'portion'].includes(entry.unit) && timestamp(entry.createdAt))) return false
+    && isNonnegativeDecimal(entry.amount) && typeof entry.unit === 'string' && ['st', 'ml', 'l', 'g', 'portion'].includes(entry.unit) && timestamp(entry.createdAt)
+    && (entry.time === undefined || entry.time === null || entry.time === 'morning' || entry.time === 'evening'))) return false
   if (!optional('nutritionCompletions', entry => object(entry) && filled(entry.habitId) && date(entry.date)
     && entry.id === nutritionCompletionId(entry.habitId, entry.date) && typeof entry.completed === 'boolean')) return false
   if (!optional('recipes', entry => object(entry) && filled(entry.id) && filled(entry.title) && typeof entry.url === 'string'

@@ -67,10 +67,20 @@
   .topbar { gap: 8px; }
   .topbar-left { gap: 5px; }
   .topbar-left .brand-mark { display: none; }
-  .home-grid { grid-template-columns: 1fr; gap: 13px; }
-  .home-page { gap: 16px; }
-  .home-panel { padding: 12px 18px 18px; border-radius: 22px; }
-  .home-date { font-size: 11px; }
+  .home-grid { grid-template-columns: 1fr; gap: 20px; }
+  .home-page { gap: 22px; }
+  .home-panel { padding: 18px 20px 20px; border-radius: 24px; }
+  .home-panel-heading { margin-bottom: 16px; }
+  .home-panel-heading h2 { font-size: 16px; }
+  .home-habits { gap: 8px; }
+  .home-habit { min-height: 56px; padding: 12px 14px; }
+  .home-habit-copy strong { font-size: 14px; }
+  .home-habit-copy small { font-size: 12px; }
+  .home-week { margin-bottom: 16px; }
+  .home-birthday-row { min-height: 68px; }
+  .home-birthday-row strong { font-size: 14px; }
+  .home-section-title { margin: 8px 0 14px; font-size: 16px; }
+  .home-date { font-size: 12px; }
   .home-notification { gap: 10px; padding: 12px; }
   .home-notification-icon { display: none; }
   .home-notification-actions { flex-direction: column; gap: 0; }

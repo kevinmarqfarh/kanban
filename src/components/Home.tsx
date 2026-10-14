@@ -7,6 +7,9 @@ import { daysBetween, isoWeek, isNutritionComplete, nutritionDayStatus, parseLoc
 import { Summary } from './Summary'
 import { Briefing } from './Briefing'
 import { HomeScreen } from './HomeScreen'
+import { NutritionTimeToggle } from './NutritionTimeToggle'
+import { useNutritionTime } from '../hooks/useNutritionTime'
+import { habitsForTime, usesNutritionTimes } from '../lib/nutritionTime'
 import type { SyncStatus } from '../lib/types'
 import type { GiftTaskDraft } from '../lib/briefing'
 
@@ -26,6 +29,7 @@ export function Home({ workspace, today, reports, initialId, localOnly, homeScre
   const [reading, setReading] = useState(!!initialId)
   const [error, setError] = useState<string | null>(null)
   const [birthdayFilter, setBirthdayFilter] = useState<string | null>(null)
+  const [nutritionTime, setNutritionTime] = useNutritionTime()
   const notifications = unreadBirthdayNotifications(workspace)
   const habits = workspace.nutritionHabits ?? []
   const finished = habits.filter(habit => isNutritionComplete(workspace, habit.id, today)).length
@@ -63,7 +67,8 @@ export function Home({ workspace, today, reports, initialId, localOnly, homeScre
               const status = nutritionDayStatus(workspace, date, today)
               return <div className={`home-week-day ${date === today ? 'today' : ''} ${status ? `status-${status}` : ''}`} key={date} data-date={date} data-status={status ?? 'none'} aria-label={`${weekdays[index]} ${date}: ${count} av ${habits.length} klara${status === 'complete' ? ', allt klart' : status === 'incomplete' ? ', något saknas' : ''}`}><span>{weekdays[index]}</span><strong>{Number(date.slice(-2))}</strong><span className="home-week-progress"><i style={{ width: `${count / habits.length * 100}%` }} /></span></div>
             })}</div>
-            <div className="home-habits">{habits.map(habit => {
+            {usesNutritionTimes(habits) && <NutritionTimeToggle workspace={workspace} date={today} value={nutritionTime} onChange={setNutritionTime} className="home-time-toggle" />}
+            <div className="home-habits">{(usesNutritionTimes(habits) ? habitsForTime(habits, nutritionTime) : habits).map(habit => {
               const completed = isNutritionComplete(workspace, habit.id, today)
               return <label className={`home-habit ${completed ? 'is-complete' : ''}`} key={habit.id} data-home-habit-id={habit.id} data-completed={completed}><input type="checkbox" aria-label={`Klar idag: ${habit.title}`} checked={completed} onChange={() => run(() => onToggleHabit(habit.id, today))} /><span className="home-habit-copy"><strong>{habit.title}</strong><small>{habit.amount} {habit.unit}</small></span></label>
             })}</div><p className="home-panel-footnote">{finished}/{habits.length} klara idag</p>

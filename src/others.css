@@ -141,3 +141,11 @@
   .nutrition-date-row > .field { width: 156px; }
   .others-record-icon { display: none; }
 }
+
+/* Morgon / Kväll / Hela dagen */
+.habit-time-options button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: 1; font-size: 12px; }
+.nutrition-groups { display: flex; flex-direction: column; gap: 22px; }
+.nutrition-group-title { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: var(--ink); font-size: 13px; font-weight: 550; }
+.nutrition-group-title svg { color: var(--ink-secondary); }
+.nutrition-group[data-time='morning'] .nutrition-group-title svg { color: var(--urgency-yellow); }
+.nutrition-group-title span { margin-left: auto; color: var(--ink-muted); font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; }

@@ -93,12 +93,16 @@ export interface Workout {
 
 export type NutritionUnit = 'st' | 'ml' | 'l' | 'g' | 'portion'
 
+export type NutritionTime = 'morning' | 'evening'
+
 export interface NutritionHabit {
   id: string
   title: string
   amount: string
   unit: NutritionUnit
   createdAt: string
+  // Morgon or kväll. Missing/null = hela dagen (also every habit saved before the choice existed).
+  time?: NutritionTime | null
 }
 
 export interface NutritionCompletion {

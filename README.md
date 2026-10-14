@@ -35,6 +35,18 @@ Lokal lagring är separat för varje webbläsare och enhet. Rensa inte webbläsa
 
 Efter tre minuter utan beröring går appen tillbaka till Home, men ett öppet formulär stängs aldrig. Inloggad hämtar den ändringar från dina andra enheter varje minut. Läget styrs under Inställningar → Hemskärm (Auto/På/Av, per enhet). Appen fungerar även på iPads som stannat på iPadOS 15, till exempel iPad mini 4. Se [docs/ipad.md](docs/ipad.md).
 
+**Väder och morgon/kväll:**
+- Hemskärmen på iPad visar veckans väder måndag–söndag med färgade ikoner i stil med Apples Väder-app, högsta och lägsta temperatur och regnrisk. Ort väljs under Inställningar → Hemskärm.
+- Kosttillskott kan sättas till Morgon, Kväll eller Hela dagen. Dagens kost visar morgonens eller kvällens tillskott efter tid på dygnet, med en växel för att byta.
+
+Se [docs/ipad.md](docs/ipad.md).
+
+**Home på telefon:** briefingen har mer luft på mobil.
+- Siffrorna ligger på en rad som går att svepa.
+- Gör först visar högst två etiketter per uppgift.
+- Ett förslag visas åt gången, med *Visa fler*.
+- Rubrik och sammanfattning använder hela bredden.
+
 **Dagens briefing:** Överst på Home sammanfattar Forma dagen utifrån Planner och födelsedagar. Du får dagens läge, siffror för försenat, idag, veckan, pågående och födelsedagar, de tre kort du bör göra först med skälen, konkreta förslag och de kommande sju dagarna. Tryck på ett kort för att öppna det i Planner. Vid en kommande födelsedag kan du med en knapp lägga *Present till …* i Planner. Briefingen kan kopieras som text eller sparas under Daglig sammanfattning. Den räknas fram på enheten utan AI och följer klockan, så en passerad tid blir försenad. Reglerna beskrivs i [docs/briefing.md](docs/briefing.md).
 
 **Daily debriefing:** Under Home kan du läsa in en sammanfattning som JSON-fil, eller flera dagars sammanfattningar i en lista. Lässtatus och dolda notiser sparas lokalt. En identisk fil skapar inga dubbletter. Ingen automatisk AI-summering körs i den lokala versionen. Den förberedda molninkorgen är separat från kanbantavlan och kan fyllas av dina framtida automationer när Supabase är anslutet. Format och anslutning beskrivs i [docs/debriefs.md](docs/debriefs.md). Notiserna visas inne i appen; iOS-push är inte aktiverat.

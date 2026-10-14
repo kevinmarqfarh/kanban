@@ -1,10 +1,15 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useMemo, useRef, useState, type FormEvent } from 'react'
 import { ArrowRight, Bell, Cake, CalendarRange, Check, CloudOff, Cloud, HardDrive, Pill, Plus, Sparkles, X } from 'lucide-react'
 import type { SyncStatus, Workspace } from '../lib/types'
 import { buildDailyBriefing } from '../lib/briefing'
 import { unreadBirthdayNotifications } from '../lib/birthdays'
 import { daysBetween, isoWeek, isNutritionComplete, nutritionDayStatus, parseLocalDate, weekDates } from '../lib/others'
 import { useNow } from '../hooks/useNow'
+import { useWeather } from '../hooks/useWeather'
+import { WeatherWeek } from './WeatherWeek'
+import { useNutritionTime } from '../hooks/useNutritionTime'
+import { NutritionTimeToggle } from './NutritionTimeToggle'
+import { habitsForTime, usesNutritionTimes } from '../lib/nutritionTime'
 
 const weekdays = ['M', 'T', 'O', 'T', 'F', 'L', 'S']
 const pad = (value: number) => String(value).padStart(2, '0')
@@ -33,9 +38,14 @@ export function HomeScreen({ workspace, today, syncStatus, signedIn, unreadDebri
   const briefing = useMemo(() => buildDailyBriefing(workspace, today, now), [workspace, today, now])
   const [error, setError] = useState<string | null>(null)
   const [title, setTitle] = useState('')
+  const titleRef = useRef<HTMLInputElement>(null)
   const [dueToday, setDueToday] = useState(true)
   const [added, setAdded] = useState<string | null>(null)
   const habits = workspace.nutritionHabits ?? []
+  const [nutritionTime, setNutritionTime] = useNutritionTime()
+  const weather = useWeather(today)
+  const timed = usesNutritionTimes(habits)
+  const shownHabits = timed ? habitsForTime(habits, nutritionTime) : habits
   const done = habits.filter(habit => isNutritionComplete(workspace, habit.id, today)).length
   const notifications = unreadBirthdayNotifications(workspace)
   const nextTip = briefing.tips[0]
@@ -45,7 +55,8 @@ export function HomeScreen({ workspace, today, syncStatus, signedIn, unreadDebri
 
   function submit(event: FormEvent) {
     event.preventDefault()
-    const clean = title.trim()
+    // Read the field itself: Enter right after the last keystroke (or dictation) can beat React's state update.
+    const clean = (titleRef.current?.value ?? title).trim()
     if (!clean) return
     const problem = onQuickAdd(clean, dueToday)
     setError(problem)
@@ -60,6 +71,8 @@ export function HomeScreen({ workspace, today, syncStatus, signedIn, unreadDebri
 
   return <div className="homescreen" data-testid="home-screen" data-tone={briefing.tone}>
     {error && <p className="form-message error homescreen-error" role="alert">{error}<button className="icon-button" type="button" aria-label="Stäng meddelande" onClick={() => setError(null)}><X size={16} /></button></p>}
+
+    <WeatherWeek today={today} place={weather.place} week={weather.week} status={weather.status} onRetry={weather.retry} />
 
     <section className="hs-card hs-today" aria-labelledby="hs-headline">
       <div className="hs-now">
@@ -98,7 +111,8 @@ export function HomeScreen({ workspace, today, syncStatus, signedIn, unreadDebri
         {habits.length > 0 && <span className={`hs-count${done === habits.length ? ' is-complete' : ''}`} aria-label={`${done} av ${habits.length} klara idag`}>{done}/{habits.length}</span>}
       </div>
       {habits.length > 0 ? <>
-        <div className="hs-habits" role="group" aria-label="Bocka av för idag">{habits.map(habit => {
+        {timed && <NutritionTimeToggle workspace={workspace} date={today} value={nutritionTime} onChange={setNutritionTime} className="hs-time-toggle" />}
+        <div className="hs-habits" role="group" aria-label="Bocka av för idag">{shownHabits.map(habit => {
           const complete = isNutritionComplete(workspace, habit.id, today)
           return <button key={habit.id} type="button" className={`hs-habit${complete ? ' is-complete' : ''}`} aria-pressed={complete} data-habit-id={habit.id} onClick={() => run(() => onToggleHabit(habit.id, today))}>
             <span className="hs-check" aria-hidden="true">{complete && <Check size={20} strokeWidth={2.4} />}</span>
@@ -134,7 +148,7 @@ export function HomeScreen({ workspace, today, syncStatus, signedIn, unreadDebri
       </div>
       <form className="hs-quick" onSubmit={submit} aria-label="Snabb uppgift till Planner">
         <label className="sr-only" htmlFor="hs-quick-title">Ny uppgift</label>
-        <input id="hs-quick-title" className="input" value={title} maxLength={140} placeholder="Ny uppgift…" enterKeyHint="done" autoComplete="off" onChange={event => { setTitle(event.target.value); setAdded(null) }} />
+        <input ref={titleRef} id="hs-quick-title" className="input" value={title} maxLength={140} placeholder="Ny uppgift…" enterKeyHint="done" autoComplete="off" onChange={event => { setTitle(event.target.value); setAdded(null) }} />
         <button type="button" className={`hs-today-toggle${dueToday ? ' active' : ''}`} aria-pressed={dueToday} onClick={() => setDueToday(value => !value)}>Idag</button>
         <button type="submit" className={`button primary hs-add${title.trim() ? '' : ' is-empty'}`} aria-label="Lägg till i Planner"><Plus size={18} /></button>
       </form>

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Sun, Moon, Monitor, Cloud, HardDrive, LogOut, Download, Smartphone, ArrowRight, Check, ChevronDown, Tablet } from 'lucide-react'
 import type { useHomeScreen } from '../hooks/useHomeScreen'
+import { WeatherPlacePicker } from './WeatherPlacePicker'
 import { useWorkspace } from '../hooks/useWorkspace'
 import { supabaseConfigured } from '../lib/supabase'
 
@@ -47,6 +48,7 @@ export function Profile({ data, theme, onTheme, onExport, syncText, homeScreen }
     {homeScreen && <section className="profile-card profile-homescreen" aria-labelledby="homescreen-title"><div className="profile-section-heading"><Tablet size={18} /><h2 id="homescreen-title">Hemskärm</h2></div>
       <p className="profile-description">Home visar dagen på en enda skärm: klockan, Gör först, kost och tillskott att bocka av, kommande dagar och en snabbuppgift. Appen går tillbaka till Home efter tre minuter utan beröring och hämtar ändringar från dina andra enheter varje minut. Valet gäller bara den här enheten.</p>
       <div className="segmented-control homescreen-options" role="group" aria-label="Hemskärm">{([{ id: 'auto', label: homeScreen.tablet ? 'Auto (på)' : 'Auto (av)' }, { id: 'on', label: 'På' }, { id: 'off', label: 'Av' }] as const).map(option => <button key={option.id} type="button" className={homeScreen.mode === option.id ? 'active' : ''} aria-pressed={homeScreen.mode === option.id} onClick={() => homeScreen.setMode(option.id)}>{option.label}</button>)}</div>
+      <WeatherPlacePicker />
       <details className="profile-tips"><summary>Tips för en dockad iPad<ChevronDown size={15} /></summary><ul>
         <li>Lägg till Forma på hemskärmen (Dela → Lägg till på hemskärmen) så öppnas appen i helskärm utan Safaris verktygsfält.</li>
         <li>Inställningar → Skärm och ljusstyrka → Autolås → Aldrig, så att skärmen är tänd när den står i laddaren.</li>

@@ -12,6 +12,19 @@ const tipIcons: Record<TipKind, LucideIcon> = {
   'birthday-today': PartyPopper, 'birthday-soon': Gift, 'birthday-plan': Cake, evening: Moon, stale: Archive, calm: Leaf, empty: ListPlus,
 }
 const PREVIEW_TIPS = 3
+/** On a phone one suggestion at a time keeps Home calm; the rest are a tap away. */
+const PREVIEW_TIPS_PHONE = 1
+const PHONE_QUERY = '(max-width: 760px)'
+function usePhone() {
+  const [phone, setPhone] = useState(() => { try { return window.matchMedia(PHONE_QUERY).matches } catch { return false } })
+  useEffect(() => {
+    const media = window.matchMedia(PHONE_QUERY)
+    const update = () => setPhone(media.matches)
+    if (media.addEventListener) media.addEventListener('change', update); else media.addListener(update)
+    return () => { if (media.removeEventListener) media.removeEventListener('change', update); else media.removeListener(update) }
+  }, [])
+  return phone
+}
 
 export function Briefing({ workspace, today, debriefs, onOpenTask, onOpenPlanner, onOpenBirthdays, onCreateGiftTask, onSave }: {
   workspace: Workspace
@@ -30,7 +43,9 @@ export function Briefing({ workspace, today, debriefs, onOpenTask, onOpenPlanner
   const [saving, setSaving] = useState(false)
   const savedToday = debriefs.some(entry => entry.date === today)
   const taskIds = new Set(workspace.tasks.map(task => task.id))
-  const tips = showAllTips ? briefing.tips : briefing.tips.slice(0, PREVIEW_TIPS)
+  const phone = usePhone()
+  const preview = phone ? PREVIEW_TIPS_PHONE : PREVIEW_TIPS
+  const tips = showAllTips ? briefing.tips : briefing.tips.slice(0, preview)
   const { stats } = briefing
 
   useEffect(() => { if (status?.tone !== 'ok') return; const timer = window.setTimeout(() => setStatus(null), 4000); return () => window.clearTimeout(timer) }, [status])
@@ -66,9 +81,9 @@ export function Briefing({ workspace, today, debriefs, onOpenTask, onOpenPlanner
   const statItems = [
     { key: 'overdue', label: 'Försenat', value: stats.overdue, alert: stats.overdue > 0 },
     { key: 'today', label: 'Idag', value: stats.dueToday, alert: false },
-    { key: 'week', label: 'Kommande 7 dagar', value: stats.dueWeek, alert: false },
+    { key: 'week', label: phone ? '7 dagar' : 'Kommande 7 dagar', value: stats.dueWeek, alert: false },
     { key: 'doing', label: 'Pågår', value: stats.inProgress, alert: false },
-    { key: 'birthdays', label: 'Födelsedagar', value: stats.birthdaysWeek, alert: false },
+    { key: 'birthdays', label: phone ? 'Fyller år' : 'Födelsedagar', value: stats.birthdaysWeek, alert: false },
   ]
 
   return <section className="briefing" aria-labelledby="briefing-title" data-testid="daily-briefing" data-tone={briefing.tone}>
@@ -127,7 +142,7 @@ export function Briefing({ workspace, today, debriefs, onOpenTask, onOpenPlanner
             </li>
           })}
         </ul>
-        {briefing.tips.length > PREVIEW_TIPS && <button className="button ghost briefing-more" type="button" aria-expanded={showAllTips} onClick={() => setShowAllTips(value => !value)}>{showAllTips ? 'Visa färre' : `Visa alla förslag (${briefing.tips.length})`}<ChevronDown size={15} className={showAllTips ? 'is-open' : ''} /></button>}
+        {briefing.tips.length > preview && <button className="button ghost briefing-more" type="button" aria-expanded={showAllTips} onClick={() => setShowAllTips(value => !value)}>{showAllTips ? 'Visa färre' : phone ? `Visa ${briefing.tips.length - preview} förslag till` : `Visa alla förslag (${briefing.tips.length})`}<ChevronDown size={15} className={showAllTips ? 'is-open' : ''} /></button>}
       </section>
     </div>
 
