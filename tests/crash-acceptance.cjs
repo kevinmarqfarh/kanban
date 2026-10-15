@@ -63,7 +63,7 @@ const check = async (name, fn) => { try { await fn(); results.push(true); consol
       await context.close();
     });
 
-    await check('JavaScript that never starts: after 15 s index.html shows "Forma startade inte" and reloads (twice at most)', async () => {
+    await check('JavaScript that never starts: after 15 s index.html names the failing file and resets itself', async () => {
       const context = await browser.newContext({ viewport: IPAD, hasTouch: true, serviceWorkers: 'block' });
       await context.route(/\/assets\/index-.*\.js$/, route => route.abort('failed'));
       const page = await context.newPage();
@@ -75,11 +75,51 @@ const check = async (name, fn) => { try { await fn(); results.push(true); consol
       const screen = page.getByTestId('boot-failed');
       await screen.waitFor();
       assert.equal(await screen.getByRole('heading').textContent(), 'Forma startade inte');
-      assert.equal(await screen.locator('.crash-auto').textContent(), 'Laddar om automatiskt om 20 s.');
+      assert.equal(await screen.locator('.crash-auto').textContent(), 'Laddar om automatiskt om 5 s.');
+      assert.match(await screen.locator('pre').textContent(), /^Kunde inte ladda: .*\/assets\/index-.*\.js/, 'The file that failed is named.');
       const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('forma-last-error')));
       assert.equal(saved.source, 'boot');
       await page.screenshot({ path: path.join(out, 'boot-failed.png') });
       await context.close();
+    });
+
+    await check('A broken offline cache (service worker that fails the app files) heals itself: reset, reload, start', async () => {
+      // A local copy of the built app whose service worker can be swapped, like a broken version followed by a fix.
+      const http = require('node:http');
+      const dist = path.join(__dirname, '..', 'dist');
+      let swMode = 'stuck';
+      const stuckWorker = "self.addEventListener('install', () => self.skipWaiting());\nself.addEventListener('activate', e => e.waitUntil(self.clients.claim()));\nself.addEventListener('fetch', e => { if (new URL(e.request.url).pathname.startsWith('/assets/')) e.respondWith(Response.error()); });";
+      const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.woff2': 'font/woff2' };
+      const server = http.createServer((req, res) => {
+        const pathname = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+        if (pathname === '/sw.js' && swMode === 'stuck') { res.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'no-store' }); return res.end(stuckWorker); }
+        let file = path.join(dist, pathname === '/' ? 'index.html' : pathname);
+        if (!file.startsWith(dist) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) file = path.join(dist, 'index.html');
+        res.writeHead(200, { 'content-type': types[path.extname(file)] || 'application/octet-stream', 'cache-control': 'no-store' });
+        fs.createReadStream(file).pipe(res);
+      });
+      await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+      const url = `http://127.0.0.1:${server.address().port}/`;
+      const context = await browser.newContext({ viewport: IPAD, hasTouch: true });
+      try {
+        const page = await context.newPage();
+        await page.goto(url);
+        await page.waitForFunction(() => window.__formaBooted === true);
+        await page.waitForFunction(() => navigator.serviceWorker && navigator.serviceWorker.controller, null, { timeout: 15_000 }).catch(async () => { await page.reload(); await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 15_000 }); });
+        // The fix is deployed, but the stuck worker still controls the page and holds the app files.
+        swMode = 'fixed';
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        const screen = page.getByTestId('boot-failed');
+        await screen.waitFor({ timeout: 20_000 });
+        assert.match(await screen.locator('pre').textContent(), /offline-cachen styrde sidan|Kunde inte ladda/);
+        // It resets the cache and reloads on its own; the app then starts.
+        await page.waitForFunction(() => window.__formaBooted === true, null, { timeout: 25_000 });
+        assert.equal(await page.getByTestId('boot-failed').count(), 0);
+        await page.locator('.loading-notice').waitFor({ state: 'detached' });
+      } finally {
+        await context.close();
+        server.close();
+      }
     });
 
     await check('A normal start never shows either screen', async () => {

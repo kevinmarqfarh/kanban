@@ -109,7 +109,17 @@ Appen saknade dock skydd. Ett fel som stoppade starten eller renderingen lämnad
   - Appen laddar om sig själv efter 20 sekunder, högst tre gånger per 15 minuter. Upprepas felet ännu oftare står skärmen kvar tills någon trycker.
   - Fel i timers och promises släcker inte appen men sparas också.
   - Det senaste felet sparas på enheten i `forma-last-error`. Inget skickas någonstans.
-- **Startvakt** (inline-skript i `index.html`, vanlig ES5): kommer JavaScript inte igång inom 15 sekunder, till exempel för att filen inte kan laddas, visas ”Forma startade inte” med felet och *Ladda om*. Sidan laddar om sig själv högst två gånger per session.
+- **Startvakt** (inline-skript i `index.html`, vanlig ES5): kommer JavaScript inte igång inom 15 sekunder visas ”Forma startade inte”.
+  - Under *Teknisk information* står vilken fil som inte kunde laddas, eller om offline-cachen styrde sidan.
+  - Därefter rensas offline-cachen (service worker och Cache Storage) och sidan laddas om, automatiskt efter 5 sekunder och högst två gånger per session. Knappen *Ladda om* gör samma sak.
+
+**Uppföljning kl. 17.23.** iPaden visade startvaktens skärm med ”Ingen felkod”. Det betyder att appens filer aldrig startade och att inget skriptfel uppstod. Ingen begäran från iPaden nådde Supabase efter kl. 14.50. Startsidan laddades alltså, men appfilerna gjorde det inte. Det stämmer med en offline-cache som hänger sig i Safari 15. Service workern gick tidigare direkt till cachen för appfilerna och hade inget skydd om cachen svarade fel eller aldrig svarade.
+
+Service workern (genereras i `vite.config.ts`) har därför tre skydd:
+
+- En cacheuppslagning som misslyckas eller tar mer än 2 sekunder går vidare till nätet.
+- Fel vid installation och städning fångas.
+- Nya versioner tar över direkt (`skipWaiting`), så att en rättelse når en dockad iPad som aldrig stängs.
 
 Samtidigt kapades `window.scrollTo({ behavior: 'instant' })` i ett skyddat anrop (`scrollToTop`), eftersom äldre Safari inte förstår `instant`. Dagens diagram i timbladet begränsas till 560 punkters bredd, så att det inte blir jättestort på iPad.
 
@@ -153,7 +163,7 @@ PLAYWRIGHT_MODULE=/tmp/pw120/node_modules/playwright-core SAFARI15_WEBKIT=$PWD/w
   - etiketterna Morgon och Kväll i formulär, Kost, Home och hemskärmen
   - luftigare Home på telefon
 
-- `tests/crash.mjs` (ingår i `npm test`) och `tests/crash-acceptance.cjs` (`npm run test:crash`, WebKit och Chromium) täcker felskärmen, den automatiska omladdningen med spärr mot loopar, fel utanför renderingen och startvakten efter 15 sekunder.
+- `tests/crash.mjs` (ingår i `npm test`) och `tests/crash-acceptance.cjs` (`npm run test:crash`, WebKit och Chromium) täcker felskärmen, den automatiska omladdningen med spärr mot loopar och fel utanför renderingen. Startvakten testas efter 15 sekunder, med den felande filen namngiven. Testerna täcker också en trasig offline-cache som läker sig själv: rensning, omladdning och start.
 
 Kör testerna med:
 

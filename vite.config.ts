@@ -18,11 +18,19 @@ export default defineConfig({
       this.emitFile({ type: 'asset', fileName: 'sw.js', source: `
 const CACHE = 'forma-shell-${version}';
 const ASSETS = ${JSON.stringify(paths)};
+// The cache must never be able to stop the app from starting. A cache lookup that fails or hangs (seen in
+// Safari 15 when its storage gets into a bad state) falls back to the network after at most two seconds.
+const fromCache = path => Promise.race([
+  caches.open(CACHE).then(cache => cache.match(path)),
+  new Promise(resolve => setTimeout(() => resolve(undefined), 2000)),
+]).catch(() => undefined);
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)));
+  // Take over at once, so a fix reaches a docked iPad that is never closed.
+  self.skipWaiting();
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).catch(() => {}));
 });
 self.addEventListener('activate', event => {
-  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('forma-shell-') && key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim()));
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('forma-shell-') && key !== CACHE).map(key => caches.delete(key)))).catch(() => {}).then(() => self.clients.claim()));
 });
 self.addEventListener('fetch', event => {
   const request = event.request;
@@ -30,9 +38,9 @@ self.addEventListener('fetch', event => {
   // Cache app files only. Supabase Auth and data requests always use the network.
   if (request.method !== 'GET' || url.origin !== self.location.origin) return;
   if (request.mode === 'navigate') {
-    event.respondWith(fetch(request).catch(() => caches.open(CACHE).then(cache => cache.match('/index.html'))));
+    event.respondWith(fetch(request).catch(async () => (await fromCache('/index.html')) || Response.error()));
   } else if (ASSETS.includes(url.pathname)) {
-    event.respondWith(caches.open(CACHE).then(async cache => (await cache.match(url.pathname)) || fetch(request)));
+    event.respondWith(fromCache(url.pathname).then(cached => cached || fetch(request)));
   }
 });
 ` })
