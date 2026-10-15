@@ -24,7 +24,7 @@ https://opendata-download-metfcst.smhi.se/api/category/snow1g/version/1/geotype/
 **Open-Meteo** kompletterar SMHI. Forma hämtar timvärden från måndag i aktuell vecka till nio dagar fram, med vind i m/s och tider som Unix-sekunder. Open-Meteo används i tre fall:
 
 - **Tidigare timmar:** SMHI börjar vid nästa hela timme, så veckans passerade dagar och natten före SMHI:s första timme kommer från Open-Meteo. Dagens högsta och lägsta temperatur gäller därför hela dygnet.
-- **Reserv:** om SMHI inte svarar tar Open-Meteo över helt. Vädersidan skriver då ”Källa: Open-Meteo (SMHI svarade inte eller orten ligger utanför SMHI:s område)”.
+- **Reserv:** om SMHI inte svarar tar Open-Meteo över helt, och remsan visar då ”Källa: Open-Meteo”.
 - **Utanför Norden:** för orter utanför SMHI:s modellområde (ungefär latitud 52,5–71, longitud 2–38) frågas SMHI inte alls.
 
 Båda källorna anropas samtidigt. De blandas aldrig för samma timme. SMHI gäller från sitt första intervall, och Open-Meteo används bara för timmarna före det. Källorna anges med länk under remsan.
