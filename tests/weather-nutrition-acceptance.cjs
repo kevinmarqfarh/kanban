@@ -164,14 +164,17 @@ async function open(browser, { viewport = { width: 1024, height: 768 }, touch = 
       await ipad.context.close();
     });
 
-    await check('Phone Home breathes: one-line swipeable stats, two reasons per task, one suggestion at a time', async () => {
+    await check('Phone Home breathes: five centred stat tiles, two reasons per task, one suggestion at a time', async () => {
       const { context, page, errors } = await open(browser, { viewport: { width: 402, height: 874 } });
       const briefing = page.getByTestId('daily-briefing');
       await briefing.waitFor();
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'No sideways page scroll.');
       const tops = await briefing.locator('.briefing-stat').evaluateAll(nodes => nodes.map(node => Math.round(node.getBoundingClientRect().top)));
       assert.equal(new Set(tops).size, 1, 'All stats on one line.');
-      assert.ok(await briefing.locator('.briefing-stats').evaluate(node => node.scrollWidth > node.clientWidth), 'The row scrolls sideways.');
+      assert.ok(await briefing.locator('.briefing-stats').evaluate(node => node.scrollWidth <= node.clientWidth), 'All five fit without sideways scrolling.');
+      const edges = await briefing.evaluate(card => { const box = card.getBoundingClientRect(); const tiles = [...card.querySelectorAll('.briefing-stat')].map(t => t.getBoundingClientRect()); return { left: tiles[0].left - box.left, right: box.right - tiles.at(-1).right, widths: new Set(tiles.map(t => Math.round(t.width))).size }; });
+      assert.ok(Math.abs(edges.left - edges.right) <= 1, `Stats are centred in the card (${edges.left} vs ${edges.right}).`);
+      assert.equal(edges.widths, 1, 'Equal tile widths.');
       assert.deepEqual(await briefing.locator('.briefing-stat dt').allTextContents(), ['Försenat', 'Idag', '7 dagar', 'Pågår', 'Fyller år']);
       for (const row of await briefing.locator('.briefing-reasons').all()) {
         const visible = await row.locator(':scope > *').evaluateAll(nodes => nodes.filter(node => getComputedStyle(node).display !== 'none').length);
@@ -188,6 +191,44 @@ async function open(browser, { viewport = { width: 1024, height: 768 }, touch = 
       await page.screenshot({ path: path.join(out, 'phone-home.png'), fullPage: true, animations: 'disabled' });
       assert.deepEqual(errors, []);
       await context.close();
+    });
+
+    await check('A calm, steady day shows no empty Förslag heading', async () => {
+      const steady = structuredClone(fixture);
+      steady.workspace.tasks = [task('x', 'Läs boken', { deadline: '2026-10-18', priority: 'high', createdAt: '2026-10-10T09:00:00.000Z', columnId: 'doing' })];
+      steady.workspace.birthdays = [];
+      const context = await browser.newContext({ viewport: { width: 402, height: 874 }, serviceWorkers: 'block', timezoneId: 'Europe/Stockholm' });
+      await context.addInitScript(({ key, value }) => localStorage.setItem(key, JSON.stringify(value)), { key, value: steady });
+      const page = await context.newPage();
+      await page.clock.install({ time: new Date('2026-10-15T07:42:00+02:00') });
+      await page.goto(base);
+      await page.getByTestId('daily-briefing').waitFor();
+      assert.equal(await page.getByTestId('briefing-tips').count(), 0);
+      assert.equal(await page.getByRole('heading', { name: 'Förslag' }).count(), 0);
+      await page.getByTestId('briefing-focus').waitFor();
+      await context.close();
+    });
+
+    await check('A phone never gets the tablet home screen, even set to På, and shows the weather on its regular Home', async () => {
+      for (const width of [402, 320]) {
+        const { context, page, errors } = await open(browser, { viewport: { width, height: 874 }, homescreen: 'on' });
+        await page.getByTestId('daily-briefing').waitFor();
+        assert.equal(await page.getByTestId('home-screen').count(), 0, `${width}px: no home-screen layout on a phone.`);
+        await page.locator('[data-testid="home-weather"][data-status="ready"]').waitFor();
+        assert.equal(await page.locator('[data-testid="home-weather"] .wx-day').count(), 7);
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${width}px: no sideways scroll`);
+        assert.ok(await page.locator('[data-testid="home-weather"] .wx-day').evaluateAll(nodes => nodes.every(node => node.scrollWidth <= node.clientWidth + 1)), `${width}px: each day fits`);
+        await page.getByRole('button', { name: 'Öppna inställningar', exact: true }).click();
+        const dialog = page.getByRole('dialog');
+        await dialog.getByRole('heading', { name: 'Väder' }).waitFor();
+        assert.equal(await dialog.getByRole('heading', { name: 'Hemskärm' }).count(), 0, 'Hemskärm is offered only where it can apply.');
+        assert.deepEqual(errors, []);
+        await context.close();
+      }
+      // The same "På" still works on a tablet.
+      const ipad = await open(browser, { homescreen: 'on' });
+      await ipad.page.getByTestId('home-screen').waitFor();
+      await ipad.context.close();
     });
 
     await check('Dark iPad home screen with weather', async () => {

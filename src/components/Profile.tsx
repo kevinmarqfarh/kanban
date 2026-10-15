@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Sun, Moon, Monitor, Cloud, HardDrive, LogOut, Download, Smartphone, ArrowRight, Check, ChevronDown, Tablet } from 'lucide-react'
+import { Sun, Moon, Monitor, Cloud, HardDrive, LogOut, Download, Smartphone, ArrowRight, Check, ChevronDown, Tablet, CloudSun } from 'lucide-react'
 import type { useHomeScreen } from '../hooks/useHomeScreen'
 import { WeatherPlacePicker } from './WeatherPlacePicker'
 import { useWorkspace } from '../hooks/useWorkspace'
@@ -45,10 +45,13 @@ export function Profile({ data, theme, onTheme, onExport, syncText, homeScreen }
     </section>
 
     <section className="profile-card"><div className="profile-section-heading"><Sun size={18} /><h2>Tema</h2></div><div className="theme-picker" aria-label="Välj tema">{([{ id: 'light', label: 'Ljust', Icon: Sun }, { id: 'dark', label: 'Mörkt', Icon: Moon }, { id: 'system', label: 'System', Icon: Monitor }] as const).map(({ id, label, Icon }) => <button key={id} className={`theme-option ${theme === id ? 'active' : ''}`} aria-pressed={theme === id} onClick={() => onTheme(id)}><Icon size={19} strokeWidth={1.5} /><span>{label}</span></button>)}</div></section>
-    {homeScreen && <section className="profile-card profile-homescreen" aria-labelledby="homescreen-title"><div className="profile-section-heading"><Tablet size={18} /><h2 id="homescreen-title">Hemskärm</h2></div>
-      <p className="profile-description">Home visar dagen på en enda skärm: klockan, Gör först, kost och tillskott att bocka av, kommande dagar och en snabbuppgift. Appen går tillbaka till Home efter tre minuter utan beröring och hämtar ändringar från dina andra enheter varje minut. Valet gäller bara den här enheten.</p>
-      <div className="segmented-control homescreen-options" role="group" aria-label="Hemskärm">{([{ id: 'auto', label: homeScreen.tablet ? 'Auto (på)' : 'Auto (av)' }, { id: 'on', label: 'På' }, { id: 'off', label: 'Av' }] as const).map(option => <button key={option.id} type="button" className={homeScreen.mode === option.id ? 'active' : ''} aria-pressed={homeScreen.mode === option.id} onClick={() => homeScreen.setMode(option.id)}>{option.label}</button>)}</div>
+    <section className="profile-card profile-weather" aria-labelledby="weather-settings-title"><div className="profile-section-heading"><CloudSun size={18} /><h2 id="weather-settings-title">Väder</h2></div>
+      <p className="profile-description">Veckans väder visas överst på Home. Valet av ort gäller bara den här enheten.</p>
       <WeatherPlacePicker />
+    </section>
+    {homeScreen?.available && <section className="profile-card profile-homescreen" aria-labelledby="homescreen-title"><div className="profile-section-heading"><Tablet size={18} /><h2 id="homescreen-title">Hemskärm</h2></div>
+      <p className="profile-description">Home visar dagen på en enda skärm: veckans väder, klockan, Gör först, kost och tillskott att bocka av, kommande dagar och en snabbuppgift. Gäller surfplattor och större skärmar. Appen går tillbaka till Home efter tre minuter utan beröring och hämtar ändringar från dina andra enheter varje minut. Valet gäller bara den här enheten.</p>
+      <div className="segmented-control homescreen-options" role="group" aria-label="Hemskärm">{([{ id: 'auto', label: homeScreen.tablet ? 'Auto (på)' : 'Auto (av)' }, { id: 'on', label: 'På' }, { id: 'off', label: 'Av' }] as const).map(option => <button key={option.id} type="button" className={homeScreen.mode === option.id ? 'active' : ''} aria-pressed={homeScreen.mode === option.id} onClick={() => homeScreen.setMode(option.id)}>{option.label}</button>)}</div>
       <details className="profile-tips"><summary>Tips för en dockad iPad<ChevronDown size={15} /></summary><ul>
         <li>Lägg till Forma på hemskärmen (Dela → Lägg till på hemskärmen) så öppnas appen i helskärm utan Safaris verktygsfält.</li>
         <li>Inställningar → Skärm och ljusstyrka → Autolås → Aldrig, så att skärmen är tänd när den står i laddaren.</li>

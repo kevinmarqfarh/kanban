@@ -19,7 +19,7 @@ Liggande visas tre kolumner. Stående visas Idag överst och de två andra korte
 - Efter **3 minuter** utan beröring på en annan sida går appen tillbaka till Home. Ett öppet formulär stängs aldrig, så inget du håller på att skriva försvinner.
 - Inloggad hämtar skärmen ändringar från dina andra enheter **varje minut** medan den är synlig. Bockar du av D-vitamin på telefonen syns det i köket inom en minut. Skrivningar är villkorade på revision, så iPaden kan aldrig skriva över en ändring som gjorts någon annanstans. Vid krock får du välja version som vanligt.
 
-**Inställningar → Hemskärm** (sparas per enhet i `forma-homescreen`):
+**Inställningar → Hemskärm** (sparas per enhet i `forma-homescreen`). Hemskärmen kräver en skärm på minst 700 × 600 punkter och används aldrig på en telefon, inte heller när *På* är valt. På telefon visas inte inställningen; vädret har en egen sektion, *Väder*, och visas överst på vanliga Home.
 
 | Val | Betydelse |
 | --- | --- |
@@ -40,7 +40,7 @@ Koden finns i `src/components/HomeScreen.tsx`, `src/hooks/useHomeScreen.ts`, `sr
 Hemskärmen visar vädret för måndag–söndag i en remsa överst. Varje dag har dagens namn (”Idag” för i dag), en färgad ikon i stil med Apples Väder-app, högsta och lägsta temperatur och regnrisk i blått när det är blött väder och risken är minst 30 %. Tidigare dagar i veckan visas tonade. Ikonerna är egna SVG-ikoner: sol, mest sol, sol och moln, mulet, dimma, duggregn, regn, regnskurar (sol, moln och regn), snöblandat, snö och åska. Färgerna anpassas till ljust och mörkt tema.
 
 - **Källa:** [Open-Meteo](https://open-meteo.com/) (gratis, ingen nyckel, CC BY 4.0, källan anges under remsan). Ett anrop hämtar hela veckan med `start_date` = måndag och `end_date` = söndag i tidszonen Europe/Stockholm.
-- **Ort:** Göteborg som standard. Under Inställningar → Hemskärm söker du en annan ort, till exempel Angered. Valet sparas per enhet i `forma-weather-place`, och hemskärmen byter direkt.
+- **Ort:** Göteborg som standard. Under Inställningar → Väder söker du en annan ort, till exempel Angered. Valet sparas per enhet i `forma-weather-place`, och hemskärmen byter direkt.
 - **Uppdatering:** vädret hämtas när hemskärmen öppnas, var 30:e minut medan den syns, när iPaden blir synlig igen och när nätet kommer tillbaka. Veckan sparas i `forma-weather-cache`. Utan nät visas den sparade veckan med ”Sparat hh:mm · offline”. Utan sparad vecka visas ”Vädret kunde inte hämtas” med *Försök igen*. Samtidiga anrop slås ihop till ett.
 - **Layout:** remsan går över hela bredden i båda orienteringarna. För att allt ska få plats utan scroll är klockan mindre, dagens råd gömt (det finns i briefingen) och tillskottsraderna tätare. Gör först, snabbuppgiften och navigeringen syns alltid helt.
 

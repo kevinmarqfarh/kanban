@@ -238,3 +238,22 @@
 /* Bigger time pill on the kitchen screen */
 .hs-habit-copy { align-items: center; }
 .hs-habit .time-pill { font-size: 11px; padding: 2px 8px 2px 7px; }
+
+/* Weekly weather on the regular Home (phone, laptop): a calm card above the briefing. */
+.home-weather { display: flex; flex-direction: column; gap: 10px; min-width: 0; padding: 16px 18px 12px; border: 1px solid var(--line); border-radius: var(--radius-bento); background: var(--surface); box-shadow: var(--shadow-card); }
+.home-weather .wx-place { flex-direction: row; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; }
+.home-weather .wx-credit { margin: 0 0 0 auto; }
+.home-weather .wx-retry { margin: 0; }
+@media (max-width: 760px) {
+  .home-weather { padding: 14px 10px 10px; border-radius: 24px; }
+  .home-weather .wx-place { padding: 0 8px; }
+  .home-weather .wx-place strong { font-size: 15px; }
+  .home-weather .wx-days { gap: 2px; }
+  .home-weather .wx-day { grid-template-rows: auto 30px 11px auto; padding: 5px 0 6px; border-radius: 12px; }
+  .home-weather .weather-icon { width: 30px; height: 30px; }
+  .home-weather .wx-day-name { font-size: 11px; }
+  .home-weather .wx-rain-chance { font-size: 10px; }
+  .home-weather .wx-temps { flex-direction: column; align-items: center; gap: 0; line-height: 1.15; }
+  .home-weather .wx-temps strong { font-size: 14px; }
+  .home-weather .wx-temps small { font-size: 12px; }
+}

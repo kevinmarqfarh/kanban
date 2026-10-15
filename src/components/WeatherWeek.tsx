@@ -8,13 +8,13 @@ const short = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön']
 const pad = (value: number) => String(value).padStart(2, '0')
 
 /** Monday–Sunday at a glance, Apple Weather style: day, icon, rain chance and high/low. */
-export function WeatherWeek({ today, place, week, status, onRetry }: {
-  today: string; place: WeatherPlace; week: Week | null; status: WeatherStatus; onRetry: () => void;
+export function WeatherWeek({ today, place, week, status, onRetry, className = 'hs-card hs-weather' }: {
+  today: string; place: WeatherPlace; week: Week | null; status: WeatherStatus; onRetry: () => void; className?: string;
 }) {
   const dates = weatherWeek(today)
   const byDate = new Map((week?.days ?? []).map(day => [day.date, day]))
   const updated = week ? new Date(week.fetchedAt) : null
-  return <section className="hs-card hs-weather" aria-label={`Väder vecka ${isoWeek(today)}, ${place.name}`} data-testid="home-screen-weather" data-status={status}>
+  return <section className={className} aria-label={`Väder vecka ${isoWeek(today)}, ${place.name}`} data-testid={className.includes('home-weather') ? 'home-weather' : 'home-screen-weather'} data-status={status}>
     <div className="wx-place">
       <strong>{place.name}</strong>
       <small>{status === 'loading' ? 'Hämtar väder…'

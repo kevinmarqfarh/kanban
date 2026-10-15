@@ -8,6 +8,8 @@ import { Summary } from './Summary'
 import { Briefing } from './Briefing'
 import { HomeScreen } from './HomeScreen'
 import { NutritionTimePill } from './NutritionTimePill'
+import { WeatherWeek } from './WeatherWeek'
+import { useWeather } from '../hooks/useWeather'
 import type { SyncStatus } from '../lib/types'
 import type { GiftTaskDraft } from '../lib/briefing'
 
@@ -27,6 +29,8 @@ export function Home({ workspace, today, reports, initialId, localOnly, homeScre
   const [reading, setReading] = useState(!!initialId)
   const [error, setError] = useState<string | null>(null)
   const [birthdayFilter, setBirthdayFilter] = useState<string | null>(null)
+  // The regular Home shows the week's weather too; the docked home screen has its own copy.
+  const weather = useWeather(today, !homeScreen)
   const notifications = unreadBirthdayNotifications(workspace)
   const habits = workspace.nutritionHabits ?? []
   const finished = habits.filter(habit => isNutritionComplete(workspace, habit.id, today)).length
@@ -54,6 +58,7 @@ export function Home({ workspace, today, reports, initialId, localOnly, homeScre
           </article>
         })}
       </section>}
+      <WeatherWeek className="home-weather" today={today} place={weather.place} week={weather.week} status={weather.status} onRetry={weather.retry} />
       <Briefing workspace={workspace} today={today} debriefs={reports.debriefs} onOpenTask={onOpenTask} onOpenPlanner={onOpenPlanner} onOpenBirthdays={onBirthdays} onCreateGiftTask={onCreateGiftTask} onSave={reports.importDebrief} />
       <div className="home-grid">
         <section className="home-panel" aria-labelledby="home-nutrition-title" data-testid="home-nutrition">

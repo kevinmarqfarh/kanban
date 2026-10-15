@@ -105,7 +105,7 @@ export function Briefing({ workspace, today, debriefs, onOpenTask, onOpenPlanner
       {statItems.map(item => <div className={`briefing-stat${item.alert ? ' is-alert' : ''}${item.value === 0 ? ' is-zero' : ''}`} key={item.key} data-stat={item.key}><dt>{item.label}</dt><dd>{item.value}</dd></div>)}
     </dl>
 
-    <div className="briefing-grid">
+    <div className={`briefing-grid${briefing.tips.length ? '' : ' is-single'}`}>
       <section className="briefing-block" aria-labelledby="briefing-focus-title" data-testid="briefing-focus">
         <h3 id="briefing-focus-title"><AlarmClock size={16} aria-hidden="true" />Gör först</h3>
         {briefing.focus.length > 0 ? <ol className="briefing-focus">
@@ -121,7 +121,7 @@ export function Briefing({ workspace, today, debriefs, onOpenTask, onOpenPlanner
         </ol> : <div className="briefing-empty"><p>Inga öppna uppgifter i Planner.</p><button className="button secondary" type="button" onClick={onOpenPlanner}>Öppna Planner<ArrowRight size={15} /></button></div>}
       </section>
 
-      <section className="briefing-block" aria-labelledby="briefing-tips-title" data-testid="briefing-tips">
+      {briefing.tips.length > 0 && <section className="briefing-block" aria-labelledby="briefing-tips-title" data-testid="briefing-tips">
         <h3 id="briefing-tips-title"><Zap size={16} aria-hidden="true" />Förslag</h3>
         <ul className="briefing-tips">
           {tips.map(tip => {
@@ -143,7 +143,7 @@ export function Briefing({ workspace, today, debriefs, onOpenTask, onOpenPlanner
           })}
         </ul>
         {briefing.tips.length > preview && <button className="button ghost briefing-more" type="button" aria-expanded={showAllTips} onClick={() => setShowAllTips(value => !value)}>{showAllTips ? 'Visa färre' : phone ? `Visa ${briefing.tips.length - preview} förslag till` : `Visa alla förslag (${briefing.tips.length})`}<ChevronDown size={15} className={showAllTips ? 'is-open' : ''} /></button>}
-      </section>
+      </section>}
     </div>
 
     {briefing.agenda.length > 0 && <section className="briefing-agenda" aria-labelledby="briefing-agenda-title" data-testid="briefing-agenda">
