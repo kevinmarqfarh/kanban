@@ -5,8 +5,8 @@ import { fetchWithTimeout } from '../lib/cloud'
 import { DEFAULT_PLACE, geocodeUrl, parsePlaces, samePlace, type WeatherPlace } from '../lib/weather'
 import { localDateString } from '../lib/birthdays'
 
-/** Settings → Hemskärm: choose the town for the weekly weather. Stored on this device only. */
-export function WeatherPlacePicker() {
+/** Settings → Väder and the weather page: choose the town for the forecast. Stored on this device only. */
+export function WeatherPlacePicker({ onChosen }: { onChosen?: (place: WeatherPlace) => void } = {}) {
   const { place, setPlace } = useWeather(localDateString(new Date()), false)
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<(WeatherPlace & { detail: string })[] | null>(null)
@@ -29,6 +29,7 @@ export function WeatherPlacePicker() {
   function choose(next: WeatherPlace) {
     setPlace({ name: next.name, latitude: next.latitude, longitude: next.longitude })
     setResults(null); setQuery(''); setMessage(`Vädret visas nu för ${next.name}.`)
+    onChosen?.(next)
   }
   return <div className="weather-place" aria-labelledby="weather-place-title">
     <p id="weather-place-title" className="weather-place-current"><MapPin size={15} aria-hidden="true" />Väder för <strong>{place.name}</strong>{!samePlace(place, DEFAULT_PLACE) && <button className="button ghost" type="button" onClick={() => choose(DEFAULT_PLACE)}>Återställ Göteborg</button>}</p>

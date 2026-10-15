@@ -160,7 +160,15 @@
 .wx-credit { margin-top: 2px; color: var(--ink-muted); font-size: 10px; text-decoration: none; }
 .wx-retry { min-height: 36px; margin: 2px 0 0 -12px; padding: 6px 12px; font-size: 11px; }
 .wx-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin: 0; padding: 0; list-style: none; }
-.wx-day { display: grid; grid-template-rows: auto 36px 12px auto; justify-items: center; align-items: center; gap: 1px; min-width: 0; padding: 6px 2px 7px; border-radius: 14px; }
+.wx-day { --wx-rows: auto 36px 12px auto; --wx-pad: 6px 2px 7px; display: grid; grid-template-rows: var(--wx-rows); justify-items: center; align-items: center; gap: 1px; min-width: 0; padding: var(--wx-pad); border-radius: 14px; }
+/* Tappable days (they open Others → Väder on that day): the button carries the layout. */
+.wx-day.has-button { grid-template-rows: auto; padding: 0; }
+.wx-day-button { display: grid; grid-template-rows: var(--wx-rows); justify-items: center; align-items: center; gap: 1px; width: 100%; min-width: 0; padding: var(--wx-pad); border-radius: inherit; color: inherit; text-align: center; -webkit-tap-highlight-color: transparent; }
+.wx-day-button:hover { background: var(--surface-hover); }
+.wx-day-button:active { transform: scale(0.97); }
+.wx-open { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; min-height: 44px; margin: -12px 0 -12px -8px; padding: 0 8px; border-radius: 10px; color: var(--ink); }
+.wx-open:hover { background: var(--surface-hover); }
+.wx-open svg { flex-shrink: 0; color: var(--ink-muted); }
 .wx-day.is-today { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--line-strong); }
 .wx-day.is-past { opacity: 0.5; }
 .wx-day-name { color: var(--ink-secondary); font-size: 12px; font-weight: 600; }
@@ -183,6 +191,7 @@
 .weather-icon .wx-snow circle { fill: #8ec5ff; }
 .weather-icon .wx-fog line { stroke: #a3adb9; stroke-width: 2; stroke-linecap: round; }
 .weather-icon .wx-bolt { fill: #ffc531; }
+.weather-icon .wx-moon { fill: #f4e7a8; stroke: #d9c779; stroke-width: 0.8; }
 [data-theme='dark'] .weather-icon .wx-cloud { fill: #e9edf2; stroke: #e9edf2; }
 [data-theme='dark'] .weather-icon .wx-cloud-back { fill: #8c96a3; stroke: #8c96a3; }
 [data-theme='dark'] .wx-rain-chance { color: #6fb2ff; }
@@ -226,7 +235,7 @@
   .hs-week-day { padding: 3px 0; }
   .hs-card-heading { margin-bottom: 8px; }
   .hs-weather { padding-block: 6px; }
-  .wx-day { grid-template-rows: auto 34px 11px auto; padding: 4px 2px 5px; }
+  .wx-day { --wx-rows: auto 34px 11px auto; --wx-pad: 4px 2px 5px; }
 }
 @media (orientation: portrait) {
   .hs-today { grid-template-areas: 'now focus'; }
@@ -249,7 +258,7 @@
   .home-weather .wx-place { padding: 0 8px; }
   .home-weather .wx-place strong { font-size: 15px; }
   .home-weather .wx-days { gap: 2px; }
-  .home-weather .wx-day { grid-template-rows: auto 30px 11px auto; padding: 5px 0 6px; border-radius: 12px; }
+  .home-weather .wx-day { --wx-rows: auto 30px 11px auto; --wx-pad: 5px 0 6px; border-radius: 12px; }
   .home-weather .weather-icon { width: 30px; height: 30px; }
   .home-weather .wx-day-name { font-size: 11px; }
   .home-weather .wx-rain-chance { font-size: 10px; }

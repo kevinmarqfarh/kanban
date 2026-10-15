@@ -2,6 +2,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { routeWeather } = require('./helpers/weather-mock.cjs');
 const playwright = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const engine = process.env.BROWSER_ENGINE === 'chromium' ? 'chromium' : 'webkit';
 const base = process.env.APP_URL || 'http://127.0.0.1:4173';
@@ -44,7 +45,7 @@ async function open(browser, { viewport = LANDSCAPE, touch = true, mode = null, 
     if (mode && !sessionStorage.getItem('mode-set')) { localStorage.setItem('forma-homescreen', mode); sessionStorage.setItem('mode-set', '1'); }
   }, { key, value: fixture, theme, mode });
   // Weather is mocked so the layout checks never depend on the network.
-  await context.route('https://api.open-meteo.com/**', route => route.fulfill({ headers: { 'access-control-allow-origin': '*' }, json: { daily: { time: ['2026-10-05', '2026-10-06', '2026-10-07', '2026-10-08', '2026-10-09', '2026-10-10', '2026-10-11'], weather_code: [3, 61, 2, 0, 80, 1, 63], temperature_2m_max: [11, 9, 12, 13, 10, 12, 8], temperature_2m_min: [5, 6, 4, 3, 6, 5, 4], precipitation_probability_max: [20, 85, 10, 0, 60, 5, 90] } } }));
+  await routeWeather(context, {}, time);
   if (setup) await setup(context);
   const page = await context.newPage();
   const errors = [];

@@ -19,9 +19,7 @@ const fixture = { version: 1, revision: null, dirty: false, workspace: {
   nutritionCompletions: [{ id: 'nutrition:dv:2026-10-14', habitId: 'dv', date: '2026-10-14', completed: true }],
   birthdays: [{ id: 'mira', name: 'Mira', birthDate: '2019-10-20', reminders: [], createdAt: created, generatedReminders: [], tag: null }], birthdayNotifications: [],
 } };
-const forecast = { daily: { time: ['2026-10-12', '2026-10-13', '2026-10-14', '2026-10-15', '2026-10-16', '2026-10-17', '2026-10-18'], weather_code: [3, 61, 2, 0, 80, 1, 63], temperature_2m_max: [11.2, 9.6, 12.4, 13.8, 10.1, 12.9, 8.7], temperature_2m_min: [5.1, 6.0, 4.4, 3.2, 6.6, 5.0, 4.9], precipitation_probability_max: [20, 85, 10, 0, 60, 5, 90] } };
-const malmo = { daily: { ...forecast.daily, weather_code: [0, 0, 0, 0, 0, 0, 0] } };
-const cors = { 'access-control-allow-origin': '*' };
+const { routeWeather, cors } = require('./helpers/weather-mock.cjs');
 
 const results = [];
 const check = async (name, fn) => { try { await fn(); results.push(true); console.log(`PASS ${name}`); } catch (error) { results.push(false); console.log(`FAIL ${name}: ${error.stack}`); } };
@@ -30,13 +28,8 @@ const weather = page => page.getByTestId('home-screen-weather');
 
 async function open(browser, { viewport = { width: 1024, height: 768 }, touch = true, time = '2026-10-14T07:42:00+02:00', weatherRoute = 'ok', theme = 'light', homescreen } = {}) {
   const context = await browser.newContext({ viewport, hasTouch: touch, deviceScaleFactor: 2, serviceWorkers: 'block', timezoneId: 'Europe/Stockholm', locale: 'sv-SE' });
-  const state = { forecastCalls: [], geocodeCalls: 0, mode: weatherRoute };
-  await context.route('https://api.open-meteo.com/**', route => {
-    const url = new URL(route.request().url());
-    state.forecastCalls.push(url.searchParams);
-    if (state.mode === 'fail') return route.abort('internetdisconnected');
-    return route.fulfill({ headers: cors, json: url.searchParams.get('latitude') === '55.6050' ? malmo : forecast });
-  });
+  const state = { geocodeCalls: 0, mode: weatherRoute };
+  await routeWeather(context, state, time);
   await context.route('https://geocoding-api.open-meteo.com/**', route => { state.geocodeCalls++; return route.fulfill({ headers: cors, json: { results: [{ name: 'Malmö', latitude: 55.605, longitude: 13.0038, admin1: 'Skåne', country: 'Sverige' }] } }); });
   await context.addInitScript(({ key, value, theme, homescreen }) => {
     if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(value));
@@ -63,15 +56,20 @@ async function open(browser, { viewport = { width: 1024, height: 768 }, touch = 
         const days = weather(page).locator('.wx-day');
         assert.deepEqual(await days.evaluateAll(nodes => nodes.map(node => node.dataset.date)), ['2026-10-12', '2026-10-13', '2026-10-14', '2026-10-15', '2026-10-16', '2026-10-17', '2026-10-18']);
         assert.deepEqual(await days.locator('.wx-day-name').allTextContents(), ['Mån', 'Tis', 'Idag', 'Tor', 'Fre', 'Lör', 'Sön']);
-        assert.deepEqual(await weather(page).locator('.weather-icon').evaluateAll(nodes => nodes.map(node => node.dataset.kind)), ['cloudy', 'rain', 'partly-cloudy', 'sun', 'showers', 'mostly-sunny', 'rain']);
-        assert.deepEqual(await days.locator('.wx-rain-chance').allTextContents(), ['', '85%', '', '', '60%', '', '90%']);
-        assert.deepEqual(await days.locator('.wx-temps').allTextContents(), ['11°5°', '10°6°', '12°4°', '14°3°', '10°7°', '13°5°', '9°5°']);
+        assert.deepEqual(await weather(page).locator('.weather-icon').evaluateAll(nodes => nodes.map(node => node.dataset.kind)), ['rain', 'sun', 'cloudy', 'rain', 'sun', 'sun', 'sun']);
+        assert.deepEqual(await days.locator('.wx-rain-chance').allTextContents(), ['85%', '', '', '87%', '', '', '']);
+        assert.deepEqual(await days.locator('.wx-temps').allTextContents(), ['10°6°', '13°3°', '15°4°', '14°10°', '11°6°', '11°3°', '12°3°']);
         assert.match(await days.nth(2).getAttribute('class'), /is-today/);
         assert.match(await days.nth(0).getAttribute('class'), /is-past/);
-        assert.match(await days.nth(1).getAttribute('aria-label'), /tisdag 13 oktober: Regn, högst 10 grader, lägst 6 grader, 85 procent risk för nederbörd/);
-        assert.match(await weather(page).textContent(), /Göteborg.*Uppdaterat 07:42.*Väder: Open-Meteo/s);
-        assert.equal(state.forecastCalls[0].get('start_date'), '2026-10-12');
-        assert.equal(state.forecastCalls[0].get('end_date'), '2026-10-18');
+        assert.match(await days.nth(0).getAttribute('aria-label'), /måndag 12 oktober: Lätt regn, högst 10 grader, lägst 6 grader, 85 procent risk för nederbörd/);
+        assert.match(await days.nth(3).locator('button').getAttribute('aria-label'), /torsdag 15 oktober: Regn, högst 14 grader, lägst 10 grader, 87 procent risk för nederbörd\. Visa timprognos\./);
+        assert.equal(await days.nth(1).locator('button').count(), 0, 'Past days are not tappable.');
+        assert.equal(await days.locator('button').count(), 5, 'Today and the rest of the week open the weather page.');
+        assert.match(await weather(page).textContent(), /Göteborg.*Uppdaterat 07:42.*Källa: SMHI · Open-Meteo/s);
+        assert.equal(await weather(page).getAttribute('data-source'), 'smhi');
+        assert.equal(state.smhiCalls.length, 1, 'SMHI is the forecast.');
+        assert.match(state.smhiCalls[0], /snow1g\/version\/1\/geotype\/point\/lon\/11\.9746\/lat\/57\.7089\/data\.json$/);
+        assert.equal(state.forecastCalls[0].get('start_date'), '2026-10-12', 'Open-Meteo fills in Monday and Tuesday.');
         const size = await page.evaluate(() => ({ scroll: document.documentElement.scrollHeight, inner: innerHeight }));
         assert.ok(size.scroll <= size.inner + 1, `${label}: no page scroll (${size.scroll} > ${size.inner})`);
         const inView = await page.locator('.wx-day, .hs-focus-row, .hs-quick, .bottom-nav').evaluateAll(nodes => nodes.every(node => { const r = node.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight + 0.5; }));

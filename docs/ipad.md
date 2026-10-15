@@ -37,14 +37,18 @@ Koden finns i `src/components/HomeScreen.tsx`, `src/hooks/useHomeScreen.ts`, `sr
 
 ## Veckoväder
 
-Hemskärmen visar vädret för måndag–söndag i en remsa överst. Varje dag har dagens namn (”Idag” för i dag), en färgad ikon i stil med Apples Väder-app, högsta och lägsta temperatur och regnrisk i blått när det är blött väder och risken är minst 30 %. Tidigare dagar i veckan visas tonade. Ikonerna är egna SVG-ikoner: sol, mest sol, sol och moln, mulet, dimma, duggregn, regn, regnskurar (sol, moln och regn), snöblandat, snö och åska. Färgerna anpassas till ljust och mörkt tema.
+Hemskärmen visar vädret för måndag–söndag i en remsa överst. Varje dag har:
 
-- **Källa:** [Open-Meteo](https://open-meteo.com/) (gratis, ingen nyckel, CC BY 4.0, källan anges under remsan). Ett anrop hämtar hela veckan med `start_date` = måndag och `end_date` = söndag i tidszonen Europe/Stockholm.
-- **Ort:** Göteborg som standard. Under Inställningar → Väder söker du en annan ort, till exempel Angered. Valet sparas per enhet i `forma-weather-place`, och hemskärmen byter direkt.
-- **Uppdatering:** vädret hämtas när hemskärmen öppnas, var 30:e minut medan den syns, när iPaden blir synlig igen och när nätet kommer tillbaka. Veckan sparas i `forma-weather-cache`. Utan nät visas den sparade veckan med ”Sparat hh:mm · offline”. Utan sparad vecka visas ”Vädret kunde inte hämtas” med *Försök igen*. Samtidiga anrop slås ihop till ett.
-- **Layout:** remsan går över hela bredden i båda orienteringarna. För att allt ska få plats utan scroll är klockan mindre, dagens råd gömt (det finns i briefingen) och tillskottsraderna tätare. Gör först, snabbuppgiften och navigeringen syns alltid helt.
+- dagens namn (”Idag” för i dag)
+- en färgad ikon i stil med Apples Väder-app
+- högsta och lägsta temperatur
+- regnrisk i blått, när det är blött väder och risken är minst 30 %
 
-Koden finns i `src/lib/weather.ts` (tolkning, väderkoder, cache), `src/hooks/useWeather.ts`, `src/components/WeatherWeek.tsx`, `src/components/WeatherIcon.tsx` och `src/components/WeatherPlacePicker.tsx`.
+Tidigare dagar i veckan visas tonade. **Tryck på en dag** (i dag eller senare) för att öppna dagens timprognos på vädersidan, eller på ortnamnet för att öppna hela vädersidan. Varje dag är en tryckyta på minst 44 × 44 punkter.
+
+Prognosen kommer från SMHI. Open-Meteo fyller i de dagar som redan passerat i veckan. Källorna anges under remsan, till exempel ”Källa: SMHI · Open-Meteo”. Källor, uppdatering, cache och vädersidan beskrivs i [weather.md](weather.md).
+
+**Layout:** remsan går över hela bredden i båda orienteringarna. För att allt ska få plats utan scroll är klockan mindre, dagens råd gömt (det finns i briefingen) och tillskottsraderna tätare. Gör först, snabbuppgiften och navigeringen syns alltid helt.
 
 ## Morgon och kväll för kosttillskott
 
@@ -96,7 +100,7 @@ iPad mini 4, iPad Air 2 och iPad (5:e generationen) kan inte uppdateras förbi *
   - Hämtning varje minut, med kontroll att telefonens ändring aldrig skrivs över.
   - Mörkt tema och tvingad Safari 15-rendering.
 
-- `tests/weather-and-nutrition-time.mjs` (ingår i `npm test`): väderkoder, måndag–söndag även över årsskifte, tolkning av ofullständiga svar, regnrisk, cache och ortsökning, samt etiketterna Morgon och Kväll och validering.
+- `tests/weather-and-nutrition-time.mjs` (ingår i `npm test`): väderkoder, nattikoner, måndag–söndag även över årsskifte, regnrisk, cache och ortsökning, samt etiketterna Morgon och Kväll och validering. SMHI-delen testas i `tests/forecast.mjs`, se [weather.md](weather.md).
 - `tests/weather-nutrition-acceptance.cjs` (WebKit och Chromium):
   - veckoväder i båda orienteringarna utan scroll
   - offline med sparad vecka och nytt försök

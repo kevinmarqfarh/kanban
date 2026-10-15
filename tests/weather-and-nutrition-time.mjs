@@ -20,74 +20,65 @@ const time = await module('../src/lib/nutritionTime.ts')
 const { isWorkspace } = await module('../src/lib/workspaceValidation.ts', { './birthdays': birthdays, './others': others })
 const { createEmptyWorkspace } = await module('../src/lib/seed.ts')
 
-/* ---------------- Weather ---------------- */
-const { weatherKind, weatherWeek, forecastUrl, parseForecast, showRainChance, parsePlaces, geocodeUrl, isPlace, usableCache, isStale, samePlace, DEFAULT_PLACE } = weather
+/* ---------------- Weather (shared model) ---------------- */
+// The forecast itself (SMHI, Open-Meteo, days, hours) is covered by tests/forecast.mjs.
+const { weatherKind, weatherWeek, showRainChance, rainChanceText, stepKind, parsePlaces, geocodeUrl, isPlace, usableCache, isStale, samePlace, weekForecast, DEFAULT_PLACE } = weather
 const TODAY = '2026-10-14' // Wednesday
 
-// WMO codes → icon family the user asked for: sunny, cloudy, rainy, cloud/rain …
+// WMO codes (Open-Meteo fallback) → icon family the user asked for: sunny, cloudy, rainy, cloud/rain …
 const kinds = { 0: 'sun', 1: 'mostly-sunny', 2: 'partly-cloudy', 3: 'cloudy', 45: 'fog', 48: 'fog', 51: 'drizzle', 55: 'drizzle', 56: 'sleet', 61: 'rain', 63: 'rain', 65: 'rain', 66: 'sleet', 71: 'snow', 77: 'snow', 80: 'showers', 82: 'showers', 85: 'snow', 95: 'thunder', 99: 'thunder', 42: 'cloudy' }
 for (const [code, kind] of Object.entries(kinds)) assert.equal(weatherKind(Number(code)).kind, kind, `code ${code}`)
-assert.equal(weatherKind(0).label, 'Soligt')
+assert.equal(weatherKind(0).label, 'Klart')
 assert.equal(weatherKind(80).label, 'Regnskurar')
+
+// The moon replaces the sun after dark; cloudy and rainy icons stay the same.
+assert.equal(stepKind({ kind: 'sun', night: true }), 'clear-night')
+assert.equal(stepKind({ kind: 'mostly-sunny', night: true }), 'mostly-clear-night')
+assert.equal(stepKind({ kind: 'partly-cloudy', night: true }), 'partly-cloudy-night')
+assert.equal(stepKind({ kind: 'showers', night: true }), 'showers-night')
+assert.equal(stepKind({ kind: 'rain', night: true }), 'rain')
+assert.equal(stepKind({ kind: 'sun', night: false }), 'sun')
 
 // Monday–Sunday of the current ISO week, also across a month and year boundary.
 assert.deepEqual(weatherWeek(TODAY), ['2026-10-12', '2026-10-13', '2026-10-14', '2026-10-15', '2026-10-16', '2026-10-17', '2026-10-18'])
 assert.deepEqual(weatherWeek('2026-10-18'), weatherWeek('2026-10-12'), 'Sunday belongs to the same week as Monday.')
 assert.deepEqual(weatherWeek('2027-01-01'), ['2026-12-28', '2026-12-29', '2026-12-30', '2026-12-31', '2027-01-01', '2027-01-02', '2027-01-03'])
 
-const url = new URL(forecastUrl(DEFAULT_PLACE, TODAY))
-assert.equal(url.origin + url.pathname, 'https://api.open-meteo.com/v1/forecast')
-assert.equal(url.searchParams.get('start_date'), '2026-10-12')
-assert.equal(url.searchParams.get('end_date'), '2026-10-18')
-assert.equal(url.searchParams.get('timezone'), 'Europe/Stockholm')
-assert.equal(url.searchParams.get('latitude'), '57.7089')
-assert.match(url.searchParams.get('daily'), /weather_code.*temperature_2m_max.*temperature_2m_min.*precipitation_probability_max/)
+// Apple-style rain chance in the week strip: only for wet weather and at least 30 %.
+const day = (kind, rain) => ({ date: TODAY, kind, label: '', max: 10, min: 5, rain })
+assert.equal(showRainChance(day('rain', 85)), true)
+assert.equal(showRainChance(day('showers', 60)), true)
+assert.equal(showRainChance(day('cloudy', 20)), false, 'Cloudy with 20 % shows no percentage.')
+assert.equal(showRainChance(day('cloudy', 60)), false, 'The strip only shows a chance under a wet icon.')
+assert.equal(showRainChance(day('rain', 20)), false)
+assert.equal(showRainChance(day('rain', null)), false, 'A missing chance stays unknown, not 0.')
+// The weather page shows every chance from 10 %, rounded to tens like Apple Weather.
+assert.equal(rainChanceText(43), '40%')
+assert.equal(rainChanceText(87), '90%')
+assert.equal(rainChanceText(10), '10%')
+assert.equal(rainChanceText(9), '')
+assert.equal(rainChanceText(null), '')
 
-const sample = { daily: {
-  time: ['2026-10-18', '2026-10-12', '2026-10-13', '2026-10-14', '2026-10-15', '2026-10-16', '2026-10-17', '2026-10-19'],
-  weather_code: [63, 3, 61, 2, 0, 80, 1, 0],
-  temperature_2m_max: [8.7, 11.2, 9.6, 12.4, 13.5, 10.1, 12.9, 15],
-  temperature_2m_min: [4.9, 5.1, 6.0, 4.4, -0.6, 6.6, 5.0, 1],
-  precipitation_probability_max: [90, 20, 85, 10, null, 60, 5, 0],
-} }
-const now = new Date('2026-10-14T07:42:00+02:00')
-const parsed = parseForecast(sample, DEFAULT_PLACE, TODAY, now)
-assert.deepEqual(parsed.days.map(day => day.date), weatherWeek(TODAY), 'Ordered Monday–Sunday, extra days dropped.')
-assert.deepEqual(parsed.days.map(day => day.kind), ['cloudy', 'rain', 'partly-cloudy', 'sun', 'showers', 'mostly-sunny', 'rain'])
-assert.deepEqual(parsed.days.map(day => [day.max, day.min]), [[11, 5], [10, 6], [12, 4], [14, -1], [10, 7], [13, 5], [9, 5]], 'Rounded to whole degrees.')
-assert.equal(parsed.days[3].rain, null, 'A missing rain chance stays unknown, not 0.')
-assert.equal(parsed.fetchedAt, now.toISOString())
-assert.equal(parsed.place, DEFAULT_PLACE)
-
-// Partial or broken responses.
-const partial = parseForecast({ daily: { time: ['2026-10-14', '2026-10-15'], weather_code: [2, 'x'], temperature_2m_max: [12, 13], temperature_2m_min: [4, 3] } }, DEFAULT_PLACE, TODAY, now)
-assert.deepEqual(partial.days.map(day => day.date), ['2026-10-14'], 'Days with invalid values are left out.')
-assert.throws(() => parseForecast({}, DEFAULT_PLACE, TODAY, now), /Väderdata saknas/)
-assert.throws(() => parseForecast(null, DEFAULT_PLACE, TODAY, now), /Väderdata saknas/)
-assert.throws(() => parseForecast({ daily: { time: ['2025-01-01'], weather_code: [0], temperature_2m_max: [1], temperature_2m_min: [0] } }, DEFAULT_PLACE, TODAY, now), /för veckan/)
-
-// Apple-style rain chance: only for wet weather and at least 30 %.
-const [mon, tue, wed, thu, fri] = parsed.days
-assert.equal(showRainChance(tue), true)
-assert.equal(showRainChance(fri), true)
-assert.equal(showRainChance(mon), false, 'Cloudy with 20 % shows no percentage.')
-assert.equal(showRainChance(wed), false)
-assert.equal(showRainChance(thu), false)
-assert.equal(showRainChance({ ...tue, rain: 20 }), false)
-
-// Cache: same place and week only; stale after 30 minutes.
-assert.equal(usableCache(parsed, DEFAULT_PLACE, TODAY), parsed)
-assert.equal(usableCache(parsed, DEFAULT_PLACE, '2026-10-18'), parsed, 'Still the same week on Sunday.')
-assert.equal(usableCache(parsed, DEFAULT_PLACE, '2026-10-19'), null, 'A new week needs a new forecast.')
-assert.equal(usableCache(parsed, { name: 'Malmö', latitude: 55.605, longitude: 13.0038 }, TODAY), null)
-assert.equal(usableCache({ ...parsed, days: 'x' }, DEFAULT_PLACE, TODAY), null)
+// Cache: same place and still about today or later; stale after 30 minutes.
+const step = { time: '2026-10-14T06:00:00.000Z', start: '2026-10-14T05:00:00.000Z', temp: 9, kind: 'cloudy', label: 'Mulet', rain: 0, mm: 0, wind: 3, gust: 6, windDir: 200, humidity: 80, pressure: 1010, visibility: 20, night: true, source: 'smhi' }
+const forecastDay = date => ({ date, kind: 'cloudy', label: 'Mulet', max: 12, min: 5, rain: 10, mm: 0, wind: 4, gust: 8, sunrise: null, sunset: null, sun: null })
+const cached = { place: DEFAULT_PLACE, source: 'smhi', sources: ['smhi', 'open-meteo'], fetchedAt: '2026-10-14T05:42:00.000Z', referenceTime: '2026-10-14T05:00:00.000Z', steps: [step], days: weatherWeek(TODAY).map(forecastDay) }
+assert.equal(usableCache(cached, DEFAULT_PLACE, TODAY), cached)
+assert.equal(usableCache(cached, DEFAULT_PLACE, '2026-10-18'), cached, 'Still useful on Sunday.')
+assert.equal(usableCache(cached, DEFAULT_PLACE, '2026-10-19'), null, 'Nothing left about the coming days.')
+assert.equal(usableCache(cached, { name: 'Malmö', latitude: 55.605, longitude: 13.0038 }, TODAY), null)
+assert.equal(usableCache({ ...cached, days: 'x' }, DEFAULT_PLACE, TODAY), null)
+assert.equal(usableCache({ ...cached, source: 'yr' }, DEFAULT_PLACE, TODAY), null)
+assert.equal(usableCache({ ...cached, steps: [{ ...step, temp: 'warm' }] }, DEFAULT_PLACE, TODAY), null)
+assert.equal(usableCache({ place: DEFAULT_PLACE, days: [], fetchedAt: cached.fetchedAt }, DEFAULT_PLACE, TODAY), null, 'The old v1 week format is not reused.')
 assert.equal(usableCache(null, DEFAULT_PLACE, TODAY), null)
-assert.equal(isStale(parsed, new Date('2026-10-14T08:00:00+02:00')), false)
-assert.equal(isStale(parsed, new Date('2026-10-14T08:12:00+02:00')), true, 'Exactly 30 minutes old is due (the timer fires at 30:00).')
-assert.equal(isStale(parsed, new Date('2026-10-14T08:10:00+02:00')), false)
-assert.equal(isStale(parsed, new Date('2026-10-14T08:13:00+02:00')), true)
-assert.equal(isStale({ ...parsed, fetchedAt: 'nonsense' }, now), true)
+assert.equal(isStale(cached, new Date('2026-10-14T08:00:00+02:00')), false)
+assert.equal(isStale(cached, new Date('2026-10-14T08:12:00+02:00')), true, 'Exactly 30 minutes old is due (the timer fires at 30:00).')
+assert.equal(isStale(cached, new Date('2026-10-14T08:10:00+02:00')), false)
+assert.equal(isStale({ ...cached, fetchedAt: 'nonsense' }, new Date()), true)
 assert.equal(samePlace(DEFAULT_PLACE, { name: 'Gbg', latitude: 57.70891, longitude: 11.97461 }), true)
+assert.deepEqual([...weekForecast({ ...cached, days: [...cached.days, forecastDay('2026-10-19')] }, TODAY).keys()], weatherWeek(TODAY), 'The strip takes Monday–Sunday only.')
+assert.equal(weekForecast(null, TODAY).size, 0)
 
 // Places.
 assert.equal(isPlace(DEFAULT_PLACE), true)
@@ -124,4 +115,4 @@ assert.equal(isWorkspace(workspace), true)
 assert.equal(isWorkspace({ ...workspace, nutritionHabits: [habit('a', 'noon')] , nutritionCompletions: [] }), false)
 assert.equal(isWorkspace({ ...workspace, nutritionHabits: [habit('a', 3)], nutritionCompletions: [] }), false)
 
-console.log('Weather and Morgon/Kväll passed: WMO icons, Monday–Sunday range, URL, parsing of partial/broken data, rain chance, cache/staleness, place search; Morgon/Kväll labels, legacy habits without a pill, and validation.')
+console.log('Weather and Morgon/Kväll passed: WMO icons, night icons, Monday–Sunday range, rain chance in the strip and on the page, forecast cache/staleness, place search; Morgon/Kväll labels, legacy habits without a pill, and validation.')

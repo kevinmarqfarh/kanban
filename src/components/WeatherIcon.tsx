@@ -15,6 +15,11 @@ function Sun({ cx = 16, cy = 16, r = 6.2, rays = true }: { cx?: number; cy?: num
   return <g className="wx-sun"><g className="wx-rays">{lines}</g><circle cx={cx} cy={cy} r={r} /></g>
 }
 
+/** A crescent moon, lit on the left: an outer half circle and an inner half ellipse, tilted a little. */
+function Moon({ cx = 16, cy = 16, r = 7.5 }: { cx?: number; cy?: number; r?: number }) {
+  return <path className="wx-moon" transform={`rotate(-24 ${cx} ${cy})`} d={`M${cx} ${cy - r}A${r} ${r} 0 1 0 ${cx} ${cy + r}A${r * 0.55} ${r} 0 1 1 ${cx} ${cy - r}z`} />
+}
+
 function Cloud({ x = 0, y = 0, scale = 1, back = false }: { x?: number; y?: number; scale?: number; back?: boolean }) {
   return <path className={back ? 'wx-cloud-back' : 'wx-cloud'} d={CLOUD} transform={`translate(${x} ${y}) scale(${scale})`} />
 }
@@ -38,6 +43,10 @@ export function WeatherIcon({ kind, size = 32, title }: { kind: WeatherKind; siz
     case 'showers': art = <><Sun cx={11} cy={9} r={4.6} rays={false} /><Cloud {...lifted} /><Drops count={2} /></>; break
     case 'sleet': art = <><Cloud {...lifted} /><g className="wx-rain"><line x1="12" y1="25" x2="10.6" y2="29" /></g><g className="wx-snow"><circle cx="17" cy="27" r="1.3" /><circle cx="22" cy="26" r="1.3" /></g></>; break
     case 'snow': art = <><Cloud {...lifted} /><g className="wx-snow"><circle cx="11" cy="26" r="1.4" /><circle cx="16.5" cy="28.5" r="1.4" /><circle cx="21.5" cy="26" r="1.4" /></g></>; break
+    case 'clear-night': art = <Moon cx={19} cy={16} r={10.5} />; break
+    case 'mostly-clear-night': art = <><Moon cx={16.5} cy={12} r={8} /><Cloud x={10} y={11.5} scale={0.62} /></>; break
+    case 'partly-cloudy-night': art = <><Moon cx={15} cy={10.5} r={7.2} /><Cloud x={2.5} y={1.5} scale={0.95} /></>; break
+    case 'showers-night': art = <><Moon cx={14} cy={8.5} r={6.4} /><Cloud {...lifted} /><Drops count={2} /></>; break
     case 'thunder': art = <><Cloud {...lifted} back /><path className="wx-bolt" d="M17.5 19.5l-4.5 6.5h3.4l-1.6 5 5.2-7h-3.5l1.6-4.5z" /></>; break
   }
   return <svg className={`weather-icon wx-kind-${kind}`} data-kind={kind} width={size} height={size} viewBox="0 0 32 32" role={title ? 'img' : undefined} aria-label={title} aria-hidden={title ? undefined : true} focusable="false">{art}</svg>

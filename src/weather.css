@@ -1,0 +1,139 @@
+/* Others → Väder: SMHI's forecast in the shape of Apple Weather. A sky that follows the weather, frosted cards. */
+.wxp {
+  --wxp-sky-top: #3f86d8; --wxp-sky-bottom: #87b9e8;
+  --wxp-card: rgba(255, 255, 255, 0.16); --wxp-card-line: rgba(255, 255, 255, 0.22);
+  --wxp-ink: #ffffff; --wxp-ink-soft: rgba(255, 255, 255, 0.78); --wxp-ink-faint: rgba(255, 255, 255, 0.6);
+  --wxp-blue: #c9e6ff;
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0;
+  padding: 18px 14px 16px; border-radius: 28px;
+  background: linear-gradient(180deg, var(--wxp-sky-top), var(--wxp-sky-bottom));
+  color: var(--wxp-ink); box-shadow: var(--shadow-card);
+}
+.wxp[data-sky='partly'] { --wxp-sky-top: #4f86c6; --wxp-sky-bottom: #a1bfdc; }
+.wxp[data-sky='cloudy'] { --wxp-sky-top: #66788d; --wxp-sky-bottom: #a3b0bf; }
+.wxp[data-sky='rain'] { --wxp-sky-top: #45546a; --wxp-sky-bottom: #7d8ca0; }
+.wxp[data-sky='snow'] { --wxp-sky-top: #7690ad; --wxp-sky-bottom: #bccbdb; }
+.wxp[data-sky='night'] { --wxp-sky-top: #0d1733; --wxp-sky-bottom: #2b3c69; }
+.wxp[data-sky='night-cloudy'] { --wxp-sky-top: #1b2230; --wxp-sky-bottom: #3c4759; }
+[data-theme='dark'] .wxp { filter: brightness(0.86) saturate(0.95); }
+
+/* The hero: place, big temperature, condition, high/low. */
+.wxp-hero { display: flex; flex-direction: column; align-items: center; gap: 0; padding: 8px 8px 6px; text-align: center; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.12); }
+.wxp-place { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 4px 12px; border-radius: 999px; color: var(--wxp-ink); font-size: 24px; font-weight: 500; letter-spacing: -0.3px; }
+.wxp-place:hover, .wxp-place[aria-expanded='true'] { background: rgba(255, 255, 255, 0.14); }
+.wxp-place svg { opacity: 0.8; }
+.wxp-now { margin: 0; line-height: 1; }
+.wxp-temp { display: inline-block; padding-left: 0.18em; font-size: 88px; font-weight: 200; letter-spacing: -3px; font-variant-numeric: tabular-nums; }
+.wxp-condition { margin-top: 2px; color: var(--wxp-ink-soft); font-size: 18px; font-weight: 500; }
+.wxp-empty { padding: 26px 0 10px; }
+.wxp-highlow { display: flex; gap: 12px; margin-top: 2px; font-size: 17px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.wxp-status { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px 10px; min-height: 20px; margin-top: 8px; color: var(--wxp-ink-faint); font-size: 12px; }
+.wxp-retry { display: inline-flex; align-items: center; gap: 5px; min-height: 36px; padding: 6px 12px; border: 1px solid var(--wxp-card-line); border-radius: 999px; background: var(--wxp-card); color: var(--wxp-ink); font-size: 12px; }
+
+/* Frosted cards. Old Safari gets the same tint without the blur (see compat.css). */
+.wxp-card { min-width: 0; padding: 12px 14px 14px; border: 1px solid var(--wxp-card-line); border-radius: 20px; background: var(--wxp-card); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+.wxp-card-title { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; padding-bottom: 8px; border-bottom: 1px solid var(--wxp-card-line); color: var(--wxp-ink-faint); font-size: 11px; font-weight: 650; letter-spacing: 0.6px; text-transform: uppercase; }
+.wxp-picker { color: var(--ink); background: var(--surface-solid); border-color: var(--line); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.wxp-picker .weather-place { margin-top: 0; }
+
+/* Hourly strip. */
+.wxp-summary { margin: 0 0 8px; padding-bottom: 10px; border-bottom: 1px solid var(--wxp-card-line); font-size: 14px; line-height: 1.45; }
+.wxp-hourly .wxp-card-title { border-bottom: 0; padding-bottom: 0; margin-bottom: 6px; }
+.wxp-hours { display: flex; gap: 2px; margin: 0 -14px; padding: 2px 10px 0; overflow-x: auto; list-style: none; scroll-snap-type: x proximity; scroll-padding-inline: 10px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.wxp-hours::-webkit-scrollbar { display: none; }
+.wxp-hour { display: grid; grid-template-rows: 18px 34px 14px 22px; justify-items: center; align-items: center; flex: 0 0 auto; min-width: 52px; padding: 4px 2px; scroll-snap-align: start; font-variant-numeric: tabular-nums; }
+.wxp-hour-time { font-size: 13px; font-weight: 600; }
+.wxp-hour.is-now .wxp-hour-time { font-weight: 750; }
+.wxp-hour-icon { display: flex; align-items: center; justify-content: center; height: 34px; }
+.wxp-hour.is-sun .wxp-hour-icon { color: #ffd45c; }
+.wxp-hour.is-sun .wxp-hour-time { font-size: 12px; }
+.wxp-hour-rain { color: var(--wxp-blue); font-size: 11px; font-weight: 700; line-height: 14px; }
+.wxp-hour-temp { font-size: 17px; font-weight: 550; }
+.wxp-hour.is-sun .wxp-hour-temp { font-size: 12px; font-weight: 600; color: var(--wxp-ink-soft); }
+
+/* Ten days: name, icon with chance, low, range bar, high. */
+.wxp-day-list { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.wxp-day-list li + li { border-top: 1px solid var(--wxp-card-line); }
+.wxp-day { display: grid; grid-template-columns: 74px 44px 34px minmax(60px, 1fr) 34px; align-items: center; gap: 8px; width: 100%; min-height: 52px; padding: 4px 4px; border-radius: 12px; color: var(--wxp-ink); text-align: left; font-variant-numeric: tabular-nums; -webkit-tap-highlight-color: transparent; }
+.wxp-day:hover { background: rgba(255, 255, 255, 0.1); }
+.wxp-day:active { background: rgba(255, 255, 255, 0.16); }
+.wxp-day-name { font-size: 17px; font-weight: 550; }
+.wxp-day-icon { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+.wxp-day-icon small { min-height: 12px; color: var(--wxp-blue); font-size: 11px; font-weight: 700; }
+.wxp-day-min { color: var(--wxp-ink-faint); font-size: 17px; font-weight: 550; text-align: right; }
+.wxp-day-max { font-size: 17px; font-weight: 550; text-align: right; }
+.wxp-range { position: relative; height: 5px; border-radius: 999px; background: rgba(0, 0, 0, 0.16); }
+.wxp-range i { position: absolute; top: 0; bottom: 0; min-width: 5px; border-radius: 999px; }
+.wxp-range b { position: absolute; top: 50%; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border: 2px solid rgba(0, 0, 0, 0.22); border-radius: 50%; background: #fff; background-clip: padding-box; }
+
+/* Detail tiles. */
+.wxp-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; min-width: 0; }
+.wxp-tile { display: flex; flex-direction: column; gap: 2px; min-height: 150px; }
+.wxp-tile .wxp-card-title { border-bottom: 0; padding-bottom: 0; }
+.wxp-tile-value { font-size: 30px; font-weight: 450; letter-spacing: -0.5px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.wxp-tile-caption { color: var(--wxp-ink-soft); font-size: 13px; font-weight: 550; }
+.wxp-tile-note { margin-top: auto; padding-top: 8px; color: var(--wxp-ink-soft); font-size: 12px; line-height: 1.45; }
+.wxp-sun-times { display: flex; flex-direction: column; gap: 2px; font-size: 24px; }
+.wxp-sun-times span { display: inline-flex; align-items: center; gap: 8px; }
+.wxp-sun-times svg { color: #ffd45c; }
+.wxp-wind { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.wxp-compass { flex-shrink: 0; width: 52px; height: 52px; }
+.wxp-compass circle { fill: none; stroke: var(--wxp-card-line); stroke-width: 1.5; }
+.wxp-compass text { fill: var(--wxp-ink-faint); font-size: 7px; font-weight: 700; }
+.wxp-compass path { fill: var(--wxp-ink); }
+.wxp-credit { padding: 0 6px; color: var(--wxp-ink-faint); font-size: 11px; line-height: 1.6; text-align: center; }
+.wxp-credit a { color: var(--wxp-ink-soft); }
+
+/* Bigger screens: Apple's iPad layout. Hero and hours across, days beside the tiles. */
+@media (min-width: 900px) {
+  .wxp { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); grid-template-areas: 'hero hero' 'picker picker' 'hourly hourly' 'days tiles' 'credit credit'; align-items: start; gap: 14px; padding: 22px 20px 18px; }
+  .wxp-hero { grid-area: hero; }
+  .wxp-picker { grid-area: picker; }
+  .wxp-hourly { grid-area: hourly; }
+  .wxp-days { grid-area: days; }
+  .wxp-tiles { grid-area: tiles; }
+  .wxp-credit { grid-area: credit; }
+}
+
+@media (max-width: 420px) {
+  .wxp { margin-inline: -4px; padding: 14px 10px 14px; border-radius: 24px; }
+  .wxp-temp { font-size: 80px; }
+  .wxp-day { grid-template-columns: 62px 38px 30px minmax(40px, 1fr) 30px; gap: 6px; }
+  .wxp-day-name, .wxp-day-min, .wxp-day-max { font-size: 16px; }
+  .wxp-tiles { gap: 10px; }
+  .wxp-tile-value { font-size: 26px; }
+  .wxp-sun-times { font-size: 20px; }
+}
+
+/* The day sheet uses the app's own modal; the chart and table follow the theme. */
+.wxp-sheet { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.wxp-chips { display: flex; gap: 6px; margin: 0 -4px; padding: 0 4px 2px; overflow-x: auto; list-style: none; scrollbar-width: none; }
+.wxp-chips::-webkit-scrollbar { display: none; }
+.wxp-chip { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 46px; min-height: 52px; padding: 6px 4px; border-radius: 14px; color: var(--ink-secondary); }
+.wxp-chip small { font-size: 11px; font-weight: 600; }
+.wxp-chip strong { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; color: var(--ink); font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.wxp-chip:hover { background: var(--surface-muted); }
+.wxp-chip.is-selected strong { background: var(--ink); color: var(--surface-solid); }
+.wxp-sheet-head { display: flex; align-items: center; gap: 12px; }
+.wxp-sheet-label { color: var(--ink); font-size: 18px; font-weight: 550; }
+.wxp-sheet-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 2px; color: var(--ink-secondary); font-size: 13px; font-variant-numeric: tabular-nums; }
+.wxp-sheet-note { color: var(--ink-muted); font-size: 12px; }
+.wxp-blue { color: #2f7fd6; }
+[data-theme='dark'] .wxp-blue { color: #6fb2ff; }
+.wxp-chart { display: block; width: 100%; height: auto; overflow: visible; }
+.wxp-chart-base { stroke: var(--line-strong); stroke-width: 1; }
+.wxp-chart-bar { fill: #3a8fe6; opacity: 0.45; }
+.wxp-chart-line { fill: none; stroke: #f0a63a; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.wxp-chart-dot { fill: #f0a63a; }
+.wxp-chart-label { fill: var(--ink); font-size: 10px; font-weight: 650; }
+.wxp-chart-tick { fill: var(--ink-muted); font-size: 9px; font-weight: 600; }
+.wxp-table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.wxp-table th, .wxp-table td { padding: 6px 4px; border-bottom: 1px solid var(--line); color: var(--ink-secondary); text-align: left; vertical-align: middle; white-space: nowrap; }
+.wxp-table thead th { color: var(--ink-muted); font-size: 10px; font-weight: 650; letter-spacing: 0.5px; text-transform: uppercase; }
+.wxp-table tbody th { color: var(--ink); font-weight: 600; }
+.wxp-table td.wxp-blue { color: #2f7fd6; }
+[data-theme='dark'] .wxp-table td.wxp-blue { color: #6fb2ff; }
+.wxp-table-temp { color: var(--ink) !important; font-size: 15px; font-weight: 600; }
+@media (max-width: 420px) { .wxp-table th:last-child, .wxp-table td:last-child { white-space: normal; } }
+
+.others-weather-badge { font-variant-numeric: tabular-nums; }

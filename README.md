@@ -36,7 +36,10 @@ Lokal lagring är separat för varje webbläsare och enhet. Rensa inte webbläsa
 Efter tre minuter utan beröring går appen tillbaka till Home, men ett öppet formulär stängs aldrig. Inloggad hämtar den ändringar från dina andra enheter varje minut. Läget styrs under Inställningar → Hemskärm (Auto/På/Av, per enhet). Appen fungerar även på iPads som stannat på iPadOS 15, till exempel iPad mini 4. Se [docs/ipad.md](docs/ipad.md).
 
 **Väder och morgon/kväll:**
-- Hemskärmen på iPad visar veckans väder måndag–söndag med färgade ikoner i stil med Apples Väder-app, högsta och lägsta temperatur och regnrisk. Ort väljs under Inställningar → Hemskärm.
+- Prognosen kommer från **SMHI**. Open-Meteo fyller i veckans tidigare timmar och tar över om SMHI inte svarar.
+- Home och iPadens hemskärm visar veckans väder måndag–söndag med färgade ikoner i stil med Apples Väder-app, högsta och lägsta temperatur och regnrisk. Tryck på orten eller en dag för att öppna vädersidan.
+- **Others → Väder** är byggd som Apple Väder: temperaturen nu, timprognos med risk för nederbörd, soluppgång och solnedgång, tiodagarsprognos med temperaturstapel, varje dags timmar med diagram, samt rutor för nederbörd, vind, luftfuktighet, sol, sikt och lufttryck. Se [docs/weather.md](docs/weather.md).
+- Ort väljs under Inställningar → Väder eller direkt på vädersidan.
 - Varje kosttillskott sätts till Morgon eller Kväll och får en liten etikett, ☀ Morgon eller ☾ Kväll, under namnet i alla listor.
 
 Se [docs/ipad.md](docs/ipad.md).
