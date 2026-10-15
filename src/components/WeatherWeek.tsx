@@ -7,10 +7,10 @@ import { WeatherIcon } from './WeatherIcon'
 const short = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön']
 const pad = (value: number) => String(value).padStart(2, '0')
 
-/** Monday–Sunday at a glance, Apple Weather style: day, icon, rain chance and high/low. Tapping opens the weather page. */
+/** Monday–Sunday at a glance, Apple Weather style: day, icon, rain chance and high/low. Tapping a day shows its hours. */
 export function WeatherWeek({ today, place, forecast, status, onRetry, onOpen, className = 'hs-card hs-weather' }: {
   today: string; place: WeatherPlace; forecast: Forecast | null; status: WeatherStatus; onRetry: () => void;
-  /** Open Others → Väder, optionally on a given day. */
+  /** Show a day's hours (today when no date is given). */
   onOpen?: (date?: string) => void; className?: string;
 }) {
   const dates = weatherWeek(today)
@@ -18,7 +18,7 @@ export function WeatherWeek({ today, place, forecast, status, onRetry, onOpen, c
   const updated = forecast ? new Date(forecast.fetchedAt) : null
   return <section className={className} aria-label={`Väder vecka ${isoWeek(today)}, ${place.name}`} data-testid={className.includes('home-weather') ? 'home-weather' : 'home-screen-weather'} data-status={status} data-source={forecast?.source ?? 'none'}>
     <div className="wx-place">
-      {onOpen ? <button className="wx-open" type="button" onClick={() => onOpen()} aria-label={`Öppna vädret för ${place.name}`}><strong>{place.name}</strong><ChevronRight size={15} aria-hidden="true" /></button> : <strong>{place.name}</strong>}
+      {onOpen ? <button className="wx-open" type="button" onClick={() => onOpen()} aria-label={`Visa timprognos för idag i ${place.name}`}><strong>{place.name}</strong><ChevronRight size={15} aria-hidden="true" /></button> : <strong>{place.name}</strong>}
       <small>{status === 'loading' ? 'Hämtar väder…'
         : status === 'error' ? 'Vädret kunde inte hämtas'
         : status === 'stale' ? `Sparat ${updated ? `${pad(updated.getHours())}:${pad(updated.getMinutes())}` : ''} · offline`

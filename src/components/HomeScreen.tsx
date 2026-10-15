@@ -7,6 +7,7 @@ import { daysBetween, isoWeek, isNutritionComplete, nutritionDayStatus, parseLoc
 import { useNow } from '../hooks/useNow'
 import { useWeather } from '../hooks/useWeather'
 import { WeatherWeek } from './WeatherWeek'
+import { WeatherDaySheet } from './WeatherDaySheet'
 import { NutritionTimePill } from './NutritionTimePill'
 
 const weekdays = ['M', 'T', 'O', 'T', 'F', 'L', 'S']
@@ -16,7 +17,7 @@ const pad = (value: number) => String(value).padStart(2, '0')
  * Hemskärm: everything for the day on one screen for a docked tablet.
  * Read at a glance from across the kitchen, act with one tap, never scroll the page.
  */
-export function HomeScreen({ workspace, today, syncStatus, signedIn, unreadDebriefs, onOpenTask, onOpenPlanner, onOpenBirthdays, onOpenNutrition, onOpenWeather, onOpenDebriefs, onToggleHabit, onQuickAdd, onReadNotification, onDismissNotification }: {
+export function HomeScreen({ workspace, today, syncStatus, signedIn, unreadDebriefs, onOpenTask, onOpenPlanner, onOpenBirthdays, onOpenNutrition, onOpenDebriefs, onToggleHabit, onQuickAdd, onReadNotification, onDismissNotification }: {
   workspace: Workspace
   today: string
   syncStatus: SyncStatus
@@ -26,7 +27,6 @@ export function HomeScreen({ workspace, today, syncStatus, signedIn, unreadDebri
   onOpenPlanner: () => void
   onOpenBirthdays: () => void
   onOpenNutrition: () => void
-  onOpenWeather?: (date?: string) => void
   onOpenDebriefs: () => void
   onToggleHabit: (habitId: string, date: string) => string | null
   onQuickAdd: (title: string, dueToday: boolean) => string | null
@@ -42,6 +42,7 @@ export function HomeScreen({ workspace, today, syncStatus, signedIn, unreadDebri
   const [added, setAdded] = useState<string | null>(null)
   const habits = workspace.nutritionHabits ?? []
   const weather = useWeather(today)
+  const [weatherDay, setWeatherDay] = useState<string | null>(null)
   const done = habits.filter(habit => isNutritionComplete(workspace, habit.id, today)).length
   const notifications = unreadBirthdayNotifications(workspace)
   const nextTip = briefing.tips[0]
@@ -68,7 +69,8 @@ export function HomeScreen({ workspace, today, syncStatus, signedIn, unreadDebri
   return <div className="homescreen" data-testid="home-screen" data-tone={briefing.tone}>
     {error && <p className="form-message error homescreen-error" role="alert">{error}<button className="icon-button" type="button" aria-label="Stäng meddelande" onClick={() => setError(null)}><X size={16} /></button></p>}
 
-    <WeatherWeek today={today} place={weather.place} forecast={weather.forecast} status={weather.status} onRetry={weather.retry} onOpen={onOpenWeather} />
+    <WeatherWeek today={today} place={weather.place} forecast={weather.forecast} status={weather.status} onRetry={weather.retry} onOpen={date => setWeatherDay(date ?? today)} />
+    {weatherDay && weather.forecast && <WeatherDaySheet forecast={weather.forecast} date={weatherDay} today={today} placeName={weather.place.name} onSelect={setWeatherDay} onClose={() => setWeatherDay(null)} />}
 
     <section className="hs-card hs-today" aria-labelledby="hs-headline">
       <div className="hs-now">

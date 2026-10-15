@@ -97,8 +97,6 @@ export const weatherWeek = (today: string) => weekDates(today)
 
 /** Rain chance worth showing in the compact week strip (like Apple Weather): wet weather and at least 30 %. */
 export const showRainChance = (day: WeatherDay) => day.rain !== null && day.rain >= 30 && isWet(day.kind)
-/** On the weather page every chance from 10 % is shown, as the user asked to see the chance of precipitation. */
-export const rainChanceText = (rain: number | null, from = 10) => rain !== null && rain >= from ? `${Math.round(rain / 10) * 10 || rain}%` : ''
 
 /* ---------- Place search (Open-Meteo geocoding) ---------- */
 

@@ -14,7 +14,7 @@ import { Modal } from './components/Modal'
 import { Birthdays, type BirthdayOrderGroup } from './components/Birthdays'
 import { DebriefNotice } from './components/Summary'
 import { Home } from './components/Home'
-import { Others, type OthersSection } from './components/Others'
+import { Others } from './components/Others'
 import { useLocalDay } from './hooks/useLocalDay'
 import { HOME_SCREEN_REFRESH_MS, IDLE_RETURN_MS, useHomeScreen } from './hooks/useHomeScreen'
 import { unreadBirthdayNotifications } from './lib/birthdays'
@@ -61,8 +61,7 @@ export default function App() {
   const debriefs = useDebriefs(data.user?.id ?? null, !data.loading)
   const today = useLocalDay()
   const homeScreen = useHomeScreen()
-  const [othersSection, setOthersSection] = useState<OthersSection | null>(null)
-  const [weatherDate, setWeatherDate] = useState<string | null>(null)
+  const [othersSection, setOthersSection] = useState<'workouts' | 'nutrition' | 'recipes' | 'notes' | null>(null)
   const [othersVisit, setOthersVisit] = useState(0)
   const [noteTarget, setNoteTarget] = useState<{ kind: NoteLinkKind; id: string } | null>(null)
   const [noteReturn, setNoteReturn] = useState<string | null>(null)
@@ -157,7 +156,7 @@ export default function App() {
   useEffect(() => { if (openProjectId && !data.loading && !workspace.projects.some(item => item.id === openProjectId)) setOpenProjectId(null) }, [openProjectId, workspace.projects, data.loading])
   function switchPage(next: Page) {
     setPage(next); setEditor(null); setOpenProjectId(null); setNoteTarget(null); setNoteReturn(null); setInitialNoteId(undefined)
-    if (next === 'others') { setOthersSection(null); setWeatherDate(null); setOthersVisit(value => value + 1) }
+    if (next === 'others') { setOthersSection(null); setOthersVisit(value => value + 1) }
     if (next === 'home') { setSummaryInitialId(undefined); setSummaryVisit(value => value + 1) }
     window.scrollTo({ top: 0, behavior: 'instant' })
   }
@@ -166,8 +165,8 @@ export default function App() {
     if (id) debriefs.markRead(id)
     window.scrollTo({ top: 0, behavior: 'instant' })
   }
-  function openOthers(section: OthersSection | null = null, date: string | null = null) {
-    setPage('others'); setEditor(null); setNoteTarget(null); setInitialNoteId(undefined); setOthersSection(section); setWeatherDate(date); setOthersVisit(value => value + 1)
+  function openOthers(section: 'workouts' | 'nutrition' | 'recipes' | 'notes' | null = null) {
+    setPage('others'); setEditor(null); setNoteTarget(null); setInitialNoteId(undefined); setOthersSection(section); setOthersVisit(value => value + 1)
     window.scrollTo({ top: 0, behavior: 'instant' })
   }
   function openBirthdays() {
@@ -400,7 +399,7 @@ export default function App() {
         {!(homeScreen.active && page === 'home') && !project && <div className="page-heading"><h1>{({ home: 'Home', planner: 'Planner', projects: 'Projects', others: 'Others' })[page]}</h1>{(page === 'planner' || page === 'projects') && <div className="page-actions"><button className="button primary" aria-label={page === 'planner' ? 'Ny uppgift' : 'Nytt projekt'} onClick={() => setEditor(page === 'planner' ? { type: 'task' } : { type: 'project' })}><Plus size={18} /><span>{page === 'planner' ? 'Ny uppgift' : 'Nytt projekt'}</span></button></div>}</div>}
         {actionError && actionError !== data.syncError && <div className="sync-banner" role="alert"><HardDrive size={18} /><p>{actionError}</p><button className="icon-button" aria-label="Stäng meddelande" onClick={() => setActionError(null)}><X size={18} /></button></div>}
         {data.syncError && <div className="sync-banner" role="status">{data.user ? <Cloud size={18} /> : <HardDrive size={18} />}<p>{data.syncError}</p>{data.syncStatus === 'conflict' ? <><button className="button secondary small" onClick={() => data.resolveConflict('remote')}>Behåll molnets</button><button className="button primary small" onClick={() => data.resolveConflict('local')}>Behåll min</button></> : <button className="button secondary small" onClick={data.retrySync}>Försök igen</button>}</div>}
-        {page === 'home' && <Home key={summaryVisit} workspace={workspace} today={today} reports={debriefs} initialId={summaryInitialId} localOnly={!data.user} homeScreen={homeScreen.active} syncStatus={data.syncStatus} onQuickAdd={quickAddTask} onOpenDebriefs={() => openDebrief(debriefs.unread[0]?.id)} onBirthdays={openBirthdays} onNutrition={() => openOthers('nutrition')} onWeather={date => openOthers('weather', date ?? null)} onOpenTask={openTaskFromHome} onOpenPlanner={() => switchPage('planner')} onCreateGiftTask={createGiftTask} onToggleHabit={toggleHabit} onReadNotification={id => updateNotification(id, 'read')} onDismissNotification={id => updateNotification(id, 'dismiss')} />}
+        {page === 'home' && <Home key={summaryVisit} workspace={workspace} today={today} reports={debriefs} initialId={summaryInitialId} localOnly={!data.user} homeScreen={homeScreen.active} syncStatus={data.syncStatus} onQuickAdd={quickAddTask} onOpenDebriefs={() => openDebrief(debriefs.unread[0]?.id)} onBirthdays={openBirthdays} onNutrition={() => openOthers('nutrition')} onOpenTask={openTaskFromHome} onOpenPlanner={() => switchPage('planner')} onCreateGiftTask={createGiftTask} onToggleHabit={toggleHabit} onReadNotification={id => updateNotification(id, 'read')} onDismissNotification={id => updateNotification(id, 'dismiss')} />}
         {page === 'planner' && <>
           {debriefs.error && <div className="sync-banner" role="status"><NotebookText size={18} /><p>{debriefs.error}</p><button className="button secondary small" onClick={debriefs.retry}>Försök igen</button></div>}
           {debriefs.unread[0] && <DebriefNotice debrief={debriefs.unread[0]} onRead={() => openDebrief(debriefs.unread[0].id)} onDismiss={() => debriefs.dismiss(debriefs.unread[0].id)} />}
@@ -415,7 +414,7 @@ export default function App() {
       if (!task?.checklist.some(item => item.id === itemId)) throw new Error('Deluppgiften har tagits bort i en annan flik.')
       return { ...current, projects: current.projects.map(existing => existing.id === project.id ? { ...existing, tasks: existing.tasks?.map(task => task.id === taskId ? { ...task, checklist: task.checklist.map(item => item.id === itemId ? { ...item, completed: !item.completed } : item) } : task) } : existing) }
     })} onDelete={() => persistChange(current => ({ ...current, projects: current.projects.filter(existing => existing.id !== project.id) }), 'Projektet är borttaget.', () => { setEditor(null); closeProject() })} />}
-        {page === 'others' && <Others key={othersVisit} workspace={workspace} today={today} initialWeatherDate={weatherDate} initialSection={othersSection} initialRecord={noteTarget} initialNoteId={initialNoteId} onBirthdays={openBirthdays} onSaveWorkout={(entry, base) => saveOther('workouts', entry, base)} onDeleteWorkout={id => deleteOther('workouts', id)} onRestoreWorkout={entry => persistChange(current => ({ ...current, workouts: [...(current.workouts ?? []).filter(item => item.id !== entry.id), entry] }), 'Passet är återställt')} onSaveHabit={(entry, base) => saveOther('nutritionHabits', entry, base)} onToggleHabit={toggleHabit} onDeleteHabit={id => deleteOther('nutritionHabits', id)} onSaveRecipe={(entry, base) => saveOther('recipes', entry, base)} onDeleteRecipe={id => deleteOther('recipes', id)} onSaveNote={(entry, base) => saveOther('notes', entry, base, true)} onDeleteNote={id => persistChange(current => { const stamp = new Date().toISOString(); return { ...current, notes: (current.notes ?? []).map(note => note.id === id ? { ...note, deletedAt: stamp } : note) } })} onPurgeNote={id => persistChange(current => ({ ...current, notes: (current.notes ?? []).filter(note => note.id !== id) }), 'Anteckningen är raderad')} onEmptyNoteTrash={() => persistChange(current => ({ ...current, notes: (current.notes ?? []).filter(note => !note.deletedAt) }), 'Papperskorgen är tömd')} onRestoreNote={note => persistChange(current => { const existing = current.notes?.find(entry => entry.id === note.id); const { deletedAt: _deleted, ...restored } = existing ?? note; return { ...current, notes: existing ? current.notes!.map(entry => entry.id === note.id ? { ...restored, deletedAt: null } : entry) : [...(current.notes ?? []), { ...restored, deletedAt: null }] } }, 'Anteckningen är återställd')} onOpenNoteLink={openNoteLink} />}
+        {page === 'others' && <Others key={othersVisit} workspace={workspace} initialSection={othersSection} initialRecord={noteTarget} initialNoteId={initialNoteId} onBirthdays={openBirthdays} onSaveWorkout={(entry, base) => saveOther('workouts', entry, base)} onDeleteWorkout={id => deleteOther('workouts', id)} onRestoreWorkout={entry => persistChange(current => ({ ...current, workouts: [...(current.workouts ?? []).filter(item => item.id !== entry.id), entry] }), 'Passet är återställt')} onSaveHabit={(entry, base) => saveOther('nutritionHabits', entry, base)} onToggleHabit={toggleHabit} onDeleteHabit={id => deleteOther('nutritionHabits', id)} onSaveRecipe={(entry, base) => saveOther('recipes', entry, base)} onDeleteRecipe={id => deleteOther('recipes', id)} onSaveNote={(entry, base) => saveOther('notes', entry, base, true)} onDeleteNote={id => persistChange(current => { const stamp = new Date().toISOString(); return { ...current, notes: (current.notes ?? []).map(note => note.id === id ? { ...note, deletedAt: stamp } : note) } })} onPurgeNote={id => persistChange(current => ({ ...current, notes: (current.notes ?? []).filter(note => note.id !== id) }), 'Anteckningen är raderad')} onEmptyNoteTrash={() => persistChange(current => ({ ...current, notes: (current.notes ?? []).filter(note => !note.deletedAt) }), 'Papperskorgen är tömd')} onRestoreNote={note => persistChange(current => { const existing = current.notes?.find(entry => entry.id === note.id); const { deletedAt: _deleted, ...restored } = existing ?? note; return { ...current, notes: existing ? current.notes!.map(entry => entry.id === note.id ? { ...restored, deletedAt: null } : entry) : [...(current.notes ?? []), { ...restored, deletedAt: null }] } }, 'Anteckningen är återställd')} onOpenNoteLink={openNoteLink} />}
       </main>
       <nav className="bottom-nav" aria-label="Huvudnavigation">{([{ id: 'home', label: 'Home', Icon: House }, { id: 'planner', label: 'Planner', Icon: Columns3 }, { id: 'projects', label: 'Projects', Icon: Folder }, { id: 'others', label: 'Others', Icon: LayoutList }] as const).map(({ id, label, Icon }) => <button key={id} className={`nav-item ${page === id ? 'active' : ''}`} aria-label={label} aria-current={page === id ? 'page' : undefined} onClick={() => switchPage(id)}><Icon className="nav-icon" size={18} /><span className="nav-label">{label}</span>{id === 'home' && unreadCount > 0 && <span className="nav-unread" aria-hidden="true">{unreadCount > 9 ? '9+' : unreadCount}</span>}</button>)}</nav>
     </div>

@@ -22,7 +22,7 @@ const { createEmptyWorkspace } = await module('../src/lib/seed.ts')
 
 /* ---------------- Weather (shared model) ---------------- */
 // The forecast itself (SMHI, Open-Meteo, days, hours) is covered by tests/forecast.mjs.
-const { weatherKind, weatherWeek, showRainChance, rainChanceText, stepKind, parsePlaces, geocodeUrl, isPlace, usableCache, isStale, samePlace, weekForecast, DEFAULT_PLACE } = weather
+const { weatherKind, weatherWeek, showRainChance, stepKind, parsePlaces, geocodeUrl, isPlace, usableCache, isStale, samePlace, weekForecast, DEFAULT_PLACE } = weather
 const TODAY = '2026-10-14' // Wednesday
 
 // WMO codes (Open-Meteo fallback) → icon family the user asked for: sunny, cloudy, rainy, cloud/rain …
@@ -52,12 +52,6 @@ assert.equal(showRainChance(day('cloudy', 20)), false, 'Cloudy with 20 % shows n
 assert.equal(showRainChance(day('cloudy', 60)), false, 'The strip only shows a chance under a wet icon.')
 assert.equal(showRainChance(day('rain', 20)), false)
 assert.equal(showRainChance(day('rain', null)), false, 'A missing chance stays unknown, not 0.')
-// The weather page shows every chance from 10 %, rounded to tens like Apple Weather.
-assert.equal(rainChanceText(43), '40%')
-assert.equal(rainChanceText(87), '90%')
-assert.equal(rainChanceText(10), '10%')
-assert.equal(rainChanceText(9), '')
-assert.equal(rainChanceText(null), '')
 
 // Cache: same place and still about today or later; stale after 30 minutes.
 const step = { time: '2026-10-14T06:00:00.000Z', start: '2026-10-14T05:00:00.000Z', temp: 9, kind: 'cloudy', label: 'Mulet', rain: 0, mm: 0, wind: 3, gust: 6, windDir: 200, humidity: 80, pressure: 1010, visibility: 20, night: true, source: 'smhi' }
@@ -115,4 +109,4 @@ assert.equal(isWorkspace(workspace), true)
 assert.equal(isWorkspace({ ...workspace, nutritionHabits: [habit('a', 'noon')] , nutritionCompletions: [] }), false)
 assert.equal(isWorkspace({ ...workspace, nutritionHabits: [habit('a', 3)], nutritionCompletions: [] }), false)
 
-console.log('Weather and Morgon/Kväll passed: WMO icons, night icons, Monday–Sunday range, rain chance in the strip and on the page, forecast cache/staleness, place search; Morgon/Kväll labels, legacy habits without a pill, and validation.')
+console.log('Weather and Morgon/Kväll passed: WMO icons, night icons, Monday–Sunday range, rain chance in the strip, forecast cache/staleness, place search; Morgon/Kväll labels, legacy habits without a pill, and validation.')

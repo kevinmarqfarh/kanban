@@ -44,9 +44,9 @@ Hemskärmen visar vädret för måndag–söndag i en remsa överst. Varje dag h
 - högsta och lägsta temperatur
 - regnrisk i blått, när det är blött väder och risken är minst 30 %
 
-Tidigare dagar i veckan visas tonade. **Tryck på en dag** (i dag eller senare) för att öppna dagens timprognos på vädersidan, eller på ortnamnet för att öppna hela vädersidan. Varje dag är en tryckyta på minst 44 × 44 punkter.
+Tidigare dagar i veckan visas tonade. **Tryck på en dag** (i dag eller senare) för att se dess timmar i ett blad, eller på ortnamnet för dagens timmar. Stäng bladet så är hemskärmen kvar. Varje dag är en tryckyta på minst 44 × 44 punkter.
 
-Prognosen kommer från SMHI. Open-Meteo fyller i de dagar som redan passerat i veckan. Källorna anges under remsan, till exempel ”Källa: SMHI · Open-Meteo”. Källor, uppdatering, cache och vädersidan beskrivs i [weather.md](weather.md).
+Prognosen kommer från SMHI. Open-Meteo fyller i de dagar som redan passerat i veckan. Källorna anges under remsan, till exempel ”Källa: SMHI · Open-Meteo”. Källor, uppdatering, cache och bladet med timmar beskrivs i [weather.md](weather.md).
 
 **Layout:** remsan går över hela bredden i båda orienteringarna. För att allt ska få plats utan scroll är klockan mindre, dagens råd gömt (det finns i briefingen) och tillskottsraderna tätare. Gör först, snabbuppgiften och navigeringen syns alltid helt.
 

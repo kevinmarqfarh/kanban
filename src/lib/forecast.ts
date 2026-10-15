@@ -167,27 +167,6 @@ export function currentStep(forecast: Forecast, now: Date = new Date()): Weather
     ?? forecast.steps[forecast.steps.length - 1] ?? null
 }
 
-export type HourItem =
-  | { type: 'step'; step: WeatherStep; now: boolean }
-  | { type: 'sunrise' | 'sunset'; time: string }
-
-/** Apple-style hourly strip: “Nu”, then the next 24 hours, with sunrise and sunset slotted in where they happen. */
-export function nextHours(forecast: Forecast, now: Date = new Date(), hours = 24): HourItem[] {
-  const current = currentStep(forecast, now)
-  if (!current) return []
-  const until = new Date(now.getTime() + hours * HOUR).toISOString()
-  const items: HourItem[] = forecast.steps.filter(step => step.time >= current.time && step.time <= until).map(step => ({ type: 'step', step, now: step === current }))
-  const at = now.toISOString()
-  for (const day of forecast.days) {
-    for (const type of ['sunrise', 'sunset'] as const) {
-      const time = day[type]
-      if (time && time > at && time <= until) items.push({ type, time })
-    }
-  }
-  const timeOf = (item: HourItem) => item.type === 'step' ? item.step.time : item.time
-  return items.sort((a, b) => (a.type === 'step' && a.now ? -1 : b.type === 'step' && b.now ? 1 : timeOf(a).localeCompare(timeOf(b))))
-}
-
 /** The steps of one local day, from the current hour when it is today. */
 export function stepsOn(forecast: Forecast, date: string, now: Date = new Date()): WeatherStep[] {
   const current = currentStep(forecast, now)
@@ -197,40 +176,3 @@ export function stepsOn(forecast: Forecast, date: string, now: Date = new Date()
 
 const clock = (iso: string) => new Date(iso).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
 export const formatClock = clock
-/** "kring 15:00", or "i morgon kring 06:00" when it is not today any more. */
-export const formatWhen = (iso: string, now: Date) => `${dateOf(iso) === localDateString(now) ? '' : 'i morgon '}kring ${clock(iso)}`
-
-/** One sentence over the hourly strip, like Apple's: when precipitation starts or stops, otherwise a dry spell. */
-export function hourlySummary(forecast: Forecast, now: Date = new Date()): string {
-  const items = nextHours(forecast, now).flatMap(item => item.type === 'step' ? [item.step] : [])
-  if (!items.length) return ''
-  const wetNow = isWet(items[0].kind)
-  const gust = Math.max(0, ...items.map(step => step.gust ?? 0))
-  const windy = gust >= 14 ? ` Byar upp till ${Math.round(gust)} m/s.` : ''
-  if (wetNow) {
-    const stops = items.find(step => !isWet(step.kind) && (step.rain ?? 0) < 30)
-    return `${items[0].label} just nu.${stops ? ` Uppehåll väntas ${formatWhen(stops.time, now)}.` : ' Nederbörd hela dygnet.'}${windy}`
-  }
-  const starts = items.find(step => isWet(step.kind) && (step.rain ?? 0) >= 40)
-  if (starts) return `${starts.label} väntas ${formatWhen(starts.time, now)}${starts.rain !== null ? ` (${starts.rain} % risk)` : ''}.${windy}`
-  const most = items.reduce((top, step) => (step.rain ?? 0) > (top.rain ?? 0) ? step : top, items[0])
-  return `Uppehåll det närmaste dygnet${(most.rain ?? 0) >= 10 ? `, som mest ${most.rain} % risk för nederbörd` : ''}.${windy}`
-}
-
-const COMPASS = ['N', 'NO', 'O', 'SO', 'S', 'SV', 'V', 'NV']
-const COMPASS_WORDS = ['nordlig', 'nordostlig', 'ostlig', 'sydostlig', 'sydlig', 'sydvästlig', 'västlig', 'nordvästlig']
-/** Wind direction (where it blows from) as N, NO, O … and as a word for screen readers. */
-export function compass(degrees: number | null): { short: string; word: string } | null {
-  if (degrees === null) return null
-  const index = Math.round(((degrees % 360) + 360) % 360 / 45) % 8
-  return { short: COMPASS[index], word: COMPASS_WORDS[index] }
-}
-
-/** Day length for the sun tile, e.g. "10 h 24 min". */
-export function dayLength(day: Pick<ForecastDay, 'sunrise' | 'sunset' | 'sun'>): string {
-  if (day.sun === 'polar-night') return 'Polarnatt'
-  if (day.sun === 'midnight-sun') return 'Midnattssol'
-  if (!day.sunrise || !day.sunset) return ''
-  const minutes = Math.round((Date.parse(day.sunset) - Date.parse(day.sunrise)) / 60_000)
-  return `${Math.floor(minutes / 60)} h ${minutes % 60} min`
-}

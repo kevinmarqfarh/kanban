@@ -1,4 +1,4 @@
-// SMHI as primary forecast, Open-Meteo for earlier hours of the week and as fallback, days/hours/sun for the weather page.
+// SMHI as primary forecast, Open-Meteo for earlier hours of the week and as fallback, days and a day's hours for the day sheet.
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import ts from 'typescript'
@@ -24,10 +24,9 @@ const fixture = JSON.parse(await readFile(new URL('./fixtures/smhi-goteborg-2026
 
 const { DEFAULT_PLACE, stepKind } = weather
 const { smhiUrl, inSmhiArea, parseSmhi, SMHI_SYMBOLS } = smhi
-const { openMeteoUrl, parseOpenMeteo, buildForecast, loadForecast, currentStep, nextHours, stepsOn, hourlySummary, daySymbol, compass, dayLength, isNightAt } = forecast
+const { openMeteoUrl, parseOpenMeteo, buildForecast, loadForecast, currentStep, stepsOn, daySymbol, isNightAt } = forecast
 const TODAY = '2026-10-15' // Thursday; the fixture is SMHI's real forecast for Göteborg from 07:30 that morning.
 const NOW = new Date('2026-10-15T07:50:00+02:00')
-const local = iso => new Date(iso).toLocaleString('sv-SE', { weekday: 'short', hour: '2-digit', minute: '2-digit' })
 
 /* ---------------- Sun ---------------- */
 const hm = date => date.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
@@ -44,9 +43,6 @@ assert.equal(sun.isNight(new Date('2026-10-15T22:00:00+02:00'), '2026-10-15', 57
 assert.equal(sun.isNight(new Date('2026-12-21T12:00:00+01:00'), '2026-12-21', 67.8558, 20.2253), true, 'Polar night is night all day.')
 assert.equal(isNightAt('2026-10-15T20:00:00.000Z', DEFAULT_PLACE), true, '22:00 in October.')
 assert.equal(isNightAt('2026-10-15T10:00:00.000Z', DEFAULT_PLACE), false)
-assert.equal(dayLength({ sunrise: gbg.sunrise.toISOString(), sunset: gbg.sunset.toISOString(), sun: null }), '10 h 24 min')
-assert.equal(dayLength({ sunrise: null, sunset: null, sun: 'polar-night' }), 'Polarnatt')
-assert.equal(dayLength({ sunrise: null, sunset: null, sun: 'midnight-sun' }), 'Midnattssol')
 
 /* ---------------- SMHI ---------------- */
 assert.equal(smhiUrl(DEFAULT_PLACE), 'https://opendata-download-metfcst.smhi.se/api/category/snow1g/version/1/geotype/point/lon/11.9746/lat/57.7089/data.json')
@@ -206,24 +202,11 @@ function fakeFetch(answers) {
   await assert.rejects(loadForecast(DEFAULT_PLACE, TODAY, fetchJson, () => NOW), /Load failed/)
 }
 
-/* ---------------- Reading it: now, the next 24 hours, a day ---------------- */
+/* ---------------- Reading it: now and a day's hours ---------------- */
 const now = currentStep(merged, NOW)
 assert.equal(now.time, '2026-10-15T06:00:00.000Z', '07:50 belongs to the 07–08 hour.')
 assert.equal(now.source, 'smhi')
 assert.equal(currentStep(merged, new Date('2026-10-30T12:00:00+01:00')), merged.steps.at(-1), 'Past the end: the last step.')
-
-const hours = nextHours(merged, NOW)
-assert.equal(hours[0].type, 'step'); assert.equal(hours[0].now, true)
-const hourSteps = hours.filter(item => item.type === 'step')
-assert.equal(hourSteps.length, 24, 'Nu (07–08) and every hour until the same time tomorrow.')
-assert.deepEqual(hours.filter(item => item.type !== 'step').map(item => [item.type, hm(new Date(item.time))]), [['sunset', '18:09'], ['sunrise', '07:47']], 'Sunset tonight and sunrise tomorrow slot in.')
-const sunsetIndex = hours.findIndex(item => item.type === 'sunset')
-assert.equal(local(hours[sunsetIndex - 1].step.time), 'tors 18:00'); assert.equal(local(hours[sunsetIndex + 1].step.time), 'tors 19:00')
-assert.equal(hours[sunsetIndex + 1].step.night, true)
-
-assert.equal(hourlySummary(merged, NOW), 'Lätt regn väntas i morgon kring 07:00 (50 % risk). Byar upp till 15 m/s.')
-assert.match(hourlySummary(merged, new Date('2026-10-16T12:20:00+02:00')), /^Regn just nu\. Uppehåll väntas kring 21:00\./)
-assert.match(hourlySummary(merged, new Date('2026-10-18T09:00:00+02:00')), /^Uppehåll det närmaste dygnet/)
 
 const fridayHours = stepsOn(merged, '2026-10-16', NOW)
 assert.equal(fridayHours.length, 24, 'Friday hour by hour.')
@@ -233,11 +216,4 @@ assert.equal(todayHours[0].time, now.time, 'Today starts at the current hour.')
 const farDay = stepsOn(merged, '2026-10-23', NOW)
 assert.deepEqual(farDay.map(step => hm(new Date(step.time))), ['02:00', '14:00'], 'Ten days out SMHI gives two steps a day.')
 
-/* ---------------- Wind ---------------- */
-assert.deepEqual(compass(0), { short: 'N', word: 'nordlig' })
-assert.deepEqual(compass(225), { short: 'SV', word: 'sydvästlig' })
-assert.deepEqual(compass(350), { short: 'N', word: 'nordlig' })
-assert.deepEqual(compass(-90), { short: 'V', word: 'västlig' })
-assert.equal(compass(null), null)
-
-console.log('Forecast passed: sunrise/sunset incl. polar night, SMHI URL/symbols/parsing of the real Göteborg forecast (9999, 12-hour steps), Open-Meteo hours, day symbols, SMHI+Open-Meteo merge without overlap, fallback both ways, outside SMHI’s area, now/next 24 h with sunrise and sunset, summary sentence, a day’s hours, wind compass.')
+console.log('Forecast passed: sunrise/sunset incl. polar night, SMHI URL/symbols/parsing of the real Göteborg forecast (9999, 12-hour steps), Open-Meteo hours, day symbols, SMHI+Open-Meteo merge without overlap, fallback both ways, outside SMHI’s area, the current hour and a day’s hours.')

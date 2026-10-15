@@ -20,7 +20,7 @@
     "test:others": "node tests/others-acceptance.cjs",
     "test:notes": "node tests/notes.mjs && node tests/notes-acceptance.cjs",
     "test:organize": "node tests/organize-acceptance.cjs",
-    "test:weather": "node tests/weather-page-acceptance.cjs && BROWSER_ENGINE=chromium node tests/weather-page-acceptance.cjs"
+    "test:weather": "node tests/weather-day-acceptance.cjs && BROWSER_ENGINE=chromium node tests/weather-day-acceptance.cjs"
   },
   "dependencies": {
     "@dnd-kit/core": "6.3.1",

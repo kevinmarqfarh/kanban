@@ -37,9 +37,9 @@ Efter tre minuter utan beröring går appen tillbaka till Home, men ett öppet f
 
 **Väder och morgon/kväll:**
 - Prognosen kommer från **SMHI**. Open-Meteo fyller i veckans tidigare timmar och tar över om SMHI inte svarar.
-- Home och iPadens hemskärm visar veckans väder måndag–söndag med färgade ikoner i stil med Apples Väder-app, högsta och lägsta temperatur och regnrisk. Tryck på orten eller en dag för att öppna vädersidan.
-- **Others → Väder** är byggd som Apple Väder: temperaturen nu, timprognos med risk för nederbörd, soluppgång och solnedgång, tiodagarsprognos med temperaturstapel, varje dags timmar med diagram, samt rutor för nederbörd, vind, luftfuktighet, sol, sikt och lufttryck. Se [docs/weather.md](docs/weather.md).
-- Ort väljs under Inställningar → Väder eller direkt på vädersidan.
+- Home och iPadens hemskärm visar veckans väder måndag–söndag med färgade ikoner i stil med Apples Väder-app, högsta och lägsta temperatur och regnrisk.
+- Tryck på en dag, eller på orten för i dag, så öppnas dagens timmar i ett blad. Bladet visar diagram och tabell med risk för nederbörd, mängd, temperatur och vind. Stäng så är du kvar på Home. Se [docs/weather.md](docs/weather.md).
+- Ort väljs under Inställningar → Väder.
 - Varje kosttillskott sätts till Morgon eller Kväll och får en liten etikett, ☀ Morgon eller ☾ Kväll, under namnet i alla listor.
 
 Se [docs/ipad.md](docs/ipad.md).
