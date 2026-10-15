@@ -88,6 +88,51 @@ iPad mini 4, iPad Air 2 och iPad (5:e generationen) kan inte uppdateras förbi *
 - `structuredClone`, `Array.prototype.at` och `crypto.randomUUID` kräver 15.4 och fungerar.
 - Receptbildernas `createImageBitmap` har funktionsdetektering och en reservväg.
 
+## Aldrig en tom skärm
+
+**Händelsen 2026-10-15 kl. 14.51.** Den dockade iPaden (Safari 15.6.8) visade bara en mörk, tom skärm. Supabase-loggarna visar följande:
+
+- Kl. 14.37 startade iPaden den nya versionen.
+- Därefter hämtade den ändringar varje minut.
+- Kl. 14.50.50 slutade hämtningarna.
+
+Sidans JavaScript slutade alltså köra. Felet gick inte att återskapa:
+
+- **Motorer:** Safari 15.4-motorn (WebKit-bygge 1616) och dagens WebKit och Chromium.
+- **Data:** SMHI:s och Open-Meteos riktiga prognoser från samma tid, för Göteborg, Angered och Hjällbo.
+- **Förlopp:** alla dagar, byte av dag, stängning och omladdning.
+
+Appen saknade dock skydd. Ett fel som stoppade starten eller renderingen lämnade en tom sida utan förklaring, och en dockad skärm har ingen som laddar om den. Därför finns nu två skydd.
+
+- **Felskärm** (`src/components/CrashScreen.tsx`, `src/lib/crashReport.ts`):
+  - Ett fel vid rendering visar ”Något gick fel” med knappen *Ladda om* och felet under *Teknisk information*. Där står meddelandet, versionen (commit) och webbläsaren.
+  - Appen laddar om sig själv efter 20 sekunder, högst tre gånger per 15 minuter. Upprepas felet ännu oftare står skärmen kvar tills någon trycker.
+  - Fel i timers och promises släcker inte appen men sparas också.
+  - Det senaste felet sparas på enheten i `forma-last-error`. Inget skickas någonstans.
+- **Startvakt** (inline-skript i `index.html`, vanlig ES5): kommer JavaScript inte igång inom 15 sekunder, till exempel för att filen inte kan laddas, visas ”Forma startade inte” med felet och *Ladda om*. Sidan laddar om sig själv högst två gånger per session.
+
+Samtidigt kapades `window.scrollTo({ behavior: 'instant' })` i ett skyddat anrop (`scrollToTop`), eftersom äldre Safari inte förstår `instant`. Dagens diagram i timbladet begränsas till 560 punkters bredd, så att det inte blir jättestort på iPad.
+
+**Om skärmen ändå blir tom:** stäng Forma helt (svep uppåt i appväxlaren) och öppna igen. Visas en felskärm, fotografera *Teknisk information*. Där står exakt vad som gick fel.
+
+### Testa i Safari 15-motorn
+
+`tests/safari15-smoke.cjs` kör appen i en riktig WebKit 15.4-motor. Testet täcker:
+
+- start på hemskärmen
+- varje dags timmar, byte av dag och stängning
+- omladdning från sparad data
+- felskärmen
+
+Uppsättning (Linux):
+
+```sh
+npm i --prefix /tmp/pw120 playwright-core@1.20.2
+curl -L -o wk.zip https://playwright.azureedge.net/builds/webkit/1616/webkit-ubuntu-20.04.zip && unzip wk.zip -d wk
+# Ubuntu 24.04 saknar ICU 66 och libwebp6 från 20.04: lägg dem i wk/minibrowser-wpe/lib
+PLAYWRIGHT_MODULE=/tmp/pw120/node_modules/playwright-core SAFARI15_WEBKIT=$PWD/wk/pw_run.sh node tests/safari15-smoke.cjs
+```
+
 ## Tester
 
 - `tests/cloud.mjs` (ingår i `npm test`): tidsgräns utan `AbortSignal.timeout`/`any`, att anroparens avbrott vinner, och felklassning för Safari, Chrome och Firefox.
@@ -107,6 +152,8 @@ iPad mini 4, iPad Air 2 och iPad (5:e generationen) kan inte uppdateras förbi *
   - ortsbyte
   - etiketterna Morgon och Kväll i formulär, Kost, Home och hemskärmen
   - luftigare Home på telefon
+
+- `tests/crash.mjs` (ingår i `npm test`) och `tests/crash-acceptance.cjs` (`npm run test:crash`, WebKit och Chromium) täcker felskärmen, den automatiska omladdningen med spärr mot loopar, fel utanför renderingen och startvakten efter 15 sekunder.
 
 Kör testerna med:
 

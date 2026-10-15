@@ -1,6 +1,8 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
+import { CrashBoundary } from './components/CrashScreen'
+import { installGlobalCrashHandlers } from './lib/crashReport'
 import './fonts.css'
 import './styles.css'
 import './birthdays.css'
@@ -27,6 +29,11 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   })
 }
 
+// Record errors outside rendering too (timers, events, promises).
+installGlobalCrashHandlers()
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode><App /></React.StrictMode>,
+  <React.StrictMode><CrashBoundary><App /></CrashBoundary></React.StrictMode>,
 )
+// The boot watchdog in index.html stands down once the app has started.
+window.__formaBooted = true

@@ -10,6 +10,7 @@ import type { Project, ProjectTask, Workspace } from '../lib/types'
 import { projectIconLabel, projectIconsByGroup, resolveProjectIcon, type ProjectIconKey } from '../lib/projectIcons'
 import { dateLabel, newId, projectProgress } from '../lib/helpers'
 import { Modal } from './Modal'
+import { scrollToTop } from '../lib/crashReport'
 
 // `satisfies` makes the build fail if a key in lib/projectIcons.ts has no component here.
 const projectIcons = {
@@ -75,7 +76,7 @@ export function ProjectDetail({ project, workspace, onClose, onEdit, onDelete, o
   const subtasks = tasks.reduce((sum, task) => sum + task.checklist.length, 0)
   const subtasksDone = tasks.reduce((sum, task) => sum + task.checklist.filter(item => item.completed).length, 0)
   // A full page, not a quick look: move focus and scroll to its top when it opens.
-  useEffect(() => { headingRef.current?.focus({ preventScroll: true }); window.scrollTo({ top: 0, behavior: 'instant' }) }, [project.id])
+  useEffect(() => { headingRef.current?.focus({ preventScroll: true }); scrollToTop() }, [project.id])
   return <article className="project-page" data-testid="project-page" data-project-id={project.id} aria-labelledby="project-page-title">
     <div className="project-page-top">
       <button className="button ghost project-back" type="button" onClick={onClose}><ArrowLeft size={16} />Alla projekt</button>

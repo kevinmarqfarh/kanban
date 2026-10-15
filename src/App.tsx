@@ -20,6 +20,7 @@ import { HOME_SCREEN_REFRESH_MS, IDLE_RETURN_MS, useHomeScreen } from './hooks/u
 import { unreadBirthdayNotifications } from './lib/birthdays'
 import { nutritionCompletionId } from './lib/others'
 import { intakeColumn, type GiftTaskDraft } from './lib/briefing'
+import { scrollToTop } from './lib/crashReport'
 
 type Page = 'home' | 'planner' | 'projects' | 'others'
 type OtherEntry = Workout | NutritionHabit | Recipe | Note
@@ -117,7 +118,7 @@ export default function App() {
     const arm = () => {
       window.clearTimeout(timer)
       timer = window.setTimeout(() => {
-        if (pageRef.current !== 'home' && !editorRef.current) { setPage('home'); setSummaryInitialId(undefined); setSummaryVisit(value => value + 1); window.scrollTo({ top: 0, behavior: 'instant' }) }
+        if (pageRef.current !== 'home' && !editorRef.current) { setPage('home'); setSummaryInitialId(undefined); setSummaryVisit(value => value + 1); scrollToTop() }
         else arm()
       }, IDLE_RETURN_MS)
     }
@@ -158,16 +159,16 @@ export default function App() {
     setPage(next); setEditor(null); setOpenProjectId(null); setNoteTarget(null); setNoteReturn(null); setInitialNoteId(undefined)
     if (next === 'others') { setOthersSection(null); setOthersVisit(value => value + 1) }
     if (next === 'home') { setSummaryInitialId(undefined); setSummaryVisit(value => value + 1) }
-    window.scrollTo({ top: 0, behavior: 'instant' })
+    scrollToTop()
   }
   function openDebrief(id?: string) {
     setPage('home'); setEditor(null); setSummaryInitialId(id); setSummaryVisit(value => value + 1)
     if (id) debriefs.markRead(id)
-    window.scrollTo({ top: 0, behavior: 'instant' })
+    scrollToTop()
   }
   function openOthers(section: 'workouts' | 'nutrition' | 'recipes' | 'notes' | null = null) {
     setPage('others'); setEditor(null); setNoteTarget(null); setInitialNoteId(undefined); setOthersSection(section); setOthersVisit(value => value + 1)
-    window.scrollTo({ top: 0, behavior: 'instant' })
+    scrollToTop()
   }
   function openBirthdays() {
     setEditor({ type: 'birthdays' })
@@ -180,7 +181,7 @@ export default function App() {
     const task = workspace.tasks.find(item => item.id === taskId)
     if (!task) { setActionError('Uppgiften har tagits bort.'); return }
     setPage('planner'); setEditor({ type: 'task', task })
-    window.scrollTo({ top: 0, behavior: 'instant' })
+    scrollToTop()
   }
   function createGiftTask(draft: GiftTaskDraft): string | null {
     return persistChange(current => {
@@ -377,7 +378,7 @@ export default function App() {
       setNoteTarget({ kind, id })
     }
     setNoteReturn(kind === 'birthday' ? null : noteId ?? null)
-    window.scrollTo({ top: 0, behavior: 'instant' })
+    scrollToTop()
     return null
   }
   function returnToNote() {

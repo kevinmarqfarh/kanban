@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { ArrowLeft, ArrowRight, Check, FileText, Upload, X } from 'lucide-react'
 import type { DailyDebrief } from '../lib/types'
+import { scrollToTop } from '../lib/crashReport'
 
 function formatDate(value: string, short = false) {
   const date = new Date(`${value}T12:00:00`)
@@ -65,7 +66,7 @@ export function Summary({ debriefs, initialId, onRead, onDismiss, onImport, erro
   useEffect(() => {
     if (selected) {
       readerHeadingRef.current?.focus({ preventScroll: true })
-      window.scrollTo({ top: 0, behavior: 'instant' })
+      scrollToTop()
     } else if (!selectedId && restoreFocusRef.current) {
       const button = returnIdRef.current ? readButtonsRef.current.get(returnIdRef.current) : undefined
       const focusTarget = button ?? importButtonRef.current

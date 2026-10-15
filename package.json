@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "check": "tsc -b",
-    "test": "node tests/data-integrity.mjs && node tests/birthdays.mjs && node tests/debriefs.mjs && node tests/persistence.mjs && node tests/others.mjs && node tests/project-icons.mjs && node tests/tags-and-tracking.mjs && node tests/briefing.mjs && node tests/cloud.mjs && node tests/weather-and-nutrition-time.mjs && node tests/forecast.mjs",
+    "test": "node tests/data-integrity.mjs && node tests/birthdays.mjs && node tests/debriefs.mjs && node tests/persistence.mjs && node tests/others.mjs && node tests/project-icons.mjs && node tests/tags-and-tracking.mjs && node tests/briefing.mjs && node tests/cloud.mjs && node tests/weather-and-nutrition-time.mjs && node tests/forecast.mjs && node tests/crash.mjs",
     "test:ipad": "node tests/homescreen-acceptance.cjs && node tests/legacy-safari-login.cjs && node tests/weather-nutrition-acceptance.cjs && BROWSER_ENGINE=chromium node tests/homescreen-acceptance.cjs && BROWSER_ENGINE=chromium node tests/weather-nutrition-acceptance.cjs",
     "test:briefing": "node tests/briefing-acceptance.cjs && BROWSER_ENGINE=webkit node tests/briefing-acceptance.cjs",
     "test:projects": "node tests/projects-editing.cjs && node tests/project-icons-acceptance.cjs && node tests/project-page-acceptance.cjs && BROWSER_ENGINE=chromium node tests/project-page-acceptance.cjs",
@@ -20,7 +20,8 @@
     "test:others": "node tests/others-acceptance.cjs",
     "test:notes": "node tests/notes.mjs && node tests/notes-acceptance.cjs",
     "test:organize": "node tests/organize-acceptance.cjs",
-    "test:weather": "node tests/weather-day-acceptance.cjs && BROWSER_ENGINE=chromium node tests/weather-day-acceptance.cjs"
+    "test:weather": "node tests/weather-day-acceptance.cjs && BROWSER_ENGINE=chromium node tests/weather-day-acceptance.cjs",
+    "test:crash": "node tests/crash-acceptance.cjs && BROWSER_ENGINE=chromium node tests/crash-acceptance.cjs"
   },
   "dependencies": {
     "@dnd-kit/core": "6.3.1",

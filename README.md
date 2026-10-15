@@ -33,7 +33,7 @@ Lokal lagring är separat för varje webbläsare och enhet. Rensa inte webbläsa
 - kommande 7 dagar med födelsedagspåminnelser
 - ett snabbfält för nya uppgifter
 
-Efter tre minuter utan beröring går appen tillbaka till Home, men ett öppet formulär stängs aldrig. Inloggad hämtar den ändringar från dina andra enheter varje minut. Läget styrs under Inställningar → Hemskärm (Auto/På/Av, per enhet). Appen fungerar även på iPads som stannat på iPadOS 15, till exempel iPad mini 4. Se [docs/ipad.md](docs/ipad.md).
+Efter tre minuter utan beröring går appen tillbaka till Home, men ett öppet formulär stängs aldrig. Inloggad hämtar den ändringar från dina andra enheter varje minut. Läget styrs under Inställningar → Hemskärm (Auto/På/Av, per enhet). Appen fungerar även på iPads som stannat på iPadOS 15, till exempel iPad mini 4. Ett fel ger aldrig en tom skärm: du får en felskärm med *Ladda om*, och appen laddar om sig själv. Se [docs/ipad.md](docs/ipad.md).
 
 **Väder och morgon/kväll:**
 - Prognosen kommer från **SMHI**. Open-Meteo fyller i veckans tidigare timmar och tar över om SMHI inte svarar.

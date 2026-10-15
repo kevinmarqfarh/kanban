@@ -1,7 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+// The deployed commit, shown in crash reports so an error can be traced to the exact build.
+// `process` exists when Vite loads this file in Node; declared here so the app's tsconfig needs no Node types.
+declare const process: { env: Record<string, string | undefined> }
+const version = (process.env.VERCEL_GIT_COMMIT_SHA ?? '').slice(0, 7) || 'local'
+
 export default defineConfig({
+  define: { __FORMA_VERSION__: JSON.stringify(version) },
   plugins: [react(), {
     name: 'forma-offline-shell',
     apply: 'build',

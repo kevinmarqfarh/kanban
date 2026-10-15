@@ -19,6 +19,31 @@
           ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : preference;
       } catch (_) {}
     </script>
+    <script>
+      // Boot watchdog (plain ES5, runs even if the app's JavaScript cannot): if Forma has not started within
+      // 15 seconds, show what went wrong and a reload button instead of a blank screen, and reload by itself.
+      (function () {
+        var bootError = '';
+        window.addEventListener('error', function (event) {
+          if (!window.__formaBooted && (event.error || event.message)) bootError = String((event.error && event.error.stack) || event.message);
+        });
+        setTimeout(function () {
+          if (window.__formaBooted) return;
+          var count = 0;
+          try { count = Number(sessionStorage.getItem('forma-boot-reloads') || 0); } catch (_) {}
+          try { localStorage.setItem('forma-last-error', JSON.stringify({ message: bootError || 'Appen startade inte inom 15 sekunder.', stack: '', source: 'boot', at: new Date().toISOString(), version: 'boot', userAgent: navigator.userAgent, url: location.pathname })); } catch (_) {}
+          var root = document.getElementById('root');
+          if (!root) return;
+          root.innerHTML = '<main class="crash-screen" role="alert" data-testid="boot-failed"><div class="crash-card"><p class="crash-brand">forma.</p><h1>Forma startade inte</h1><p>Kontrollera nätet. Inget du sparat har försvunnit.</p><button class="button primary" type="button" onclick="location.reload()">Ladda om</button><p class="crash-auto"></p><details><summary>Teknisk information</summary><pre></pre></details></div></main>';
+          root.querySelector('pre').textContent = (bootError || 'Ingen felkod') + '\n' + navigator.userAgent;
+          if (count < 2) {
+            root.querySelector('.crash-auto').textContent = 'Laddar om automatiskt om 20 s.';
+            try { sessionStorage.setItem('forma-boot-reloads', String(count + 1)); } catch (_) {}
+            setTimeout(function () { location.reload(); }, 20000);
+          }
+        }, 15000);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

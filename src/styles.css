@@ -631,3 +631,15 @@ input[type='checkbox']:checked { border-color: var(--accent); background: var(--
 .habit-name { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
 .habit-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .home-habit-copy { align-items: center; }
+
+/* Crash and boot-failure screen: never a blank page (see src/lib/crashReport.ts and index.html). */
+.crash-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; background: var(--bg, #f6f6f6); color: var(--ink, #1b1b1b); font-family: var(--font, -apple-system, system-ui, sans-serif); }
+.crash-card { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; width: min(460px, 100%); padding: 28px; border: 1px solid var(--line, #ddd); border-radius: 24px; background: var(--surface-solid, #fff); box-shadow: var(--shadow-popover, 0 10px 30px rgba(0, 0, 0, 0.12)); }
+.crash-brand { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; }
+.crash-card h1 { font-size: 24px; font-weight: 550; letter-spacing: -0.5px; }
+.crash-card p { color: var(--ink-secondary, #555); font-size: 14px; line-height: 1.5; }
+.crash-card .button { min-height: 48px; padding: 0 20px; }
+.crash-auto { font-size: 12px !important; color: var(--ink-muted, #888) !important; }
+.crash-card details { width: 100%; color: var(--ink-muted, #888); font-size: 12px; }
+.crash-card summary { min-height: 32px; cursor: pointer; }
+.crash-card pre { max-height: 180px; margin-top: 6px; padding: 10px; overflow: auto; border-radius: 10px; background: var(--surface-muted, #f0f0f0); font-size: 11px; white-space: pre-wrap; word-break: break-word; }
