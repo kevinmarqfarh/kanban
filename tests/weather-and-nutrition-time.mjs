@@ -16,7 +16,7 @@ async function module(path, dependencies = {}) {
 const birthdays = await module('../src/lib/birthdays.ts')
 const others = await module('../src/lib/others.ts', { './birthdays': birthdays })
 const weather = await module('../src/lib/weather.ts', { './others': others })
-const time = await module('../src/lib/nutritionTime.ts', { './others': others })
+const time = await module('../src/lib/nutritionTime.ts')
 const { isWorkspace } = await module('../src/lib/workspaceValidation.ts', { './birthdays': birthdays, './others': others })
 const { createEmptyWorkspace } = await module('../src/lib/seed.ts')
 
@@ -109,38 +109,19 @@ assert.deepEqual(parsePlaces({}), [])
 assert.deepEqual(parsePlaces(null), [])
 
 /* ---------------- Morgon / Kväll ---------------- */
-const { currentNutritionTime, habitsForTime, usesNutritionTimes, nutritionTimeProgress, groupHabitsByTime, nutritionTimeLabel, NUTRITION_TIME_OPTIONS } = time
-const at = hhmm => new Date(`2026-10-14T${hhmm}:00+02:00`)
-assert.equal(currentNutritionTime(at('04:59')), 'evening', 'Late night still belongs to the evening.')
-assert.equal(currentNutritionTime(at('05:00')), 'morning')
-assert.equal(currentNutritionTime(at('13:59')), 'morning')
-assert.equal(currentNutritionTime(at('14:00')), 'evening')
-assert.equal(currentNutritionTime(at('23:30')), 'evening')
-assert.deepEqual(NUTRITION_TIME_OPTIONS.map(option => option.label), ['Morgon', 'Kväll', 'Hela dagen'])
+const { nutritionTimeLabel, NUTRITION_TIME_OPTIONS } = time
+assert.deepEqual(NUTRITION_TIME_OPTIONS.map(option => [option.value, option.label]), [['morning', 'Morgon'], ['evening', 'Kväll']], 'Each supplement is taken either in the morning or in the evening.')
 assert.equal(nutritionTimeLabel('morning'), 'Morgon')
-assert.equal(nutritionTimeLabel(undefined), 'Hela dagen', 'Habits saved before the choice existed are all-day.')
+assert.equal(nutritionTimeLabel('evening'), 'Kväll')
+assert.equal(nutritionTimeLabel(undefined), null, 'Habits saved before the choice existed get no pill.')
+assert.equal(nutritionTimeLabel(null), null)
 
 const created = '2026-09-01T09:00:00.000Z'
 const habit = (id, t) => ({ id, title: id.toUpperCase(), amount: '1', unit: 'st', createdAt: created, ...(t === undefined ? {} : { time: t }) })
-const habits = [habit('d', 'morning'), habit('m', 'evening'), habit('w', null), habit('o', 'morning'), habit('legacy')]
-assert.deepEqual(habitsForTime(habits, 'morning').map(h => h.id), ['d', 'w', 'o', 'legacy'], 'Morning plus all-day, stored order kept.')
-assert.deepEqual(habitsForTime(habits, 'evening').map(h => h.id), ['m', 'w', 'legacy'])
-assert.equal(usesNutritionTimes(habits), true)
-assert.equal(usesNutritionTimes([habit('a'), habit('b', null)]), false, 'No toggle until something is tied to morning or evening.')
-assert.deepEqual(groupHabitsByTime(habits).map(group => [group.label, group.habits.map(h => h.id)]), [['Morgon', ['d', 'o']], ['Kväll', ['m']], ['Hela dagen', ['w', 'legacy']]])
-assert.deepEqual(groupHabitsByTime([habit('x', 'evening')]).map(group => group.label), ['Kväll'], 'Empty groups are hidden.')
-
-const workspace = { ...createEmptyWorkspace(), nutritionHabits: habits, nutritionCompletions: [
-  { id: 'nutrition:d:2026-10-14', habitId: 'd', date: '2026-10-14', completed: true },
-  { id: 'nutrition:w:2026-10-14', habitId: 'w', date: '2026-10-14', completed: true },
-  { id: 'nutrition:m:2026-10-13', habitId: 'm', date: '2026-10-13', completed: true },
-] }
-assert.deepEqual((({ done, total }) => ({ done, total }))(nutritionTimeProgress(workspace, 'morning', TODAY)), { done: 2, total: 4 })
-assert.deepEqual((({ done, total }) => ({ done, total }))(nutritionTimeProgress(workspace, 'evening', TODAY)), { done: 1, total: 3 }, 'Yesterday’s evening tick does not count today.')
-
+const workspace = { ...createEmptyWorkspace(), nutritionHabits: [habit('d', 'morning'), habit('m', 'evening'), habit('legacy'), habit('cleared', null)], nutritionCompletions: [] }
 // Validation: the new field is optional and strict.
 assert.equal(isWorkspace(workspace), true)
 assert.equal(isWorkspace({ ...workspace, nutritionHabits: [habit('a', 'noon')] , nutritionCompletions: [] }), false)
 assert.equal(isWorkspace({ ...workspace, nutritionHabits: [habit('a', 3)], nutritionCompletions: [] }), false)
 
-console.log('Weather and Morgon/Kväll passed: WMO icons, Monday–Sunday range, URL, parsing of partial/broken data, rain chance, cache/staleness, place search; morning/evening switch-over at 05:00 and 14:00, all-day and legacy habits, grouping, per-part progress and validation.')
+console.log('Weather and Morgon/Kväll passed: WMO icons, Monday–Sunday range, URL, parsing of partial/broken data, rain chance, cache/staleness, place search; Morgon/Kväll labels, legacy habits without a pill, and validation.')

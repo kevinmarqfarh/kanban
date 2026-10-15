@@ -48,13 +48,9 @@ Koden finns i `src/lib/weather.ts` (tolkning, väderkoder, cache), `src/hooks/us
 
 ## Morgon och kväll för kosttillskott
 
-Varje kostvana har valet **När: Morgon, Kväll eller Hela dagen**, som sätts när du skapar eller redigerar den. Nya vanor börjar på Morgon. Vanor som sparats tidigare räknas som Hela dagen (fältet `time` saknas eller är `null`).
+Varje kosttillskott tas antingen på morgonen eller på kvällen. Du väljer **När: Morgon eller Kväll** när du skapar eller redigerar tillskottet. Nya tillskott börjar på Morgon. Valet syns som en liten etikett, ☀ Morgon (gul) eller ☾ Kväll (blå), under namnet i Dagens kost på Home, på iPadens hemskärm och i Kost. Listorna behåller sin vanliga layout och ordning, och inget delas upp eller döljs.
 
-- **Kost (Others):** vanorna grupperas under Morgon, Kväll och Hela dagen, med antal klara per grupp för vald dag.
-- **Dagens kost (Home och hemskärmen):** en växel *Morgon | Kväll* visar dagsdelens tillskott plus Hela dagen-vanorna, med hur många som är klara i varje del. Växeln följer klockan: morgon kl 05–14, annars kväll. Trycker du på den andra delen gäller ditt val tills klockan går över till nästa dagsdel. Växeln visas bara när minst en vana är kopplad till morgon eller kväll.
-- **Veckoöversikten** räknar fortfarande alla vanor. En dag är grön först när både morgon och kväll är klara.
-
-Koden finns i `src/lib/nutritionTime.ts`, `src/hooks/useNutritionTime.ts` och `src/components/NutritionTimeToggle.tsx`.
+Tillskott som sparades innan valet fanns har ingen etikett, och inget av alternativen är förvalt när du redigerar dem. Fältet heter `time` (`'morning' | 'evening'`) och saknas eller är `null` för sådana tillskott. Logiken finns i `src/lib/nutritionTime.ts` och etiketten i `src/components/NutritionTimePill.tsx`.
 
 ## Äldre iPads (iPadOS 15)
 
@@ -100,12 +96,12 @@ iPad mini 4, iPad Air 2 och iPad (5:e generationen) kan inte uppdateras förbi *
   - Hämtning varje minut, med kontroll att telefonens ändring aldrig skrivs över.
   - Mörkt tema och tvingad Safari 15-rendering.
 
-- `tests/weather-and-nutrition-time.mjs` (ingår i `npm test`): väderkoder, måndag–söndag även över årsskifte, tolkning av ofullständiga svar, regnrisk, cache och ortsökning, samt morgon/kväll-gränserna, gruppering och framsteg.
+- `tests/weather-and-nutrition-time.mjs` (ingår i `npm test`): väderkoder, måndag–söndag även över årsskifte, tolkning av ofullständiga svar, regnrisk, cache och ortsökning, samt etiketterna Morgon och Kväll och validering.
 - `tests/weather-nutrition-acceptance.cjs` (WebKit och Chromium):
   - veckoväder i båda orienteringarna utan scroll
   - offline med sparad vecka och nytt försök
   - ortsbyte
-  - Morgon/Kväll i formulär, Kost, Home och hemskärmen
+  - etiketterna Morgon och Kväll i formulär, Kost, Home och hemskärmen
   - luftigare Home på telefon
 
 Kör testerna med:

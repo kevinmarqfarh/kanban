@@ -123,68 +123,45 @@ async function open(browser, { viewport = { width: 1024, height: 768 }, touch = 
       await context.close();
     });
 
-    await check('A new supplement gets Morgon, Kväll or Hela dagen and Kost groups by it', async () => {
+    await check('A supplement is set to Morgon or Kväll and shows a small pill everywhere, with no extra layout', async () => {
       const { context, page } = await open(browser, { viewport: { width: 402, height: 874 } });
+      const pills = (scope, attr) => page.locator(scope).evaluateAll((nodes, attr) => nodes.map(node => [node.dataset[attr], node.querySelector('.time-pill')?.textContent ?? null]), attr);
+      // Phone Home: every supplement listed, in stored order, each with its pill.
+      assert.deepEqual(await pills('.home-habits [data-home-habit-id]', 'homeHabitId'), [['dv', 'Morgon'], ['om', 'Morgon'], ['mg', 'Kväll'], ['zn', 'Kväll'], ['wa', null], ['old', null]]);
+      assert.equal(await page.locator('.nutrition-time-toggle, .home-time-toggle').count(), 0, 'No morning/evening switch.');
       await page.locator('.bottom-nav').getByRole('button', { name: 'Others', exact: true }).click();
       await page.getByRole('button', { name: /^Kost/ }).first().click();
+      assert.equal(await page.locator('.nutrition-group').count(), 0, 'Kost is one list, not grouped.');
+      assert.deepEqual(await pills('.nutrition-habits [data-habit-id]', 'habitId'), [['dv', 'Morgon'], ['om', 'Morgon'], ['mg', 'Kväll'], ['zn', 'Kväll'], ['wa', null], ['old', null]]);
+      // New habit: Morgon by default, switch to Kväll.
       await page.getByRole('button', { name: 'Ny kostvana' }).click();
       const dialog = page.getByRole('dialog');
       const group = dialog.getByRole('group', { name: 'När' });
-      assert.equal(await group.getByRole('button', { name: 'Morgon' }).getAttribute('aria-pressed'), 'true', 'New habits default to Morgon.');
+      assert.deepEqual(await group.getByRole('button').allTextContents(), ['Morgon', 'Kväll']);
+      assert.equal(await group.getByRole('button', { name: 'Morgon' }).getAttribute('aria-pressed'), 'true');
       await dialog.getByLabel('Titel', { exact: true }).fill('Melatonin');
       await dialog.getByLabel('Mängd', { exact: true }).fill('1');
       await group.getByRole('button', { name: 'Kväll' }).click();
-      assert.equal(await group.getByRole('button', { name: 'Kväll' }).getAttribute('aria-pressed'), 'true');
       await dialog.getByRole('button', { name: 'Spara', exact: true }).click();
       assert.equal((await cache(page)).nutritionHabits.find(h => h.title === 'Melatonin').time, 'evening');
-      const groups = await page.locator('.nutrition-group').evaluateAll(nodes => nodes.map(node => [node.dataset.time, [...node.querySelectorAll('[data-habit-id] strong')].map(n => n.textContent)]));
-      assert.deepEqual(groups, [['morning', ['D-vitamin', 'Omega-3']], ['evening', ['Magnesium', 'Zink', 'Melatonin']], ['all-day', ['Vatten', 'Protein']]]);
-      // Edit keeps the choice and can change it.
+      // An older habit without a time: nothing selected until chosen.
       await page.getByRole('button', { name: 'Redigera kostvana Protein' }).click();
-      assert.equal(await dialog.getByRole('group', { name: 'När' }).getByRole('button', { name: 'Hela dagen' }).getAttribute('aria-pressed'), 'true', 'Habits saved before the choice are Hela dagen.');
+      assert.deepEqual(await dialog.getByRole('group', { name: 'När' }).getByRole('button').evaluateAll(nodes => nodes.map(node => node.getAttribute('aria-pressed'))), ['false', 'false']);
       await dialog.getByRole('group', { name: 'När' }).getByRole('button', { name: 'Morgon' }).click();
       await dialog.getByRole('button', { name: 'Spara', exact: true }).click();
       assert.equal((await cache(page)).nutritionHabits.find(h => h.title === 'Protein').time, 'morning');
-      await page.screenshot({ path: path.join(out, 'kost-grouped.png'), fullPage: true, animations: 'disabled' });
+      assert.equal(await page.locator('[data-habit-id="old"] .time-pill').textContent(), 'Morgon');
+      await page.screenshot({ path: path.join(out, 'kost-pills.png'), fullPage: true, animations: 'disabled' });
       await context.close();
-    });
 
-    await check('Dagens kost shows morning before 14:00, evening after, and the toggle switches by hand', async () => {
-      for (const [where, opts, list, toggle] of [
-        ['phone Home', { viewport: { width: 402, height: 874 } }, '.home-habits [data-home-habit-id]', '.home-time-toggle'],
-        ['iPad home screen', {}, '.hs-habit', '.hs-time-toggle'],
-      ]) {
-        const { context, page } = await open(browser, opts);
-        const ids = () => page.locator(list).evaluateAll(nodes => nodes.map(node => node.dataset.homeHabitId ?? node.dataset.habitId));
-        await page.locator(toggle).waitFor();
-        assert.equal(await page.locator(`${toggle} [data-time="morning"]`).getAttribute('aria-pressed'), 'true', `${where}: morning at 07:42`);
-        assert.match(await page.locator(`${toggle} [data-time="morning"]`).textContent(), /Morgon1\/4/);
-        assert.match(await page.locator(`${toggle} [data-time="evening"]`).textContent(), /Kväll0\/4/);
-        assert.deepEqual(await ids(), ['dv', 'om', 'wa', 'old'], `${where}: morning + all-day`);
-        await page.locator(`${toggle} [data-time="evening"]`).click();
-        assert.deepEqual(await ids(), ['mg', 'zn', 'wa', 'old'], `${where}: evening + all-day`);
-        // Tick Vatten in the evening view: it counts for both parts.
-        await page.locator(list).nth(2).click();
-        assert.match(await page.locator(`${toggle} [data-time="morning"]`).textContent(), /2\/4/);
-        // The clock moves past 14:00: back to following the clock (evening).
-        await page.locator(`${toggle} [data-time="morning"]`).click();
-        await page.clock.runFor(6.5 * 3600_000);
-        await page.waitForFunction(t => document.querySelector(`${t} [data-time="evening"]`)?.getAttribute('aria-pressed') === 'true', toggle);
-        await context.close();
-      }
-    });
-
-    await check('Without any morning/evening habit there is no toggle', async () => {
-      const plain = structuredClone(fixture);
-      plain.workspace.nutritionHabits = plain.workspace.nutritionHabits.map(({ time, ...rest }) => rest);
-      const context = await browser.newContext({ viewport: { width: 402, height: 874 }, serviceWorkers: 'block' });
-      await context.addInitScript(({ key, value }) => localStorage.setItem(key, JSON.stringify(value)), { key, value: plain });
-      const page = await context.newPage();
-      await page.goto(base);
-      await page.getByTestId('home-nutrition').waitFor();
-      assert.equal(await page.locator('.home-time-toggle').count(), 0);
-      assert.equal(await page.locator('.home-habits [data-home-habit-id]').count(), 6);
-      await context.close();
+      // iPad home screen: same pills, all supplements visible, still one screen.
+      const ipad = await open(browser);
+      assert.deepEqual(await ipad.page.locator('.hs-habit').evaluateAll(nodes => nodes.map(node => [node.dataset.habitId, node.querySelector('.time-pill')?.textContent ?? null])), [['dv', 'Morgon'], ['om', 'Morgon'], ['mg', 'Kväll'], ['zn', 'Kväll'], ['wa', null], ['old', null]]);
+      const size = await ipad.page.evaluate(() => ({ scroll: document.documentElement.scrollHeight, inner: innerHeight }));
+      assert.ok(size.scroll <= size.inner + 1);
+      await ipad.page.locator('[data-habit-id="mg"]').click();
+      assert.equal(await ipad.page.locator('[data-habit-id="mg"]').getAttribute('aria-pressed'), 'true');
+      await ipad.context.close();
     });
 
     await check('Phone Home breathes: one-line swipeable stats, two reasons per task, one suggestion at a time', async () => {

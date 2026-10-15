@@ -37,7 +37,7 @@ Efter tre minuter utan beröring går appen tillbaka till Home, men ett öppet f
 
 **Väder och morgon/kväll:**
 - Hemskärmen på iPad visar veckans väder måndag–söndag med färgade ikoner i stil med Apples Väder-app, högsta och lägsta temperatur och regnrisk. Ort väljs under Inställningar → Hemskärm.
-- Kosttillskott kan sättas till Morgon, Kväll eller Hela dagen. Dagens kost visar morgonens eller kvällens tillskott efter tid på dygnet, med en växel för att byta.
+- Varje kosttillskott sätts till Morgon eller Kväll och får en liten etikett, ☀ Morgon eller ☾ Kväll, under namnet i alla listor.
 
 Se [docs/ipad.md](docs/ipad.md).
 

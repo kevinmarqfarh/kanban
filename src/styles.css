@@ -622,10 +622,12 @@ input[type='checkbox']:checked { border-color: var(--accent); background: var(--
   .project-page .project-detail-layout { padding: 18px 16px; border-radius: 22px; }
 }
 
-/* Morgon | Kväll in Dagens kost */
-.nutrition-time-toggle { display: grid; grid-template-columns: 1fr 1fr; }
-.nutrition-time-toggle button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; font-size: 12px; font-weight: 550; }
-.nutrition-time-toggle button[data-time='morning'] svg { color: var(--urgency-yellow); }
-.nutrition-time-toggle small { color: var(--ink-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
-.nutrition-time-toggle small.is-complete { color: var(--status-complete-ink); }
-.home-time-toggle { margin-bottom: 12px; }
+/* ☀ Morgon / ☾ Kväll marker under a supplement's name */
+.time-pill { display: inline-flex; align-items: center; gap: 4px; width: max-content; padding: 2px 7px 2px 6px; border-radius: 999px; font-size: 10px; font-weight: 600; line-height: 1.5; letter-spacing: 0.1px; white-space: nowrap; }
+.time-pill-morning { background: rgba(232, 168, 20, 0.14); color: #94680a; }
+.time-pill-evening { background: rgba(92, 105, 210, 0.13); color: #4652b4; }
+[data-theme='dark'] .time-pill-morning { background: rgba(255, 197, 49, 0.16); color: #f2c55c; }
+[data-theme='dark'] .time-pill-evening { background: rgba(140, 152, 255, 0.18); color: #a9b2ff; }
+.habit-name { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.habit-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.home-habit-copy { align-items: center; }

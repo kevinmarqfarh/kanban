@@ -151,9 +151,6 @@
 
 /* Never disabled: a disabled default button silently blocks Enter-to-submit while React catches up. */
 .hs-add.is-empty { opacity: 0.45; }
-.hs-time-toggle { margin-bottom: 10px; }
-.hs-time-toggle button { min-height: 48px; font-size: 14px; }
-.hs-time-toggle small { font-size: 13px; }
 
 /* Weekly weather, Apple Weather style: Monday–Sunday across the top. */
 .hs-weather { grid-area: weather; display: grid; grid-template-columns: minmax(118px, 0.9fr) minmax(0, 7fr); align-items: center; gap: 14px; padding: 10px 14px 10px 18px; }
@@ -237,3 +234,7 @@
   .hs-clock { font-size: 56px; }
   .hs-weather { padding-block: 10px 8px; }
 }
+
+/* Bigger time pill on the kitchen screen */
+.hs-habit-copy { align-items: center; }
+.hs-habit .time-pill { font-size: 11px; padding: 2px 8px 2px 7px; }

@@ -7,9 +7,7 @@ import { daysBetween, isoWeek, isNutritionComplete, nutritionDayStatus, parseLoc
 import { useNow } from '../hooks/useNow'
 import { useWeather } from '../hooks/useWeather'
 import { WeatherWeek } from './WeatherWeek'
-import { useNutritionTime } from '../hooks/useNutritionTime'
-import { NutritionTimeToggle } from './NutritionTimeToggle'
-import { habitsForTime, usesNutritionTimes } from '../lib/nutritionTime'
+import { NutritionTimePill } from './NutritionTimePill'
 
 const weekdays = ['M', 'T', 'O', 'T', 'F', 'L', 'S']
 const pad = (value: number) => String(value).padStart(2, '0')
@@ -42,10 +40,7 @@ export function HomeScreen({ workspace, today, syncStatus, signedIn, unreadDebri
   const [dueToday, setDueToday] = useState(true)
   const [added, setAdded] = useState<string | null>(null)
   const habits = workspace.nutritionHabits ?? []
-  const [nutritionTime, setNutritionTime] = useNutritionTime()
   const weather = useWeather(today)
-  const timed = usesNutritionTimes(habits)
-  const shownHabits = timed ? habitsForTime(habits, nutritionTime) : habits
   const done = habits.filter(habit => isNutritionComplete(workspace, habit.id, today)).length
   const notifications = unreadBirthdayNotifications(workspace)
   const nextTip = briefing.tips[0]
@@ -111,12 +106,11 @@ export function HomeScreen({ workspace, today, syncStatus, signedIn, unreadDebri
         {habits.length > 0 && <span className={`hs-count${done === habits.length ? ' is-complete' : ''}`} aria-label={`${done} av ${habits.length} klara idag`}>{done}/{habits.length}</span>}
       </div>
       {habits.length > 0 ? <>
-        {timed && <NutritionTimeToggle workspace={workspace} date={today} value={nutritionTime} onChange={setNutritionTime} className="hs-time-toggle" />}
-        <div className="hs-habits" role="group" aria-label="Bocka av för idag">{shownHabits.map(habit => {
+        <div className="hs-habits" role="group" aria-label="Bocka av för idag">{habits.map(habit => {
           const complete = isNutritionComplete(workspace, habit.id, today)
           return <button key={habit.id} type="button" className={`hs-habit${complete ? ' is-complete' : ''}`} aria-pressed={complete} data-habit-id={habit.id} onClick={() => run(() => onToggleHabit(habit.id, today))}>
             <span className="hs-check" aria-hidden="true">{complete && <Check size={20} strokeWidth={2.4} />}</span>
-            <span className="hs-habit-copy"><strong>{habit.title}</strong><small>{habit.amount} {habit.unit}</small></span>
+            <span className="hs-habit-copy"><span className="habit-name"><strong>{habit.title}</strong><NutritionTimePill time={habit.time} /></span><small>{habit.amount} {habit.unit}</small></span>
           </button>
         })}</div>
         <div className="hs-week" aria-label={`Kost vecka ${isoWeek(today)}`}>{weekDates(today).map((day, index) => {
