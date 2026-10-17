@@ -146,3 +146,6 @@
 .habit-time-options { display: grid; grid-template-columns: 1fr 1fr; }
 .habit-time-options button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; }
 .habit-time-options button:first-child svg { color: var(--urgency-yellow); }
+.recipe-favorite.is-favorite { color: var(--danger); }
+.recipe-favorite { border-radius: 12px; }
+.recipe-list-row .others-record-open { flex: 1; }

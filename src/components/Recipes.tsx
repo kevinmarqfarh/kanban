@@ -1,5 +1,5 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
-import { ArrowUpRight, Check, CookingPot, ImagePlus, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { ArrowUpRight, Check, CookingPot, Heart, ImagePlus, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import type { Recipe } from '../lib/types'
 import { newId } from '../lib/helpers'
 import { isRecipeImage, predefinedRecipeLabels, recipeLabelKey, recipeLabelOptions, safeRecipeUrl, validateRecipeUrl } from '../lib/others'
@@ -72,24 +72,39 @@ export function Recipes({ recipes, onSave, onDelete, initialId }: {
   onSave: (edited: Recipe, original?: Recipe) => string | null;
   onDelete: (id: string) => string | null;
 }) {
-  const [selected, setSelected] = useState<Recipe | null>(() => recipes.find(recipe => recipe.id === initialId) ?? null)
+  const [selectedId, setSelectedId] = useState<string | null>(initialId ?? null)
+  const selected = recipes.find(recipe => recipe.id === selectedId) ?? null
+  const setSelected = (recipe: Recipe | null) => setSelectedId(recipe?.id ?? null)
   const [editing, setEditing] = useState<Recipe | null | undefined>(undefined)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<string | null>(null)
+  const [favoritesOnly, setFavoritesOnly] = useState(false)
+  const favoriteCount = recipes.filter(recipe => recipe.favorite).length
   const used = recipeLabelOptions(recipes).filter(label => recipes.some(recipe => recipe.labels.some(value => recipeLabelKey(value) === recipeLabelKey(label))))
   const activeFilter = filter && used.some(label => recipeLabelKey(label) === filter) ? filter : null
-  const ordered = [...recipes].filter(recipe => !activeFilter || recipe.labels.some(label => recipeLabelKey(label) === activeFilter)).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  const ordered = [...recipes].filter(recipe => (!favoritesOnly || recipe.favorite) && (!activeFilter || recipe.labels.some(label => recipeLabelKey(label) === activeFilter))).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   const link = selected ? safeRecipeUrl(selected.url) : null
   function open(recipe: Recipe) {
     setSelected(recipe); setConfirmDelete(false); setError(null)
   }
-  return <div className="others-content"><div className="others-list-toolbar"><span>{activeFilter ? `${ordered.length} av ${recipes.length} recept` : `${recipes.length} recept`}</span><button className="button primary" type="button" onClick={() => setEditing(null)}><Plus size={16} />Nytt recept</button></div>
+  function toggleFavorite(recipe: Recipe) {
+    const current = recipes.find(item => item.id === recipe.id)
+    if (!current) return
+    const failure = onSave({ ...current, favorite: !current.favorite }, current)
+    setError(failure)
+  }
+  function favoriteButton(recipe: Recipe) {
+    return <button className={`icon-button recipe-favorite${recipe.favorite ? ' is-favorite' : ''}`} type="button" aria-pressed={!!recipe.favorite} aria-label={`${recipe.favorite ? 'Ta bort' : 'Lägg till'} ${recipe.title} ${recipe.favorite ? 'från' : 'bland'} favoriter`} title={recipe.favorite ? 'Ta bort favorit' : 'Lägg till favorit'} onClick={() => toggleFavorite(recipe)}><Heart size={18} fill={recipe.favorite ? 'currentColor' : 'none'} /></button>
+  }
+  return <div className="others-content"><div className="others-list-toolbar"><span>{activeFilter || favoritesOnly ? `${ordered.length} av ${recipes.length} recept` : `${recipes.length} recept`}</span><button className="button primary" type="button" onClick={() => setEditing(null)}><Plus size={16} />Nytt recept</button></div>
+    <div className="filter-chips" role="group" aria-label="Visa recept"><button className={`filter-chip${favoritesOnly ? '' : ' active'}`} type="button" aria-pressed={!favoritesOnly} onClick={() => setFavoritesOnly(false)}>Alla recept<span className="filter-count">{recipes.length}</span></button><button className={`filter-chip${favoritesOnly ? ' active' : ''}`} type="button" aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly(true)}><Heart size={15} fill={favoritesOnly ? 'currentColor' : 'none'} />Favoriter<span className="filter-count">{favoriteCount}</span></button></div>
+    {error && !selected && <p className="others-error" role="alert">{error}</p>}
     {used.length > 0 && <div className="filter-chips" role="group" aria-label="Filtrera recept efter etikett"><button className={`filter-chip${activeFilter ? '' : ' active'}`} type="button" aria-pressed={!activeFilter} onClick={() => setFilter(null)}>Alla<span className="filter-count">{recipes.length}</span></button>{used.map(label => { const count = recipes.filter(recipe => recipe.labels.some(value => recipeLabelKey(value) === recipeLabelKey(label))).length; return <button className={`filter-chip${activeFilter === recipeLabelKey(label) ? ' active' : ''}`} type="button" key={recipeLabelKey(label)} aria-pressed={activeFilter === recipeLabelKey(label)} onClick={() => setFilter(activeFilter === recipeLabelKey(label) ? null : recipeLabelKey(label))}>{displayLabel(label)}<span className="filter-count">{count}</span></button> })}</div>}
-    <div className="others-record-list">{ordered.map(recipe => <button className="others-record-row recipe-list-row" type="button" key={recipe.id} data-recipe-id={recipe.id} aria-label={`Öppna recept ${recipe.title}`} onClick={() => open(recipe)}>{recipe.image && isRecipeImage(recipe.image) ? <img className="recipe-thumb" src={recipe.image} alt="" loading="lazy" decoding="async" /> : <span className="others-record-icon"><CookingPot size={19} strokeWidth={1.5} /></span>}<span className="others-record-copy"><strong>{recipe.title}</strong>{recipe.labels.length > 0 && <span className="recipe-list-labels">{recipe.labels.map(label => <span className="label-chip" key={label}>{displayLabel(label)}</span>)}</span>}</span><ArrowUpRight size={16} /></button>)}</div>
+    <div className="others-record-list">{ordered.map(recipe => <article className="others-record-row recipe-list-row" key={recipe.id} data-recipe-id={recipe.id}><button className="others-record-open" type="button" aria-label={`Öppna recept ${recipe.title}`} onClick={() => open(recipe)}>{recipe.image && isRecipeImage(recipe.image) ? <img className="recipe-thumb" src={recipe.image} alt="" loading="lazy" decoding="async" /> : <span className="others-record-icon"><CookingPot size={19} strokeWidth={1.5} /></span>}<span className="others-record-copy"><strong>{recipe.title}</strong>{recipe.labels.length > 0 && <span className="recipe-list-labels">{recipe.labels.map(label => <span className="label-chip" key={label}>{displayLabel(label)}</span>)}</span>}</span><ArrowUpRight size={16} /></button>{favoriteButton(recipe)}</article>)}</div>
     {recipes.length === 0 && <p className="others-empty">Inga recept ännu.</p>}
-    {recipes.length > 0 && ordered.length === 0 && <p className="others-empty">Inga recept med den etiketten.</p>}
-    {selected && editing === undefined && <Modal title={selected.title} onClose={() => setSelected(null)} error={error} footer={<><button className="icon-button danger" type="button" aria-label="Ta bort recept" onClick={() => setConfirmDelete(true)}><Trash2 size={18} /></button><button className="button secondary" type="button" onClick={() => setSelected(null)}>Stäng</button><button className="button primary" type="button" onClick={() => { setEditing(selected); setSelected(null) }}><Pencil size={15} />Redigera</button></>}>
+    {recipes.length > 0 && ordered.length === 0 && <p className="others-empty">{favoritesOnly ? (activeFilter ? 'Inga favoriter med den etiketten.' : 'Inga favoriter ännu. Tryck på hjärtat vid ett recept för att spara det här.') : 'Inga recept med den etiketten.'}</p>}
+    {selected && editing === undefined && <Modal title={selected.title} onClose={() => setSelected(null)} error={error} footer={<>{favoriteButton(selected)}<button className="icon-button danger" type="button" aria-label="Ta bort recept" onClick={() => setConfirmDelete(true)}><Trash2 size={18} /></button><button className="button secondary" type="button" onClick={() => setSelected(null)}>Stäng</button><button className="button primary" type="button" onClick={() => { setEditing(selected); setSelected(null) }}><Pencil size={15} />Redigera</button></>}>
       {selected.image && isRecipeImage(selected.image) && <img className="recipe-hero" src={selected.image} alt={`Bild till ${selected.title}`} />}
       {selected.labels.length > 0 && <div className="recipe-detail-labels">{selected.labels.map(label => <span className="label-chip" key={label}>{displayLabel(label)}</span>)}</div>}
       {link && <a className="button secondary recipe-link" href={link} target="_blank" rel="noopener noreferrer">Öppna länk<ArrowUpRight size={16} /></a>}

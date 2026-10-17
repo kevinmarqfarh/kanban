@@ -113,6 +113,7 @@ export interface NutritionCompletion {
 }
 
 export interface Recipe {
+  favorite?: boolean
   id: string
   title: string
   url: string

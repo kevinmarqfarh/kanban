@@ -51,7 +51,8 @@ export function isWorkspace(value: unknown): value is Workspace {
     && entry.id === nutritionCompletionId(entry.habitId, entry.date) && typeof entry.completed === 'boolean')) return false
   if (!optional('recipes', entry => object(entry) && filled(entry.id) && filled(entry.title) && typeof entry.url === 'string'
     && validateRecipeUrl(entry.url) && typeof entry.steps === 'string' && strings(entry.labels) && timestamp(entry.createdAt)
-    && (entry.image === undefined || isRecipeImage(entry.image)))) return false
+    && (entry.image === undefined || isRecipeImage(entry.image))
+    && (entry.favorite === undefined || typeof entry.favorite === 'boolean'))) return false
   if (!optional('notes', entry => object(entry) && filled(entry.id) && filled(entry.title) && entry.title.length <= 160
     && typeof entry.content === 'string' && entry.content.length <= 200_000
     && typeof entry.font === 'string' && ['system', 'serif', 'mono'].includes(entry.font)

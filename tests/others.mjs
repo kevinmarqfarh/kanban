@@ -59,6 +59,14 @@ const recipe = { id: 'recipe', title: 'Soppa', url: 'https://example.com/recept'
 const notification = { id: birthdays.birthdayNotificationId('anna', '2026-11-04', 'month'), birthdayId: 'anna', date: '2026-11-04', reminder: 'month', name: 'Anna', age: 31, createdAt, readAt: null, dismissedAt: null }
 const workspace = { ...createEmptyWorkspace(), workouts: [workout], nutritionHabits: [habit], nutritionCompletions: [completion], recipes: [recipe], birthdayNotifications: [notification] }
 assert.ok(isWorkspace(workspace))
+assert.ok(isWorkspace({ ...workspace, recipes: [{ ...recipe, favorite: true }] }))
+assert.ok(isWorkspace({ ...workspace, recipes: [{ ...recipe, favorite: false }] }))
+const favoriteMerge = mergeRecordChanges(recipe, { ...recipe, favorite: true }, { ...recipe, title: 'Ny titel', steps: 'Nya steg' })
+assert.equal(favoriteMerge.favorite, true)
+assert.equal(favoriteMerge.title, 'Ny titel')
+assert.equal(favoriteMerge.steps, 'Nya steg')
+const editedFavorite = mergeRecordChanges(recipe, { ...recipe, title: 'Redigerat' }, { ...recipe, favorite: true })
+assert.equal(editedFavorite.favorite, true, 'Editing a recipe preserves a favorite marked in another tab.')
 assert.equal(workoutRawText(workout), 'Styrka · 2026-10-06\nBänkpress · 3 sets · 70 kg · 120 BPM')
 const timedWorkout = { ...workout, title: 'Intervall', rows: [{ ...row, title: 'Löpning', amount: '7,5', amountUnit: 'min', load: '2,5', loadUnit: 'time', bpm: '145' }] }
 assert.equal(workoutRawText(timedWorkout), 'Intervall · 2026-10-06\nLöpning · 7,5 min · 2,5 min · 145 BPM', 'Minutes use the min unit and preserve decimal commas in copied raw text.')
@@ -69,6 +77,8 @@ assert.equal(isNutritionComplete(workspace, 'water', '2026-10-06'), true)
 assert.equal(isNutritionComplete(workspace, 'water', '2026-10-07'), false, 'Each day has independent habit state.')
 assert.ok(isWorkspace({ columns: workspace.columns, tasks: [], projects: [] }), 'Old workspaces without any Others collections remain supported.')
 const bad = [
+  { ...workspace, recipes: [{ ...recipe, favorite: 'true' }] },
+  { ...workspace, recipes: [{ ...recipe, favorite: null }] },
   { ...workspace, workouts: null },
   { ...workspace, workouts: [workout, workout] },
   { ...workspace, workouts: [{ ...workout, date: '2026-02-30' }] },
