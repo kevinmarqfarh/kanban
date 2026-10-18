@@ -103,10 +103,15 @@ async function open(browser, viewport = { width: 1512, height: 982 }, touch = fa
       await page.getByRole('dialog').getByLabel('Projektnamn', { exact: true }).fill('Nytt kök 2027');
       await page.getByRole('dialog').getByRole('button', { name: 'Spara projekt', exact: true }).click();
       await projectPage(page).getByRole('heading', { level: 1, name: 'Nytt kök 2027' }).waitFor();
+      // Deleting is immediate; Ångra brings the project back with its tasks, and it can be opened again.
+      const kitchen = (await cache(page)).projects.find(project => project.id === 'kitchen');
       await projectPage(page).getByRole('button', { name: 'Ta bort projekt', exact: true }).click();
-      await projectPage(page).locator('.delete-confirm').getByRole('button', { name: 'Behåll', exact: true }).click();
+      await page.locator('.project-card').first().waitFor();
+      assert.equal((await cache(page)).projects.some(project => project.id === 'kitchen'), false);
+      await page.getByTestId('undo-toast').getByRole('button', { name: 'Ångra', exact: true }).click();
+      assert.deepEqual((await cache(page)).projects.find(project => project.id === 'kitchen'), kitchen);
+      await card(page, 'Nytt kök 2027').click();
       await projectPage(page).getByRole('button', { name: 'Ta bort projekt', exact: true }).click();
-      await projectPage(page).locator('.delete-confirm').getByRole('button', { name: 'Ta bort projekt', exact: true }).click();
       await page.locator('.project-card').first().waitFor();
       assert.equal((await cache(page)).projects.some(project => project.id === 'kitchen'), false);
       await context.close();

@@ -1,7 +1,7 @@
 import { useNow } from '../hooks/useNow'
 import { formatClock, stepsOn } from '../lib/forecast'
 import { parseLocalDate } from '../lib/others'
-import { stepKind, type Forecast, type WeatherStep } from '../lib/weather'
+import { SOURCE_LINKS, SOURCE_NAMES, stepKind, type Forecast, type WeatherStep } from '../lib/weather'
 import { Modal } from './Modal'
 import { WeatherIcon } from './WeatherIcon'
 
@@ -59,6 +59,7 @@ export function WeatherDaySheet({ forecast, date, today, placeName, onSelect, on
           </tr>)}</tbody>
         </table>
       </> : <p className="wxp-sheet-note">Prognosen för resten av dagen är inte hämtad ännu.</p>}
+      <p className="wxp-sheet-credit">Källa: <a href={SOURCE_LINKS[forecast.source]} target="_blank" rel="noreferrer">{SOURCE_NAMES[forecast.source]}</a>{forecast.source === 'smhi' && forecast.sources.includes('open-meteo') && <>, tidigare timmar <a href={SOURCE_LINKS['open-meteo']} target="_blank" rel="noreferrer">Open-Meteo</a></>} · hämtad {formatClock(forecast.fetchedAt)}</p>
     </div>
   </Modal>
 }

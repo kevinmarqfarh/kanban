@@ -148,8 +148,10 @@ const screenshot = async (page, name) => { await page.evaluate(() => document.fo
     await withPage({ workouts: [workout] }, async page => {
       await openSection(page, 'workout'); await page.getByRole('button', { name: 'Nytt pass', exact: true }).click(); await waitDialog(page); await dialog(page).getByRole('button', { name: 'Spara pass', exact: true }).click();
       assert.equal((await cache(page)).workouts.length, 1); assert.equal(await dialog(page).getByLabel('Övning 1', { exact: true }).evaluate(input => input.validity.valueMissing), true); await closeDialog(page);
-      await editWorkout(page); await dialog(page).getByRole('button', { name: 'Ta bort pass', exact: true }).click(); assert.equal((await cache(page)).workouts.length, 1); await dialog(page).getByRole('button', { name: 'Behåll', exact: true }).click();
-      await dialog(page).getByRole('button', { name: 'Ta bort pass', exact: true }).click(); await dialog(page).getByRole('button', { name: 'Ta bort', exact: true }).click(); await page.reload(); assert.deepEqual((await cache(page)).workouts, []); await preserveCore(page);
+      // Deleting is immediate; Ångra in the list puts the session back.
+      await editWorkout(page); await dialog(page).getByRole('button', { name: 'Ta bort pass', exact: true }).click(); await dialog(page).waitFor({ state: 'hidden' }); assert.deepEqual((await cache(page)).workouts, []);
+      await page.getByRole('status').filter({ hasText: 'Passet är borttaget.' }).getByRole('button', { name: 'Ångra', exact: true }).click(); assert.equal((await cache(page)).workouts.length, 1);
+      await editWorkout(page); await dialog(page).getByRole('button', { name: 'Ta bort pass', exact: true }).click(); await dialog(page).waitFor({ state: 'hidden' }); await page.reload(); assert.deepEqual((await cache(page)).workouts, []); await preserveCore(page);
     });
   });
 
@@ -201,7 +203,11 @@ const screenshot = async (page, name) => { await page.evaluate(() => document.fo
       await openSection(page, 'nutrition'); await newHabit(page); await saveHabit(page); let [saved] = (await cache(page)).nutritionHabits; assert.equal(saved.amount, '300'); assert.equal(saved.unit, 'g');
       await page.getByRole('checkbox', { name: 'Klarmarkera Grönsaker', exact: true }).check(); await editHabit(page, 'Grönsaker'); await dialog(page).getByLabel('Titel', { exact: true }).fill('Grönsaker varje dag'); await dialog(page).getByLabel('Mängd', { exact: true }).fill('2.5'); await dialog(page).getByLabel(/^Enhet/).selectOption('portion'); await saveHabit(page);
       await page.reload(); await openSection(page, 'nutrition'); [saved] = (await cache(page)).nutritionHabits; assert.equal(saved.title, 'Grönsaker varje dag'); assert.equal(saved.amount, '2.5'); assert.equal(saved.unit, 'portion'); assert.equal(await page.getByRole('checkbox', { name: 'Klarmarkera Grönsaker varje dag', exact: true }).isChecked(), true);
-      await editHabit(page, saved.title); await dialog(page).getByRole('button', { name: 'Ta bort kostvana', exact: true }).click(); assert.equal((await cache(page)).nutritionHabits.length, 1); await dialog(page).getByRole('button', { name: 'Ta bort', exact: true }).click(); await page.reload(); assert.deepEqual((await cache(page)).nutritionHabits, []); assert.deepEqual((await cache(page)).nutritionCompletions, []); await preserveCore(page);
+      // Deleting is immediate; Ångra brings back the habit and today's tick.
+      const ticks = (await cache(page)).nutritionCompletions;
+      await editHabit(page, saved.title); await dialog(page).getByRole('button', { name: 'Ta bort kostvana', exact: true }).click(); await dialog(page).waitFor({ state: 'hidden' }); assert.deepEqual((await cache(page)).nutritionHabits, []);
+      await page.getByTestId('undo-toast').getByRole('button', { name: 'Ångra', exact: true }).click(); assert.deepEqual((await cache(page)).nutritionHabits, [saved]); assert.deepEqual((await cache(page)).nutritionCompletions, ticks);
+      await editHabit(page, saved.title); await dialog(page).getByRole('button', { name: 'Ta bort kostvana', exact: true }).click(); await dialog(page).waitFor({ state: 'hidden' }); await page.reload(); assert.deepEqual((await cache(page)).nutritionHabits, []); assert.deepEqual((await cache(page)).nutritionCompletions, []); await preserveCore(page);
     });
   });
 
@@ -264,23 +270,24 @@ const screenshot = async (page, name) => { await page.evaluate(() => document.fo
     try {
       const a = await load(context), b = await load(context);
       await openSection(a, 'workout'); await openSection(b, 'workout'); await editWorkout(b); await editWorkout(a);
-      await dialog(a).getByRole('button', { name: 'Ta bort pass', exact: true }).click(); await dialog(a).getByRole('button', { name: 'Ta bort', exact: true }).click();
+      await dialog(a).getByRole('button', { name: 'Ta bort pass', exact: true }).click();
       await dialog(b).getByLabel(/^Titel/).fill('En gammal passform'); await dialog(b).getByRole('button', { name: 'Spara pass', exact: true }).click(); await dialog(b).getByRole('alert').filter({ hasText: /tagits bort/ }).waitFor(); assert.deepEqual((await cache(a)).workouts, []); await closeDialog(b);
       await openSection(a, 'nutrition'); await openSection(b, 'nutrition'); await editHabit(b); await editHabit(a);
-      await dialog(a).getByRole('button', { name: 'Ta bort kostvana', exact: true }).click(); await dialog(a).getByRole('button', { name: 'Ta bort', exact: true }).click();
+      await dialog(a).getByRole('button', { name: 'Ta bort kostvana', exact: true }).click();
       await dialog(b).getByLabel('Titel', { exact: true }).fill('En gammal kostform'); await dialog(b).getByRole('button', { name: 'Spara', exact: true }).click(); await dialog(b).getByRole('alert').filter({ hasText: /tagits bort/ }).waitFor(); assert.deepEqual((await cache(a)).nutritionHabits, []); await closeDialog(b);
       await openSection(a, 'recipes'); await openSection(b, 'recipes'); await editRecipe(b); await openRecipe(a);
-      await dialog(a).getByRole('button', { name: 'Ta bort recept', exact: true }).click(); await dialog(a).getByRole('button', { name: 'Ta bort', exact: true }).click();
+      await dialog(a).getByRole('button', { name: 'Ta bort recept', exact: true }).click();
       await dialog(b).getByLabel('Titel', { exact: true }).fill('En gammal receptform'); await dialog(b).getByRole('button', { name: 'Spara recept', exact: true }).click(); await dialog(b).getByRole('alert').filter({ hasText: /tagits bort/ }).waitFor(); assert.deepEqual((await cache(a)).recipes, []); await closeDialog(b);
       await a.reload(); await preserveCore(a); assert.deepEqual((await cache(a)).workouts, []); assert.deepEqual((await cache(a)).nutritionHabits, []); assert.deepEqual((await cache(a)).recipes, []);
     } finally { await context.close(); }
   });
 
-  await check('Recipe deletion is deliberate and backup includes every new collection with original workspace fields', async () => {
+  await check('Recipe deletion offers Ångra and backup includes every new collection with original workspace fields', async () => {
     await withPage({ recipes: [recipe], workouts: [workout], nutritionHabits: [habit], nutritionCompletions: [{ id: completionId(habit.id, today), habitId: habit.id, date: today, completed: true }] }, async page => {
-      await openSection(page, 'recipes'); await openRecipe(page); await dialog(page).getByRole('button', { name: 'Ta bort recept', exact: true }).click(); assert.equal((await cache(page)).recipes.length, 1); await dialog(page).getByRole('button', { name: 'Behåll', exact: true }).click(); await closeDialog(page);
+      await openSection(page, 'recipes'); await openRecipe(page); await dialog(page).getByRole('button', { name: 'Ta bort recept', exact: true }).click(); await dialog(page).waitFor({ state: 'hidden' }); assert.deepEqual((await cache(page)).recipes, []);
+      await page.getByTestId('undo-toast').getByRole('button', { name: 'Ångra', exact: true }).click(); assert.deepEqual((await cache(page)).recipes, [recipe]);
       await page.getByRole('button', { name: 'Öppna inställningar', exact: true }).click(); await waitDialog(page); const downloadEvent = page.waitForEvent('download'); await dialog(page).getByRole('button', { name: 'Exportera säkerhetskopia', exact: true }).click(); const download = await downloadEvent; await download.saveAs(path.join(out, 'complete-backup.json')); const { debriefs, ...saved } = JSON.parse(fs.readFileSync(path.join(out, 'complete-backup.json'), 'utf8')); assert.deepEqual(saved, await cache(page)); assert.deepEqual(debriefs, []); await closeDialog(page);
-      await openRecipe(page); await dialog(page).getByRole('button', { name: 'Ta bort recept', exact: true }).click(); await dialog(page).getByRole('button', { name: 'Ta bort', exact: true }).click(); await page.reload(); assert.deepEqual((await cache(page)).recipes, []); assert.deepEqual((await cache(page)).workouts, [workout]); await preserveCore(page);
+      await openRecipe(page); await dialog(page).getByRole('button', { name: 'Ta bort recept', exact: true }).click(); await dialog(page).waitFor({ state: 'hidden' }); await page.reload(); assert.deepEqual((await cache(page)).recipes, []); assert.deepEqual((await cache(page)).workouts, [workout]); await preserveCore(page);
     });
   });
 

@@ -126,11 +126,16 @@ const screenshot = async (page, filename) => { await page.evaluate(() => documen
     assert.ok((await notifications(page)).every(entry => entry.readAt || entry.dismissedAt)); const retained = await notifications(page);
     await page.clock.pauseAt(new Date('2027-11-05T12:00:00+01:00')); await page.reload(); await unchangedTasks(page); assert.deepEqual(await notifications(page), retained);
   });
-  await check('Birthday deletion requires confirmation and retains historical Kanban content', async () => {
-    await openBirthdays(page); await dialog(page).getByRole('button', { name: 'Ta bort födelsedag för Anna Andersson', exact: true }).click();
-    assert.equal((await cache(page)).birthdays.length, 1); await row(page, 'Anna Andersson').getByRole('button', { name: 'Behåll', exact: true }).click();
-    assert.equal((await cache(page)).birthdays.length, 1); await dialog(page).getByRole('button', { name: 'Ta bort födelsedag för Anna Andersson', exact: true }).click();
-    await row(page, 'Anna Andersson').getByRole('button', { name: 'Ta bort', exact: true }).click(); assert.deepEqual((await cache(page)).birthdays, []); await unchangedTasks(page); await closeBirthdays(page);
+  await check('Birthday deletion is immediate with Ångra in the dialog, and retains historical Kanban content', async () => {
+    await openBirthdays(page); const saved = (await cache(page)).birthdays;
+    await dialog(page).getByRole('button', { name: 'Ta bort födelsedag för Anna Andersson', exact: true }).click();
+    assert.deepEqual((await cache(page)).birthdays, []);
+    const undo = dialog(page).locator('.birthday-undo');
+    assert.equal(await undo.locator('span').textContent(), 'Födelsedagen är borttagen');
+    await undo.getByRole('button', { name: 'Ångra', exact: true }).click();
+    assert.deepEqual((await cache(page)).birthdays, saved, 'Ångra restores the birthday exactly.');
+    await dialog(page).getByRole('button', { name: 'Ta bort födelsedag för Anna Andersson', exact: true }).click();
+    assert.deepEqual((await cache(page)).birthdays, []); await unchangedTasks(page); await closeBirthdays(page);
     await page.reload(); await unchangedTasks(page); assert.deepEqual((await cache(page)).birthdays, []);
   });
   await check('Late return catches up once and old Kanban-ledger IDs do not suppress new Home notifications', async () => {

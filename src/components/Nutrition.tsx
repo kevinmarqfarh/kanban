@@ -22,7 +22,6 @@ function HabitEditor({ habit, onSave, onDelete, onClose }: {
     id: newId(), title: '', amount: '', unit: 'st', createdAt: new Date().toISOString(), time: 'morning',
   })
   const [error, setError] = useState<string | null>(null)
-  const [confirmDelete, setConfirmDelete] = useState(false)
   function save(event: FormEvent) {
     event.preventDefault()
     if (!draft.title.trim()) { setError('Ange ett namn.'); return }
@@ -33,7 +32,7 @@ function HabitEditor({ habit, onSave, onDelete, onClose }: {
     else onClose()
   }
   return <Modal title={habit ? 'Redigera kostvana' : 'Ny kostvana'} onClose={onClose} error={error} footer={<>
-    {habit && <button className="icon-button danger" type="button" aria-label="Ta bort kostvana" onClick={() => setConfirmDelete(true)}><Trash2 size={18} /></button>}
+    {habit && <button className="icon-button danger" type="button" aria-label="Ta bort kostvana" onClick={() => { const failure = onDelete(draft.id); if (failure) setError(failure); else onClose() }}><Trash2 size={18} /></button>}
     <button className="button secondary" type="button" onClick={onClose}>Avbryt</button><button className="button primary" type="submit" form="habit-form"><Check size={16} />Spara</button>
   </>}>
     <form id="habit-form" onSubmit={save}><label className="field">Titel<input className="input" required autoFocus maxLength={160} value={draft.title} onChange={event => setDraft({ ...draft, title: event.target.value })} /></label><div className="field-row"><label className="field">Mängd<input className="input" type="text" required inputMode="decimal" pattern="[0-9]+([.,][0-9]+)?" value={draft.amount} onChange={event => setDraft({ ...draft, amount: event.target.value })} /></label><label className="field">Enhet<select className="select" value={draft.unit} onChange={event => setDraft({ ...draft, unit: event.target.value as NutritionUnit })}>{units.map(unit => <option key={unit} value={unit}>{unit}</option>)}</select></label></div>
@@ -44,7 +43,6 @@ function HabitEditor({ habit, onSave, onDelete, onClose }: {
           return <button key={option.label} type="button" className={active ? 'active' : ''} aria-pressed={active} onClick={() => setDraft({ ...draft, time: option.value })}><Icon size={15} aria-hidden="true" />{option.label}</button>
         })}</div>
       </div>
-      {confirmDelete && <div className="form-message delete-confirm"><p>Ta bort kostvanan?</p><button className="button secondary" type="button" onClick={() => setConfirmDelete(false)}>Behåll</button><button className="button primary danger" type="button" onClick={() => { const failure = onDelete(draft.id); if (failure) setError(failure); else onClose() }}>Ta bort</button></div>}
     </form>
   </Modal>
 }

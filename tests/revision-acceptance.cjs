@@ -139,7 +139,6 @@ const noSuccessToast = async page => assert.doesNotMatch((await page.locator('.t
       await openTask(b, 'rapid-4');
       await openTask(a, 'rapid-4');
       await dialog(a).getByRole('button', { name: 'Ta bort uppgift', exact: true }).click();
-      await dialog(a).getByRole('button', { name: 'Ta bort', exact: true }).click();
       if (await dialog(b).count()) {
         await dialog(b).getByLabel('Titel', { exact: true }).fill('En gammal form som inte ska återskapa kortet');
         await saveTask(b);

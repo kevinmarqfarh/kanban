@@ -822,9 +822,7 @@ async function mouseDrag(page, fromName, target, position = 'top') {
       assert.equal(await page.getByRole('button', { name: 'Öppna anteckning Gammal', exact: true }).count(), 0, 'Trashed notes are not in the list.');
       assert.match(await page.locator('.notes-trash-open').textContent(), /Papperskorg1/);
       await page.getByRole('button', { name: 'Öppna anteckning Idéer', exact: true }).click(); await page.locator('.note-editor').waitFor();
-      await page.getByRole('button', { name: 'Ta bort anteckning', exact: true }).click(); await waitDialog(page);
-      assert.match(await dialog(page).textContent(), /papperskorgen och kan återställas i 30 dagar/);
-      await dialog(page).getByRole('button', { name: 'Ta bort', exact: true }).click(); await page.locator('.note-editor').waitFor({ state: 'detached' });
+      await page.getByRole('button', { name: 'Ta bort anteckning', exact: true }).click(); await page.locator('.note-editor').waitFor({ state: 'detached' });
       const trashedIdea = (await cache(page)).notes.find(entry => entry.id === 'idea');
       assert.ok(trashedIdea.deletedAt, 'Deleting keeps the note with a deletion time.'); assert.equal(trashedIdea.content, '<div>Första raden.</div>');
       assert.match(await page.getByRole('status').filter({ hasText: 'Flyttad till papperskorgen.' }).textContent(), /Ångra/);

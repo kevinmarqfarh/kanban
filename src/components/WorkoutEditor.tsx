@@ -65,7 +65,6 @@ export function WorkoutEditor({ workout, history = [], onSave, onDelete, onClose
     id: newId(), date: localDateString(new Date()), title: '', rows: [newRow()], createdAt: new Date().toISOString(),
   })
   const [error, setError] = useState<string | null>(null)
-  const [confirmDelete, setConfirmDelete] = useState(false)
   const [focusRow, setFocusRow] = useState<string | null>(null)
   const [recent] = useState(() => recentExercises(history, workout?.id))
   useEffect(() => {
@@ -92,7 +91,7 @@ export function WorkoutEditor({ workout, history = [], onSave, onDelete, onClose
     setFocusRow(row.id)
   }
   return <Modal phoneFullscreen title={workout ? 'Redigera pass' : 'Nytt pass'} onClose={onClose} error={error} footer={<>
-    {workout && <button className="icon-button danger" type="button" aria-label="Ta bort pass" onClick={() => setConfirmDelete(true)}><Trash2 size={18} /></button>}
+    {workout && <button className="icon-button danger" type="button" aria-label="Ta bort pass" onClick={() => { const failure = onDelete(draft.id); if (failure) setError(failure); else onClose() }}><Trash2 size={18} /></button>}
     <button className="button secondary" type="button" onClick={onClose}>Avbryt</button><button className="button primary" form="workout-form" type="submit"><Check size={16} />Spara pass</button>
   </>}>
     <form id="workout-form" className="workout-form" onSubmit={save}>
@@ -116,7 +115,6 @@ export function WorkoutEditor({ workout, history = [], onSave, onDelete, onClose
       })}</ol>
       {draft.rows.length === 0 && <p className="others-help">Inga övningar. Lägg till minst en för att logga passet.</p>}
       <button className="button secondary others-add-row" type="button" onClick={addRow}><Plus size={16} />Lägg till övning</button>
-      {confirmDelete && <div className="form-message delete-confirm"><p>Ta bort passet?</p><button className="button secondary" type="button" onClick={() => setConfirmDelete(false)}>Behåll</button><button className="button primary danger" type="button" onClick={() => { const failure = onDelete(draft.id); if (failure) setError(failure); else onClose() }}>Ta bort</button></div>}
     </form>
   </Modal>
 }
@@ -168,6 +166,6 @@ export function Workouts({ workouts, onSave, onDelete, onRestore, initialId }: {
     {ordered.length === 0 && <p className="others-empty">Inga träningspass ännu.</p>}
     {copyStatus && <p className="others-status" role="status"><Check size={14} />{copyStatus}</p>}
     {rawText !== null && <div className="others-copy-fallback"><div className="others-copy-heading"><p>Kopiera texten manuellt.</p><button className="icon-button" type="button" aria-label="Dölj kopiering" onClick={() => setRawText(null)}><X size={17} /></button></div><textarea className="textarea" rows={6} readOnly autoFocus aria-label="Råtext för träningspass" value={rawText} onFocus={event => event.currentTarget.select()} /></div>}
-    {editing !== undefined && <WorkoutEditor key={editing?.id ?? 'new-workout'} workout={editing ?? undefined} history={workouts} onSave={onSave} onDelete={onDelete} onClose={() => setEditing(undefined)} />}
+    {editing !== undefined && <WorkoutEditor key={editing?.id ?? 'new-workout'} workout={editing ?? undefined} history={workouts} onSave={onSave} onDelete={id => { const failure = onDelete(id); const deleted = workouts.find(workout => workout.id === id); if (!failure && deleted) setRemoved(deleted); return failure }} onClose={() => setEditing(undefined)} />}
   </div>
 }

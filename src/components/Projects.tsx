@@ -69,7 +69,6 @@ export function ProjectDetail({ project, workspace, onClose, onEdit, onDelete, o
   project: Project; workspace: Workspace; onClose: () => void; onEdit: () => void; onDelete: () => string | null;
   onAddTask: () => void; onOpenTask: (task: ProjectTask, subtaskId?: string) => void; onToggleSubtask: (taskId: string, itemId: string) => string | null;
 }) {
-  const [confirmDelete, setConfirmDelete] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
   const { tasks, complete, percent } = projectProgress(project.id, workspace)
@@ -81,7 +80,7 @@ export function ProjectDetail({ project, workspace, onClose, onEdit, onDelete, o
     <div className="project-page-top">
       <button className="button ghost project-back" type="button" onClick={onClose}><ArrowLeft size={16} />Alla projekt</button>
       <div className="project-page-actions">
-        <button className="icon-button danger" type="button" aria-label="Ta bort projekt" onClick={() => setConfirmDelete(true)}><Trash2 size={18} /></button>
+        <button className="icon-button danger" type="button" aria-label="Ta bort projekt" onClick={() => { const failure = onDelete(); if (failure) setSaveError(failure) }}><Trash2 size={18} /></button>
         <button className="button secondary" type="button" aria-label="Redigera projekt" onClick={onEdit}><Pencil size={15} /><span>Redigera projekt</span></button>
         <button className="button primary" type="button" aria-label="Ny huvuduppgift" onClick={onAddTask}><Plus size={17} /><span>Huvuduppgift</span></button>
       </div>
@@ -94,7 +93,6 @@ export function ProjectDetail({ project, workspace, onClose, onEdit, onDelete, o
       </div>
     </header>
     {saveError && <p className="form-message error" role="alert">{saveError}</p>}
-    {confirmDelete && <div className="form-message delete-confirm" role="group" aria-label="Ta bort projektet"><p>Ta bort projektet och dess uppgifter?</p><button className="button secondary" type="button" onClick={() => setConfirmDelete(false)}>Behåll</button><button className="button primary danger" type="button" onClick={() => { const failure = onDelete(); if (failure) setSaveError(failure) }}>Ta bort projekt</button></div>}
     <div className="project-detail-layout">
       <aside className="project-overview" aria-label="Översikt">
         <div className="project-detail-intro"><p>{tasks.length ? `${tasks.length} ${tasks.length === 1 ? 'huvuduppgift' : 'huvuduppgifter'}${subtasks ? ` · ${subtasksDone}/${subtasks} deluppgifter klara` : ''}` : 'Inga uppgifter ännu'}</p></div>
@@ -123,7 +121,6 @@ export function ProjectTaskEditor({ task, focusSubtaskId, onSave, onDelete, onCl
   const subtaskFocusRef = useRef<HTMLInputElement>(null)
   const [itemTitle, setItemTitle] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [confirmDelete, setConfirmDelete] = useState(false)
   function addItem() {
     if (!itemTitle.trim()) return
     setDraft(current => ({ ...current, checklist: [...current.checklist, { id: newId(), title: itemTitle.trim(), completed: false }] }))
@@ -139,7 +136,7 @@ export function ProjectTaskEditor({ task, focusSubtaskId, onSave, onDelete, onCl
     setDraft(next); setItemTitle(''); setError(onSave(next))
   }
   return <Modal wide initialFocusRef={subtaskFocusRef} title={task ? 'Projektuppgift' : 'Ny projektuppgift'} error={error} onClose={onClose} footer={<>
-    {task && <button className="icon-button danger" aria-label="Ta bort projektuppgift" onClick={() => setConfirmDelete(true)}><Trash2 size={18} /></button>}
+    {task && <button className="icon-button danger" aria-label="Ta bort projektuppgift" onClick={() => setError(onDelete(draft.id))}><Trash2 size={18} /></button>}
     <button className="button secondary" onClick={onClose}>Avbryt</button><button className="button primary" type="submit" form="project-task-form"><Check size={17} />Spara uppgift</button>
   </>}>
     <form id="project-task-form" className="project-task-form" onSubmit={save}>
@@ -154,6 +151,5 @@ export function ProjectTaskEditor({ task, focusSubtaskId, onSave, onDelete, onCl
       <div className="checklist-add"><input className="input" aria-label="Ny deluppgift" placeholder="Lägg till deluppgift" value={itemTitle} onChange={event => setItemTitle(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); addItem() } }} /><button className="icon-button" type="button" aria-label="Lägg till deluppgift" onClick={addItem}><Plus size={19} /></button></div>
       </div>
     </form>
-    {confirmDelete && <div className="form-message delete-confirm"><p>Ta bort projektuppgiften?</p><button className="button secondary" onClick={() => setConfirmDelete(false)}>Behåll</button><button className="button primary danger" onClick={() => setError(onDelete(draft.id))}>Ta bort uppgift</button></div>}
   </Modal>
 }

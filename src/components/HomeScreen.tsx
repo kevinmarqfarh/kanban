@@ -9,6 +9,9 @@ import { useWeather } from '../hooks/useWeather'
 import { WeatherWeek } from './WeatherWeek'
 import { WeatherDaySheet } from './WeatherDaySheet'
 import { NutritionTimePill } from './NutritionTimePill'
+import { orderHabitsByTime } from '../lib/nutritionTime'
+import { deadlineLabel, parseQuickTask } from '../lib/quickAdd'
+import { weatherNote } from '../lib/forecast'
 
 const weekdays = ['M', 'T', 'O', 'T', 'F', 'L', 'S']
 const pad = (value: number) => String(value).padStart(2, '0')
@@ -29,7 +32,7 @@ export function HomeScreen({ workspace, today, syncStatus, signedIn, unreadDebri
   onOpenNutrition: () => void
   onOpenDebriefs: () => void
   onToggleHabit: (habitId: string, date: string) => string | null
-  onQuickAdd: (title: string, dueToday: boolean) => string | null
+  onQuickAdd: (title: string, deadline: string | null, deadlineTime: string | null) => string | null
   onReadNotification: (id: string) => string | null
   onDismissNotification: (id: string) => string | null
 }) {
@@ -40,8 +43,11 @@ export function HomeScreen({ workspace, today, syncStatus, signedIn, unreadDebri
   const titleRef = useRef<HTMLInputElement>(null)
   const [dueToday, setDueToday] = useState(true)
   const [added, setAdded] = useState<string | null>(null)
+  // Shown live: the chip next to the field turns into the date read from the text.
+  const parsed = useMemo(() => parseQuickTask(title, today), [title, today])
   const habits = workspace.nutritionHabits ?? []
   const weather = useWeather(today)
+  const note = useMemo(() => weatherNote(weather.forecast, now), [weather.forecast, now])
   const [weatherDay, setWeatherDay] = useState<string | null>(null)
   const done = habits.filter(habit => isNutritionComplete(workspace, habit.id, today)).length
   const notifications = unreadBirthdayNotifications(workspace)
@@ -55,9 +61,12 @@ export function HomeScreen({ workspace, today, syncStatus, signedIn, unreadDebri
     // Read the field itself: Enter right after the last keystroke (or dictation) can beat React's state update.
     const clean = (titleRef.current?.value ?? title).trim()
     if (!clean) return
-    const problem = onQuickAdd(clean, dueToday)
+    // A date written at the end ("fre 14", "imorgon", "24/10") wins over the Idag toggle.
+    const quick = parseQuickTask(clean, today)
+    const deadline = quick.deadline ?? (dueToday ? today : null)
+    const problem = onQuickAdd(quick.title, deadline, quick.deadline ? quick.deadlineTime : null)
     setError(problem)
-    if (!problem) { setAdded(`”${clean}” ligger i Planner${dueToday ? ' med deadline idag' : ''}.`); setTitle('') }
+    if (!problem) { setAdded(`”${quick.title}” ligger i Planner${deadline ? ` med deadline ${deadlineLabel(deadline, quick.deadline ? quick.deadlineTime : null, today, true).toLowerCase()}` : ''}.`); setTitle('') }
   }
 
   const sync = !signedIn ? { Icon: HardDrive, text: 'Sparas på enheten' }
@@ -80,7 +89,7 @@ export function HomeScreen({ workspace, today, syncStatus, signedIn, unreadDebri
         </div>
         <p className="hs-date"><span>{date}</span><span>Vecka {isoWeek(today)}</span></p>
         <h2 id="hs-headline" className="hs-headline">{briefing.headline}</h2>
-        <p className="hs-summary">{briefing.summary}</p>
+        <p className="hs-summary">{briefing.summary}{note && <span className="briefing-weather"> {note}</span>}</p>
         <dl className="hs-stats">
           {[
             { key: 'overdue', label: 'Försenat', value: briefing.stats.overdue, alert: briefing.stats.overdue > 0 },
@@ -109,7 +118,7 @@ export function HomeScreen({ workspace, today, syncStatus, signedIn, unreadDebri
         {habits.length > 0 && <span className={`hs-count${done === habits.length ? ' is-complete' : ''}`} aria-label={`${done} av ${habits.length} klara idag`}>{done}/{habits.length}</span>}
       </div>
       {habits.length > 0 ? <>
-        <div className="hs-habits" role="group" aria-label="Bocka av för idag">{habits.map(habit => {
+        <div className="hs-habits" role="group" aria-label="Bocka av för idag">{orderHabitsByTime(habits, now).map(habit => {
           const complete = isNutritionComplete(workspace, habit.id, today)
           return <button key={habit.id} type="button" className={`hs-habit${complete ? ' is-complete' : ''}`} aria-pressed={complete} data-habit-id={habit.id} onClick={() => run(() => onToggleHabit(habit.id, today))}>
             <span className="hs-check" aria-hidden="true">{complete && <Check size={20} strokeWidth={2.4} />}</span>
@@ -146,7 +155,9 @@ export function HomeScreen({ workspace, today, syncStatus, signedIn, unreadDebri
       <form className="hs-quick" onSubmit={submit} aria-label="Snabb uppgift till Planner">
         <label className="sr-only" htmlFor="hs-quick-title">Ny uppgift</label>
         <input ref={titleRef} id="hs-quick-title" className="input" value={title} maxLength={140} placeholder="Ny uppgift…" enterKeyHint="done" autoComplete="off" onChange={event => { setTitle(event.target.value); setAdded(null) }} />
-        <button type="button" className={`hs-today-toggle${dueToday ? ' active' : ''}`} aria-pressed={dueToday} onClick={() => setDueToday(value => !value)}>Idag</button>
+        {parsed.deadline
+          ? <span className="hs-today-toggle active is-parsed" role="status" aria-label={`Deadline ${deadlineLabel(parsed.deadline, parsed.deadlineTime, today, true)}`} data-deadline={parsed.deadline}>{deadlineLabel(parsed.deadline, parsed.deadlineTime, today)}</span>
+          : <button type="button" className={`hs-today-toggle${dueToday ? ' active' : ''}`} aria-pressed={dueToday} onClick={() => setDueToday(value => !value)}>Idag</button>}
         <button type="submit" className={`button primary hs-add${title.trim() ? '' : ' is-empty'}`} aria-label="Lägg till i Planner"><Plus size={18} /></button>
       </form>
       {added && <p className="hs-added" role="status"><Check size={13} />{added}</p>}

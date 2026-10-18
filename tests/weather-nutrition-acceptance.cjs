@@ -65,7 +65,9 @@ async function open(browser, { viewport = { width: 1024, height: 768 }, touch = 
         assert.match(await days.nth(3).locator('button').getAttribute('aria-label'), /torsdag 15 oktober: Regn, högst 14 grader, lägst 10 grader, 87 procent risk för nederbörd\. Visa timprognos\./);
         assert.equal(await days.nth(1).locator('button').count(), 0, 'Past days are not tappable.');
         assert.equal(await days.locator('button').count(), 5, 'Today and the rest of the week open the weather page.');
-        assert.match(await weather(page).textContent(), /Göteborg.*Uppdaterat 07:42.*Källa: SMHI · Open-Meteo/s);
+        assert.match(await weather(page).textContent(), /Göteborg.*Källa: SMHI · Open-Meteo/s);
+        assert.equal(await weather(page).locator('.wx-place small').count(), 0, 'A fresh forecast shows no time: quiet when all is well.');
+        assert.equal(await weather(page).locator('.wx-credit').getAttribute('title'), 'Källa: SMHI · Open-Meteo', 'The source is a small info icon.');
         assert.equal(await weather(page).getAttribute('data-source'), 'smhi');
         assert.equal(state.smhiCalls.length, 1, 'SMHI is the forecast.');
         assert.match(state.smhiCalls[0], /snow1g\/version\/1\/geotype\/point\/lon\/11\.9746\/lat\/57\.7089\/data\.json$/);
@@ -125,7 +127,8 @@ async function open(browser, { viewport = { width: 1024, height: 768 }, touch = 
       const { context, page } = await open(browser, { viewport: { width: 402, height: 874 } });
       const pills = (scope, attr) => page.locator(scope).evaluateAll((nodes, attr) => nodes.map(node => [node.dataset[attr], node.querySelector('.time-pill')?.textContent ?? null]), attr);
       // Phone Home: every supplement listed, in stored order, each with its pill.
-      assert.deepEqual(await pills('.home-habits [data-home-habit-id]', 'homeHabitId'), [['dv', 'Morgon'], ['om', 'Morgon'], ['mg', 'Kväll'], ['zn', 'Kväll'], ['wa', null], ['old', null]]);
+      // Home orders by time of day: at 07:42 the morning ones first, then those without a time, then the evening.
+      assert.deepEqual(await pills('.home-habits [data-home-habit-id]', 'homeHabitId'), [['dv', 'Morgon'], ['om', 'Morgon'], ['wa', null], ['old', null], ['mg', 'Kväll'], ['zn', 'Kväll']]);
       assert.equal(await page.locator('.nutrition-time-toggle, .home-time-toggle').count(), 0, 'No morning/evening switch.');
       await page.locator('.bottom-nav').getByRole('button', { name: 'Others', exact: true }).click();
       await page.getByRole('button', { name: /^Kost/ }).first().click();
@@ -154,7 +157,7 @@ async function open(browser, { viewport = { width: 1024, height: 768 }, touch = 
 
       // iPad home screen: same pills, all supplements visible, still one screen.
       const ipad = await open(browser);
-      assert.deepEqual(await ipad.page.locator('.hs-habit').evaluateAll(nodes => nodes.map(node => [node.dataset.habitId, node.querySelector('.time-pill')?.textContent ?? null])), [['dv', 'Morgon'], ['om', 'Morgon'], ['mg', 'Kväll'], ['zn', 'Kväll'], ['wa', null], ['old', null]]);
+      assert.deepEqual(await ipad.page.locator('.hs-habit').evaluateAll(nodes => nodes.map(node => [node.dataset.habitId, node.querySelector('.time-pill')?.textContent ?? null])), [['dv', 'Morgon'], ['om', 'Morgon'], ['wa', null], ['old', null], ['mg', 'Kväll'], ['zn', 'Kväll']]);
       const size = await ipad.page.evaluate(() => ({ scroll: document.documentElement.scrollHeight, inner: innerHeight }));
       assert.ok(size.scroll <= size.inner + 1);
       await ipad.page.locator('[data-habit-id="mg"]').click();

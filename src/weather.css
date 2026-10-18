@@ -29,3 +29,5 @@
 .wxp-table-temp { color: var(--ink) !important; font-size: 15px; font-weight: 600; }
 @media (max-width: 420px) { .wxp-table th:last-child, .wxp-table td:last-child { white-space: normal; } }
 
+.wxp-sheet-credit { color: var(--ink-muted); font-size: 11px; }
+.wxp-sheet-credit a { color: inherit; }

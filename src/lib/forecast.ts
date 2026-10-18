@@ -176,3 +176,61 @@ export function stepsOn(forecast: Forecast, date: string, now: Date = new Date()
 
 const clock = (iso: string) => new Date(iso).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
 export const formatClock = clock
+
+/* ---------- One sentence for the briefing ---------- */
+
+const UMBRELLA: readonly DayKind[] = ['drizzle', 'rain', 'showers', 'thunder']
+const hourText = (ms: number) => String(new Date(ms).getHours()).padStart(2, '0')
+const degreesText = (value: number) => `${Math.round(value) < 0 ? '−' : ''}${Math.abs(Math.round(value))}°`
+const lower = (text: string) => text.charAt(0).toLowerCase() + text.slice(1)
+
+/**
+ * The weather as one short sentence in the daily briefing: precipitation and when, otherwise a dry spell with the
+ * warmest temperature; from 18:00 it is about tomorrow. Frost overnight is mentioned. Empty without data.
+ */
+export function weatherNote(forecast: Forecast | null, now: Date = new Date()): string {
+  if (!forecast) return ''
+  const today = localDateString(now)
+  const evening = now.getHours() >= 18
+  const day = evening ? addLocalDays(today, 1) : today
+  const from = evening ? Date.parse(new Date(`${day}T06:00:00`).toISOString()) : now.getTime()
+  const to = Date.parse(new Date(`${day}T22:00:00`).toISOString())
+  const steps = forecast.steps.filter(step => Date.parse(step.time) > from && Date.parse(step.start) < to)
+  if (!steps.length) return ''
+
+  // The first stretch of precipitation (steps that follow each other).
+  const firstWet = steps.findIndex(step => isWet(step.kind) && (step.rain ?? 100) >= 40)
+  let sentence: string
+  if (firstWet >= 0) {
+    const block = [steps[firstWet]]
+    for (const step of steps.slice(firstWet + 1)) {
+      // A short dry-looking hour with a high chance does not split the rain in two.
+      if (!(isWet(step.kind) || (step.rain ?? 0) >= 40) || step.start !== block[block.length - 1].time) break
+      block.push(step)
+    }
+    const heaviest = block.filter(step => isWet(step.kind)).reduce((top, step) => (step.mm ?? 0) > (top.mm ?? 0) ? step : top, block[0])
+    // End the stretch at its last wet hour.
+    while (block.length > 1 && !isWet(block[block.length - 1].kind)) block.pop()
+    const start = Math.max(Date.parse(block[0].start), from), end = Date.parse(block[block.length - 1].time)
+    const ongoing = !evening && Date.parse(block[0].start) <= now.getTime()
+    const when = ongoing ? `fram till ${hourText(end)}` : end - start <= 3_600_000 ? `kring ${hourText(start)}` : `${hourText(start)}–${hourText(end)}`
+    const umbrella = UMBRELLA.includes(heaviest.kind) ? ', ta med paraply' : ''
+    sentence = evening
+      ? `I morgon: ${lower(heaviest.label)} ${when}${umbrella}.`
+      : `${heaviest.label} ${ongoing ? 'nu, ' : 'väntas '}${when}${umbrella}.`
+  } else if (evening) {
+    const tomorrow = forecast.days.find(entry => entry.date === day)
+    sentence = tomorrow ? `I morgon: ${lower(tomorrow.label)}, ${degreesText(tomorrow.min)}–${degreesText(tomorrow.max)}.` : 'I morgon: uppehåll.'
+  } else {
+    const warmest = Math.max(...steps.map(step => step.temp))
+    sentence = `Uppehåll resten av dagen, som varmast ${degreesText(warmest)}.`
+  }
+
+  // Frost tonight: from now (or 18:00) until 09:00 tomorrow.
+  const nightFrom = evening ? now.getTime() : Date.parse(new Date(`${today}T18:00:00`).toISOString())
+  const nightTo = Date.parse(new Date(`${addLocalDays(today, 1)}T09:00:00`).toISOString())
+  const night = forecast.steps.filter(step => Date.parse(step.time) >= nightFrom && Date.parse(step.time) <= nightTo)
+  const coldest = night.length ? Math.min(...night.map(step => step.temp)) : null
+  if (coldest !== null && coldest <= 0) sentence += ` Frost i natt, ner mot ${degreesText(coldest)}.`
+  return sentence
+}

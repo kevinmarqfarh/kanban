@@ -76,7 +76,6 @@ export function Recipes({ recipes, onSave, onDelete, initialId }: {
   const selected = recipes.find(recipe => recipe.id === selectedId) ?? null
   const setSelected = (recipe: Recipe | null) => setSelectedId(recipe?.id ?? null)
   const [editing, setEditing] = useState<Recipe | null | undefined>(undefined)
-  const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<string | null>(null)
   const [favoritesOnly, setFavoritesOnly] = useState(false)
@@ -86,7 +85,7 @@ export function Recipes({ recipes, onSave, onDelete, initialId }: {
   const ordered = [...recipes].filter(recipe => (!favoritesOnly || recipe.favorite) && (!activeFilter || recipe.labels.some(label => recipeLabelKey(label) === activeFilter))).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   const link = selected ? safeRecipeUrl(selected.url) : null
   function open(recipe: Recipe) {
-    setSelected(recipe); setConfirmDelete(false); setError(null)
+    setSelected(recipe); setError(null)
   }
   function toggleFavorite(recipe: Recipe) {
     const current = recipes.find(item => item.id === recipe.id)
@@ -104,12 +103,11 @@ export function Recipes({ recipes, onSave, onDelete, initialId }: {
     <div className="others-record-list">{ordered.map(recipe => <article className="others-record-row recipe-list-row" key={recipe.id} data-recipe-id={recipe.id}><button className="others-record-open" type="button" aria-label={`Öppna recept ${recipe.title}`} onClick={() => open(recipe)}>{recipe.image && isRecipeImage(recipe.image) ? <img className="recipe-thumb" src={recipe.image} alt="" loading="lazy" decoding="async" /> : <span className="others-record-icon"><CookingPot size={19} strokeWidth={1.5} /></span>}<span className="others-record-copy"><strong>{recipe.title}</strong>{recipe.labels.length > 0 && <span className="recipe-list-labels">{recipe.labels.map(label => <span className="label-chip" key={label}>{displayLabel(label)}</span>)}</span>}</span><ArrowUpRight size={16} /></button>{favoriteButton(recipe)}</article>)}</div>
     {recipes.length === 0 && <p className="others-empty">Inga recept ännu.</p>}
     {recipes.length > 0 && ordered.length === 0 && <p className="others-empty">{favoritesOnly ? (activeFilter ? 'Inga favoriter med den etiketten.' : 'Inga favoriter ännu. Tryck på hjärtat vid ett recept för att spara det här.') : 'Inga recept med den etiketten.'}</p>}
-    {selected && editing === undefined && <Modal title={selected.title} onClose={() => setSelected(null)} error={error} footer={<>{favoriteButton(selected)}<button className="icon-button danger" type="button" aria-label="Ta bort recept" onClick={() => setConfirmDelete(true)}><Trash2 size={18} /></button><button className="button secondary" type="button" onClick={() => setSelected(null)}>Stäng</button><button className="button primary" type="button" onClick={() => { setEditing(selected); setSelected(null) }}><Pencil size={15} />Redigera</button></>}>
+    {selected && editing === undefined && <Modal title={selected.title} onClose={() => setSelected(null)} error={error} footer={<>{favoriteButton(selected)}<button className="icon-button danger" type="button" aria-label="Ta bort recept" onClick={() => { const failure = onDelete(selected.id); if (failure) setError(failure); else setSelected(null) }}><Trash2 size={18} /></button><button className="button secondary" type="button" onClick={() => setSelected(null)}>Stäng</button><button className="button primary" type="button" onClick={() => { setEditing(selected); setSelected(null) }}><Pencil size={15} />Redigera</button></>}>
       {selected.image && isRecipeImage(selected.image) && <img className="recipe-hero" src={selected.image} alt={`Bild till ${selected.title}`} />}
       {selected.labels.length > 0 && <div className="recipe-detail-labels">{selected.labels.map(label => <span className="label-chip" key={label}>{displayLabel(label)}</span>)}</div>}
       {link && <a className="button secondary recipe-link" href={link} target="_blank" rel="noopener noreferrer">Öppna länk<ArrowUpRight size={16} /></a>}
       {selected.steps ? <div className="recipe-steps">{selected.steps}</div> : <p className="others-help">Inga steg tillagda.</p>}
-      {confirmDelete && <div className="form-message delete-confirm"><p>Ta bort receptet?</p><button className="button secondary" type="button" onClick={() => setConfirmDelete(false)}>Behåll</button><button className="button primary danger" type="button" onClick={() => { const failure = onDelete(selected.id); if (failure) setError(failure); else setSelected(null) }}>Ta bort</button></div>}
     </Modal>}
     {editing !== undefined && <RecipeEditor key={editing?.id ?? 'new-recipe'} recipe={editing ?? undefined} recipes={recipes} onSave={onSave} onClose={() => setEditing(undefined)} />}
   </div>

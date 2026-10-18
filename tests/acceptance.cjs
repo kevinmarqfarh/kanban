@@ -185,20 +185,28 @@ const title = 'QA – planera nästa helg';
     await nav(page, 'Projects');
     await page.getByRole('button', { name: 'Öppna projekt QA – ett eget projekt', exact: true }).click();
     await page.getByTestId('project-page').getByRole('button', { name: 'Ta bort projekt', exact: true }).click();
-    await page.getByTestId('project-page').locator('.delete-confirm').getByRole('button', { name: 'Ta bort projekt', exact: true }).click();
+    await page.getByTestId('undo-toast').filter({ hasText: 'Projektet är borttaget' }).waitFor();
     assert.deepEqual((await cache(page)).tasks, before);
     await page.locator('.new-project-card').waitFor();
     await nav(page, 'Planner');
   });
 
-  await check('Delete task requires deliberate confirmation', async () => {
+  await check('Deleting a task is immediate and Ångra puts it back in its place', async () => {
     await nav(page, 'Planner');
+    const order = (await cache(page)).tasks.map(task => task.id);
     await page.getByRole('button', { name: `Öppna ${title}`, exact: true }).click();
     await dialog(page).getByRole('button', { name: 'Ta bort uppgift', exact: true }).click();
-    assert.ok((await cache(page)).tasks.some(task => task.title === title));
-    await dialog(page).getByRole('button', { name: 'Behåll', exact: true }).click();
+    await dialog(page).waitFor({ state: 'hidden' });
+    assert.ok(!(await cache(page)).tasks.some(task => task.title === title));
+    const toast = page.getByTestId('undo-toast');
+    assert.equal(await toast.locator('span').textContent(), 'Uppgiften är borttagen');
+    await toast.getByRole('button', { name: 'Ångra', exact: true }).click();
+    assert.deepEqual((await cache(page)).tasks.map(task => task.id), order, 'Back in the same place.');
+    await page.getByRole('button', { name: `Öppna ${title}`, exact: true }).waitFor();
+    // Delete for real: the toast goes away by itself and the task stays deleted.
+    await page.getByRole('button', { name: `Öppna ${title}`, exact: true }).click();
     await dialog(page).getByRole('button', { name: 'Ta bort uppgift', exact: true }).click();
-    await dialog(page).getByRole('button', { name: 'Ta bort', exact: true }).click();
+    await page.getByTestId('undo-toast').waitFor({ state: 'detached', timeout: 10_000 });
     assert.ok(!(await cache(page)).tasks.some(task => task.title === title));
   });
 

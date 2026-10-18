@@ -15,7 +15,6 @@ export function TaskEditor({ task, columnId, workspace, onSave, onDelete, onClos
   const [labels, setLabels] = useState(draft.labels.join(', '))
   const [checklistTitle, setChecklistTitle] = useState('')
   const [comment, setComment] = useState('')
-  const [confirmDelete, setConfirmDelete] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const completed = draft.checklist.filter(item => item.completed).length
   function addItem() {
@@ -41,7 +40,7 @@ export function TaskEditor({ task, columnId, workspace, onSave, onDelete, onClos
     if (failure) setSaveError(failure)
   }
   return <Modal title={task ? 'Uppgift' : 'Ny uppgift'} error={saveError} onClose={onClose} footer={<>
-    {task && <button className="icon-button danger" aria-label="Ta bort uppgift" onClick={() => setConfirmDelete(true)}><Trash2 size={19} /></button>}
+    {task && <button className="icon-button danger" aria-label="Ta bort uppgift" onClick={() => { const failure = onDelete(draft.id); if (failure) setSaveError(failure) }}><Trash2 size={19} /></button>}
     <button className="button secondary" onClick={onClose}>Avbryt</button><button className="button primary" form="task-form" type="submit"><Check size={17} />{task ? 'Spara ändringar' : 'Skapa uppgift'}</button>
   </>}>
     <form id="task-form" onSubmit={save}>
@@ -60,7 +59,6 @@ export function TaskEditor({ task, columnId, workspace, onSave, onDelete, onClos
       <div className="section-label"><span><MessageSquare size={15} /> Kommentarer</span><span>{draft.comments.length}</span></div>
       <div className="comments">{draft.comments.map(entry => <div key={entry.id} className="comment"><div className="comment-meta"><span>Du</span><time dateTime={entry.createdAt}>{new Date(entry.createdAt).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' })}</time></div><p>{entry.text}</p></div>)}</div>
       <div className="comment-compose"><input className="input" aria-label="Ny kommentar" placeholder="Skriv kommentar" value={comment} onChange={event => setComment(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); addComment() } }} /><button type="button" className="icon-button" aria-label="Lägg till kommentar" onClick={addComment}><Send size={17} /></button></div>
-      {confirmDelete && <div className="form-message delete-confirm"><p>Ta bort uppgiften?</p><button type="button" className="button secondary" onClick={() => setConfirmDelete(false)}>Behåll</button><button type="button" className="button primary danger" onClick={() => { const failure = onDelete(draft.id); if (failure) setSaveError(failure) }}>Ta bort</button></div>}
     </form>
   </Modal>
 }

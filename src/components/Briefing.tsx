@@ -26,8 +26,10 @@ function usePhone() {
   return phone
 }
 
-export function Briefing({ workspace, today, debriefs, onOpenTask, onOpenPlanner, onOpenBirthdays, onCreateGiftTask, onSave }: {
+export function Briefing({ workspace, today, weatherNote = '', debriefs, onOpenTask, onOpenPlanner, onOpenBirthdays, onCreateGiftTask, onSave }: {
   workspace: Workspace
+  /** One sentence about the weather, added to the summary. */
+  weatherNote?: string
   today: string
   debriefs: DailyDebrief[]
   onOpenTask: (taskId: string) => void
@@ -91,7 +93,7 @@ export function Briefing({ workspace, today, debriefs, onOpenTask, onOpenPlanner
       <div className="briefing-heading">
         <p className="briefing-eyebrow"><Sunrise size={14} aria-hidden="true" />{briefing.greeting} · Dagens briefing</p>
         <h2 id="briefing-title">{briefing.headline}</h2>
-        <p className="briefing-summary">{briefing.summary}</p>
+        <p className="briefing-summary">{briefing.summary}{weatherNote && <span className="briefing-weather"> {weatherNote}</span>}</p>
       </div>
       <div className="briefing-tools">
         <button className="icon-button" type="button" aria-label="Kopiera briefingen som text" title="Kopiera som text" onClick={copy}><Copy size={17} /></button>

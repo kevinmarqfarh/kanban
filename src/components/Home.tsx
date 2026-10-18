@@ -11,6 +11,9 @@ import { NutritionTimePill } from './NutritionTimePill'
 import { WeatherWeek } from './WeatherWeek'
 import { WeatherDaySheet } from './WeatherDaySheet'
 import { useWeather } from '../hooks/useWeather'
+import { useNow } from '../hooks/useNow'
+import { orderHabitsByTime } from '../lib/nutritionTime'
+import { weatherNote } from '../lib/forecast'
 import type { SyncStatus } from '../lib/types'
 import type { GiftTaskDraft } from '../lib/briefing'
 
@@ -21,7 +24,7 @@ function dateText(date: string, today: string) {
 
 export function Home({ workspace, today, reports, initialId, localOnly, homeScreen = false, syncStatus = 'local', onQuickAdd, onOpenDebriefs, onBirthdays, onNutrition, onOpenTask, onOpenPlanner, onCreateGiftTask, onToggleHabit, onReadNotification, onDismissNotification }: {
   workspace: Workspace; today: string; reports: ReturnType<typeof useDebriefs>; initialId?: string; localOnly: boolean;
-  homeScreen?: boolean; syncStatus?: SyncStatus; onQuickAdd?: (title: string, dueToday: boolean) => string | null; onOpenDebriefs?: () => void;
+  homeScreen?: boolean; syncStatus?: SyncStatus; onQuickAdd?: (title: string, deadline: string | null, deadlineTime: string | null) => string | null; onOpenDebriefs?: () => void;
   onBirthdays: () => void; onNutrition: () => void;
   onOpenTask: (taskId: string) => void; onOpenPlanner: () => void; onCreateGiftTask: (draft: GiftTaskDraft) => string | null;
   onToggleHabit: (habitId: string, date: string) => string | null;
@@ -35,7 +38,10 @@ export function Home({ workspace, today, reports, initialId, localOnly, homeScre
   // Tapping a day (or the town) in the week strip opens that day's hours in a sheet over Home.
   const [weatherDay, setWeatherDay] = useState<string | null>(null)
   const notifications = unreadBirthdayNotifications(workspace)
+  const now = useNow()
   const habits = workspace.nutritionHabits ?? []
+  // Evening supplements rise to the top in the afternoon, morning ones in the morning.
+  const orderedHabits = orderHabitsByTime(habits, now)
   const finished = habits.filter(habit => isNutritionComplete(workspace, habit.id, today)).length
   const birthdayTags = groupBirthdays(workspace.birthdays ?? []).filter(group => group.tag)
   const activeFilter = birthdayTags.find(group => group.key === birthdayFilter)?.key ?? null
@@ -63,7 +69,7 @@ export function Home({ workspace, today, reports, initialId, localOnly, homeScre
       </section>}
       <WeatherWeek className="home-weather" today={today} place={weather.place} forecast={weather.forecast} status={weather.status} onRetry={weather.retry} onOpen={date => setWeatherDay(date ?? today)} />
       {weatherDay && weather.forecast && <WeatherDaySheet forecast={weather.forecast} date={weatherDay} today={today} placeName={weather.place.name} onSelect={setWeatherDay} onClose={() => setWeatherDay(null)} />}
-      <Briefing workspace={workspace} today={today} debriefs={reports.debriefs} onOpenTask={onOpenTask} onOpenPlanner={onOpenPlanner} onOpenBirthdays={onBirthdays} onCreateGiftTask={onCreateGiftTask} onSave={reports.importDebrief} />
+      <Briefing workspace={workspace} today={today} weatherNote={weatherNote(weather.forecast, now)} debriefs={reports.debriefs} onOpenTask={onOpenTask} onOpenPlanner={onOpenPlanner} onOpenBirthdays={onBirthdays} onCreateGiftTask={onCreateGiftTask} onSave={reports.importDebrief} />
       <div className="home-grid">
         <section className="home-panel" aria-labelledby="home-nutrition-title" data-testid="home-nutrition">
           <div className="home-panel-heading"><h2 id="home-nutrition-title"><Utensils size={18} />Dagens kost</h2><button className="icon-button" aria-label="Öppna kost" onClick={onNutrition}><ArrowRight size={18} /></button></div>
@@ -73,7 +79,7 @@ export function Home({ workspace, today, reports, initialId, localOnly, homeScre
               const status = nutritionDayStatus(workspace, date, today)
               return <div className={`home-week-day ${date === today ? 'today' : ''} ${status ? `status-${status}` : ''}`} key={date} data-date={date} data-status={status ?? 'none'} aria-label={`${weekdays[index]} ${date}: ${count} av ${habits.length} klara${status === 'complete' ? ', allt klart' : status === 'incomplete' ? ', något saknas' : ''}`}><span>{weekdays[index]}</span><strong>{Number(date.slice(-2))}</strong><span className="home-week-progress"><i style={{ width: `${count / habits.length * 100}%` }} /></span></div>
             })}</div>
-            <div className="home-habits">{habits.map(habit => {
+            <div className="home-habits">{orderedHabits.map(habit => {
               const completed = isNutritionComplete(workspace, habit.id, today)
               return <label className={`home-habit ${completed ? 'is-complete' : ''}`} key={habit.id} data-home-habit-id={habit.id} data-completed={completed}><input type="checkbox" aria-label={`Klar idag: ${habit.title}`} checked={completed} onChange={() => run(() => onToggleHabit(habit.id, today))} /><span className="home-habit-copy"><span className="habit-name"><strong>{habit.title}</strong><NutritionTimePill time={habit.time} /></span><small>{habit.amount} {habit.unit}</small></span></label>
             })}</div><p className="home-panel-footnote">{finished}/{habits.length} klara idag</p>

@@ -11,7 +11,7 @@ Koden finns i `src/lib/briefing.ts` (regler, ren funktion) och `src/components/B
 | Del | Innehåll |
 | --- | --- |
 | Hälsning och rubrik | *God morgon* (05–10), *Hej* (10–17), *God kväll* (17–) och *God natt* (00–05). Rubriken beskriver dagens läge, se nedan. |
-| Sammanfattning | Fakta först, till exempel ”2 uppgifter har deadline idag och 1 är försenad. Mira fyller 7 på lördag.” |
+| Sammanfattning | Fakta först, till exempel ”2 uppgifter har deadline idag och 1 är försenad. Mira fyller 7 på lördag.” Sist kommer en mening om vädret från SMHI, till exempel ”Lätt regn väntas 15–18, ta med paraply.” Från kl. 18 handlar den om morgondagen. Se [improvements-2026-10-18.md](improvements-2026-10-18.md). |
 | Siffror | Försenat (rödmarkerat när det finns något), Idag, Kommande 7 dagar, Pågår och Födelsedagar inom 7 dagar. |
 | Gör först | De tre viktigaste öppna korten med skäl: deadline, prioritet, pågår och checklistans läge. Tryck för att öppna kortet i Planner. |
 | Förslag | Konkreta råd, max sex, varav tre visas innan *Visa alla förslag*. |

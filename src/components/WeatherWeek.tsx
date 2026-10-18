@@ -1,4 +1,4 @@
-import { ChevronRight, RotateCw } from 'lucide-react'
+import { ChevronRight, Info, RotateCw } from 'lucide-react'
 import { SOURCE_LINKS, SOURCE_NAMES, showRainChance, weatherWeek, weekForecast, type Forecast, type WeatherPlace } from '../lib/weather'
 import type { WeatherStatus } from '../hooks/useWeather'
 import { isoWeek, parseLocalDate } from '../lib/others'
@@ -6,6 +6,8 @@ import { WeatherIcon } from './WeatherIcon'
 
 const short = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön']
 const pad = (value: number) => String(value).padStart(2, '0')
+/** The time the forecast was fetched is only worth showing once it is this old (normally it refreshes every 30 min). */
+export const STALE_NOTE_MS = 2 * 60 * 60_000
 
 /** Monday–Sunday at a glance, Apple Weather style: day, icon, rain chance and high/low. Tapping a day shows its hours. */
 export function WeatherWeek({ today, place, forecast, status, onRetry, onOpen, className = 'hs-card hs-weather' }: {
@@ -19,12 +21,13 @@ export function WeatherWeek({ today, place, forecast, status, onRetry, onOpen, c
   return <section className={className} aria-label={`Väder vecka ${isoWeek(today)}, ${place.name}`} data-testid={className.includes('home-weather') ? 'home-weather' : 'home-screen-weather'} data-status={status} data-source={forecast?.source ?? 'none'}>
     <div className="wx-place">
       {onOpen ? <button className="wx-open" type="button" onClick={() => onOpen()} aria-label={`Visa timprognos för idag i ${place.name}`}><strong>{place.name}</strong><ChevronRight size={15} aria-hidden="true" /></button> : <strong>{place.name}</strong>}
-      <small>{status === 'loading' ? 'Hämtar väder…'
+      {/* Quiet when all is well: a time only when the forecast is old, offline or missing. */}
+      {(status !== 'ready' || (updated && Date.now() - updated.getTime() > STALE_NOTE_MS)) && <small>{status === 'loading' ? 'Hämtar väder…'
         : status === 'error' ? 'Vädret kunde inte hämtas'
         : status === 'stale' ? `Sparat ${updated ? `${pad(updated.getHours())}:${pad(updated.getMinutes())}` : ''} · offline`
-        : updated ? `Uppdaterat ${pad(updated.getHours())}:${pad(updated.getMinutes())}` : ''}</small>
+        : updated ? `Från ${pad(updated.getHours())}:${pad(updated.getMinutes())}` : ''}</small>}
       {(status === 'error' || status === 'stale') && <button className="button ghost wx-retry" type="button" onClick={onRetry}><RotateCw size={14} />Försök igen</button>}
-      {forecast && <a className="wx-credit" href={SOURCE_LINKS[forecast.source]} target="_blank" rel="noreferrer">Källa: {forecast.sources.map(source => SOURCE_NAMES[source]).join(' · ')}</a>}
+      {forecast && <a className="wx-credit" href={SOURCE_LINKS[forecast.source]} target="_blank" rel="noreferrer" title={`Källa: ${forecast.sources.map(source => SOURCE_NAMES[source]).join(' · ')}`}><Info size={14} aria-hidden="true" /><span className="sr-only">Källa: {forecast.sources.map(source => SOURCE_NAMES[source]).join(' · ')}</span></a>}
     </div>
     <ol className="wx-days">{dates.map((date, index) => {
       const day = byDate.get(date)

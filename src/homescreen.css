@@ -114,6 +114,7 @@
 .hs-quick .input { flex: 1; min-width: 0; min-height: 48px; font-size: 16px; }
 .hs-today-toggle { flex-shrink: 0; min-width: 60px; min-height: 48px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 12px; color: var(--ink-muted); font-size: 13px; font-weight: 550; }
 .hs-today-toggle.active { border-color: var(--ink-secondary); background: var(--accent-soft); color: var(--ink); }
+.hs-today-toggle.is-parsed { display: inline-flex; align-items: center; max-width: 34%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hs-add { flex-shrink: 0; width: 48px; min-height: 48px; padding: 0; justify-content: center; }
 .hs-added { display: flex; align-items: center; gap: 6px; margin-top: 6px; color: var(--status-complete-ink); font-size: 12px; }
 
@@ -157,7 +158,8 @@
 .wx-place { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
 .wx-place strong { overflow: hidden; max-width: 100%; color: var(--ink); font-size: 16px; font-weight: 550; text-overflow: ellipsis; white-space: nowrap; }
 .wx-place small { color: var(--ink-muted); font-size: 11px; }
-.wx-credit { margin-top: 2px; color: var(--ink-muted); font-size: 10px; text-decoration: none; }
+.wx-credit { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; margin: 0 0 0 -6px; border-radius: 50%; color: var(--ink-muted); text-decoration: none; }
+.wx-credit:hover { background: var(--surface-hover); color: var(--ink-secondary); }
 .wx-retry { min-height: 36px; margin: 2px 0 0 -12px; padding: 6px 12px; font-size: 11px; }
 .wx-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin: 0; padding: 0; list-style: none; }
 .wx-day { --wx-rows: auto 36px 12px auto; --wx-pad: 6px 2px 7px; display: grid; grid-template-rows: var(--wx-rows); justify-items: center; align-items: center; gap: 1px; min-width: 0; padding: var(--wx-pad); border-radius: 14px; }

@@ -33,14 +33,17 @@ Lokal lagring är separat för varje webbläsare och enhet. Rensa inte webbläsa
 - kommande 7 dagar med födelsedagspåminnelser
 - ett snabbfält för nya uppgifter
 
-Efter tre minuter utan beröring går appen tillbaka till Home, men ett öppet formulär stängs aldrig. Inloggad hämtar den ändringar från dina andra enheter varje minut. Läget styrs under Inställningar → Hemskärm (Auto/På/Av, per enhet). Appen fungerar även på iPads som stannat på iPadOS 15, till exempel iPad mini 4. Ett fel ger aldrig en tom skärm: du får en felskärm med *Ladda om*, och appen laddar om sig själv. Se [docs/ipad.md](docs/ipad.md).
+Efter tre minuter utan beröring går appen tillbaka till Home, men ett öppet formulär stängs aldrig. Inloggad hämtar den ändringar från dina andra enheter varje minut. Läget styrs under Inställningar → Hemskärm (Auto/På/Av, per enhet). Appen fungerar även på iPads som stannat på iPadOS 15, till exempel iPad mini 4. Ett fel ger aldrig en tom skärm: du får en felskärm med *Ladda om*, och appen laddar om sig själv. Med tema *System* blir hemskärmen mörk efter solnedgång. Snabbfältet förstår datum sist i texten, till exempel ”Ring tandläkaren fre 14”. Se [docs/ipad.md](docs/ipad.md).
 
 **Väder och morgon/kväll:**
 - Prognosen kommer från **SMHI**. Open-Meteo fyller i veckans tidigare timmar och tar över om SMHI inte svarar.
 - Home och iPadens hemskärm visar veckans väder måndag–söndag med färgade ikoner i stil med Apples Väder-app, högsta och lägsta temperatur och regnrisk.
 - Tryck på en dag, eller på orten för i dag, så öppnas dagens timmar i ett blad. Bladet visar diagram och tabell med risk för nederbörd, mängd, temperatur och vind. Stäng så är du kvar på Home. Se [docs/weather.md](docs/weather.md).
 - Ort väljs under Inställningar → Väder.
-- Varje kosttillskott sätts till Morgon eller Kväll och får en liten etikett, ☀ Morgon eller ☾ Kväll, under namnet i alla listor.
+- Briefingen får en mening om vädret, till exempel ”Lätt regn väntas 15–18, ta med paraply.” Från kl. 18 handlar den om morgondagen.
+- Varje kosttillskott sätts till Morgon eller Kväll och får en liten etikett, ☀ Morgon eller ☾ Kväll, under namnet i alla listor. På Home hamnar de som gäller just nu överst, kvällens från kl. 15.
+
+**Ångra:** att ta bort sker direkt, och en rad med *Ångra* lägger tillbaka exakt det som togs bort. Se [docs/improvements-2026-10-18.md](docs/improvements-2026-10-18.md).
 
 Se [docs/ipad.md](docs/ipad.md).
 

@@ -31,7 +31,6 @@ function NoteEditor({ note, workspace, onSave, onDelete, onOpenLink, onBack, ini
   const [error, setError] = useState<string | null>(initialError ?? null)
   const [picker, setPicker] = useState(false)
   const [query, setQuery] = useState('')
-  const [confirmDelete, setConfirmDelete] = useState(false)
   const [saved, setSaved] = useState(!initialError)
   // Notes always open as a full-window writing surface; closing it returns to the list.
   const focusMode = true
@@ -165,7 +164,7 @@ function NoteEditor({ note, workspace, onSave, onDelete, onOpenLink, onBack, ini
       <button className="button ghost note-focus-exit" onClick={onBack} title="Tillbaka till anteckningar (Esc)"><ArrowLeft size={16} /><span>Anteckningar</span></button>
       <span className="note-save-state" role="status">{saved ? <><Check size={13} />Sparat</> : 'Inte sparat'}</span>
       {focusMode && <span className="note-word-count" aria-live="off">{words === 1 ? '1 ord' : `${words} ord`}</span>}
-      <button className="icon-button danger note-focus-delete" aria-label="Ta bort anteckning" title="Ta bort anteckning" onClick={() => setConfirmDelete(true)}><Trash2 size={17} /></button>
+      <button className="icon-button danger note-focus-delete" aria-label="Ta bort anteckning" title="Ta bort anteckning" onClick={() => { const failure = onDelete(note.id); if (failure) setError(failure); else onBack() }}><Trash2 size={17} /></button>
     </div>
     <input className="note-title-input" aria-label="Anteckningens titel" placeholder="Ny anteckning" maxLength={160} value={title} onChange={event => { setTitle(event.target.value); persist({ title: event.target.value }); if (focusMode) setTyping(true) }} />
     <div className="note-toolbar note-chrome" role="toolbar" aria-label="Textredigerare"><label><span className="sr-only">Typsnitt</span><select aria-label="Typsnitt" value={font} onChange={event => { const next = event.target.value as NoteFont; setFont(next); persist({ font: next }) }}><option value="system">Standard</option><option value="serif">Serif</option><option value="mono">Monospace</option></select></label><button className={`icon-button${marks.bold ? ' is-active' : ''}`} aria-label="Fet" title="Fet (⌘B)" aria-pressed={marks.bold} onMouseDown={event => event.preventDefault()} onClick={() => format('bold')}><Bold size={18} /></button><button className={`icon-button${marks.italic ? ' is-active' : ''}`} aria-label="Kursiv" title="Kursiv (⌘I)" aria-pressed={marks.italic} onMouseDown={event => event.preventDefault()} onClick={() => format('italic')}><Italic size={18} /></button><button className="icon-button" aria-label="Punktlista" title="Punktlista" onMouseDown={event => event.preventDefault()} onClick={() => list('insertUnorderedList')}><List size={19} /></button><button className="icon-button" aria-label="Numrerad lista" title="Numrerad lista" onMouseDown={event => event.preventDefault()} onClick={() => list('insertOrderedList')}><ListOrdered size={19} /></button><button className="icon-button note-insert" aria-label="Lägg till länk" title="Lägg till länk" onMouseDown={event => event.preventDefault()} onClick={() => { rememberRange(); setQuery(''); setPicker(true) }}><Plus size={20} /></button></div>
@@ -182,7 +181,6 @@ function NoteEditor({ note, workspace, onSave, onDelete, onOpenLink, onBack, ini
       <button type="button" aria-label="Numrerad lista av markering" onClick={() => list('insertOrderedList')}><ListOrdered size={17} /></button>
     </div>, document.body)}
     {picker && <Modal title="Lägg till länk" onClose={() => setPicker(false)}><label className="field">Sök innehåll<input className="input" type="search" autoFocus value={query} onChange={event => setQuery(event.target.value)} placeholder="Titel eller funktion" /></label><div className="note-link-picker">{matches.slice(0, 100).map(item => <button key={`${item.kind}:${item.id}`} onClick={() => insertLink(item)}><span>{noteLinkLabels[item.kind]}</span><strong>{item.title}</strong><Plus size={16} /></button>)}{!matches.length && <p>Inget innehåll hittades.</p>}</div></Modal>}
-    {confirmDelete && <Modal title="Ta bort anteckningen?" onClose={() => setConfirmDelete(false)} error={error} footer={<><button className="button secondary" onClick={() => setConfirmDelete(false)}>Behåll</button><button className="button primary danger" onClick={() => { const failure = onDelete(note.id); if (failure) setError(failure); else onBack() }}>Ta bort</button></>}><p>Anteckningen flyttas till papperskorgen och kan återställas i {NOTE_TRASH_DAYS} dagar.</p></Modal>}
   </div>
 }
 

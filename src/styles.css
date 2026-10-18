@@ -643,3 +643,6 @@ input[type='checkbox']:checked { border-color: var(--accent); background: var(--
 .crash-card details { width: 100%; color: var(--ink-muted, #888); font-size: 12px; }
 .crash-card summary { min-height: 32px; cursor: pointer; }
 .crash-card pre { max-height: 180px; margin-top: 6px; padding: 10px; overflow: auto; border-radius: 10px; background: var(--surface-muted, #f0f0f0); font-size: 11px; white-space: pre-wrap; word-break: break-word; }
+.theme-sun-note { margin-top: 10px; }
+.toast-undo { gap: 14px; padding: 6px 6px 6px 18px; }
+.toast-undo .button { min-height: 40px; color: var(--ink); font-weight: 650; }
