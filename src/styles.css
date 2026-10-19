@@ -646,3 +646,23 @@ input[type='checkbox']:checked { border-color: var(--accent); background: var(--
 .theme-sun-note { margin-top: 10px; }
 .toast-undo { gap: 14px; padding: 6px 6px 6px 18px; }
 .toast-undo .button { min-height: 40px; color: var(--ink); font-weight: 650; }
+
+.task-quick-complete { position: absolute; right: 12px; bottom: 9px; z-index: 2; min-width: 36px; min-height: 36px; background: var(--surface-solid); border-radius: 10px; }
+.task-quick-complete[aria-pressed="true"] { color: var(--ink); background: var(--accent-soft); }
+.task-card .task-meta { padding-right: 38px; }
+.project-hide-completed, .project-main-completion { display: flex; align-items: center; gap: 9px; font-size: 12px; color: var(--ink-secondary); margin: 10px 0; }
+.project-main-completion { padding: 0 20px; }
+.project-checklist-disclosure > summary, .project-icon-disclosure > summary { cursor: pointer; color: var(--ink-secondary); font-size: 13px; padding: 12px 20px; }
+.project-icon-disclosure > summary { padding-left: 0; }
+.modal-discard { padding: 28px; }
+.modal-discard p { margin: 14px 0 24px; color: var(--ink-secondary); line-height: 1.6; }
+.discard-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.modal-panel [hidden] { display: none !important; }
+.checklist-row label .input { flex: 1; min-width: 0; }
+
+.task-card:not(.drag-overlay) { padding-bottom: 48px; }
+.project-task-row .deadline-overdue::before { content: "Försenad "; }
+
+.project-task-heading { display: flex; align-items: center; gap: 0; }
+.project-task-heading .project-main-completion { margin: 0; padding: 12px 0 12px 20px; min-height: 44px; }
+.project-task-heading .project-task-row { flex: 1; min-width: 0; }

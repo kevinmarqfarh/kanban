@@ -1,9 +1,10 @@
+import { filterPlannerTasks, type PlannerFilter } from './lib/plannerFilters'
+import { doneColumnId, isTaskDone, newId } from './lib/helpers'
 import { useEffect, useRef, useState } from 'react'
 import { Columns3, Folder, House, LayoutList, Settings, Plus, Search, Sun, Moon, CircleCheck, Sparkles, Cloud, HardDrive, X, Trash2, Check, NotebookText, Bell } from 'lucide-react'
 import { useWorkspace } from './hooks/useWorkspace'
 import { useDebriefs } from './hooks/useDebriefs'
 import type { Birthday, Column, Task, Project, ProjectTask, Workspace, Workout, NutritionHabit, Recipe, Note, NoteLinkKind } from './lib/types'
-import { newId, isTaskDone } from './lib/helpers'
 import { mergeRecordChanges } from './lib/workspaceMerge'
 import { isWorkspace } from './lib/workspaceValidation'
 import { Board } from './components/Board'
@@ -76,6 +77,9 @@ export default function App() {
   // An open project is a page of its own (with Back), not a dialog, so task editors can sit on top of it.
   const [openProjectId, setOpenProjectId] = useState<string | null>(null)
   const [query, setQuery] = useState('')
+  const [plannerFilter, setPlannerFilter] = useState<PlannerFilter>('all')
+  const [statusUndo, setStatusUndo] = useState<{ id: string; projectId?: string; before: string | boolean; after: string | boolean } | null>(null)
+  useEffect(() => { if (!statusUndo) return; const timer = setTimeout(() => setStatusUndo(null), UNDO_MS); return () => clearTimeout(timer) }, [statusUndo])
   const [toast, setToast] = useState('')
   // Deleting is immediate; a toast offers Ångra for a few seconds instead of asking first.
   const [undo, setUndo] = useState<{ text: string; before: Workspace; after: Workspace } | null>(null)
@@ -111,7 +115,7 @@ export default function App() {
   }, [data.loading, data.setWorkspace, workspace.columns])
   const ongoing = workspace.tasks.filter(task => task.columnId === 'doing').length
   const active = workspace.tasks.length - done
-  const visibleTasks = workspace.tasks.filter(task => (!query.trim() || `${task.title} ${task.description} ${task.labels.join(' ')}`.toLocaleLowerCase('sv').includes(query.trim().toLocaleLowerCase('sv'))))
+  const visibleTasks = filterPlannerTasks(workspace, query, plannerFilter, today)
   const project = page === 'projects' && openProjectId ? workspace.projects.find(project => project.id === openProjectId) : undefined
   const birthdayUnread = unreadBirthdayNotifications(workspace)
   const unreadCount = birthdayUnread.length + debriefs.unread.length
@@ -213,6 +217,7 @@ export default function App() {
   }
   function persistChange(update: (current: Workspace) => Workspace, message?: string, after?: () => void, onApplied?: (next: Workspace) => void): string | null {
     try {
+      setStatusUndo(null)
       const failure = setWorkspace(current => {
         const next = update(current)
         if (isWorkspace(next)) onApplied?.(next)
@@ -270,6 +275,30 @@ export default function App() {
     }, 'Projektuppgiften är sparad', closeTask, next => {
       if (!original) creationSnapshots.current.projectTasks.set(task.id, structuredClone(next.projects.find(project => project.id === projectId)!.tasks!.find(item => item.id === task.id)!))
     })
+  }
+  function toggleTaskStatus(task: Task) {
+    const target = isTaskDone(task, workspace) ? workspace.columns.find(column => column.id !== 'done' && column.id !== 'finalized')?.id : doneColumnId(workspace)
+    if (!target || target === task.columnId) return
+    const failure = persistChange(current => {
+      if (!current.tasks.some(entry => entry.id === task.id)) throw new Error('Uppgiften finns inte längre.')
+      return { ...current, tasks: current.tasks.map(entry => entry.id === task.id ? { ...entry, columnId: target } : entry) }
+    })
+    if (failure) setActionError(failure)
+    else { setToast(''); setUndo(null); setStatusUndo({ id: task.id, before: task.columnId, after: target }) }
+  }
+  function toggleProjectTaskStatus(projectId: string, task: ProjectTask): string | null {
+    const failure = persistChange(current => {
+      if (!current.projects.find(project => project.id === projectId)?.tasks?.some(entry => entry.id === task.id)) throw new Error('Uppgiften finns inte längre.')
+      return { ...current, projects: current.projects.map(project => project.id === projectId ? { ...project, tasks: project.tasks?.map(entry => entry.id === task.id ? { ...entry, completed: !task.completed } : entry) } : project) }
+    })
+    if (!failure) { setToast(''); setUndo(null); setStatusUndo({ projectId, id: task.id, before: task.completed, after: !task.completed }) }
+    return failure
+  }
+  function undoStatus() {
+    if (!statusUndo) return
+    const change = statusUndo
+    persistChange(current => change.projectId ? { ...current, projects: current.projects.map(project => project.id === change.projectId ? { ...project, tasks: project.tasks?.map(task => task.id === change.id && task.completed === change.after ? { ...task, completed: change.before as boolean } : task) } : project) } : { ...current, tasks: current.tasks.map(task => task.id === change.id && task.columnId === change.after ? { ...task, columnId: change.before as string } : task) }, 'Status återställd')
+    setStatusUndo(null)
   }
   function moveTask(taskId: string, columnId: string, beforeId?: string) {
     const existing = workspace.tasks.find(task => task.id === taskId)
@@ -434,11 +463,13 @@ export default function App() {
           {debriefs.unread[0] && <DebriefNotice debrief={debriefs.unread[0]} onRead={() => openDebrief(debriefs.unread[0].id)} onDismiss={() => debriefs.dismiss(debriefs.unread[0].id)} />}
           <div className="summary-grid"><div className="summary-card feature"><span className="stat-icon"><Sparkles size={19} /></span><div><p className="stat-label">Pågår</p><p className="stat-value">{ongoing}</p></div></div><div className="summary-card"><span className="stat-icon"><Columns3 size={19} /></span><div><p className="stat-label">Aktiva</p><p className="stat-value">{active}</p></div></div><div className="summary-card"><span className="stat-icon"><CircleCheck size={19} /></span><div><p className="stat-label">Klara</p><p className="stat-value">{done}</p></div></div></div>
           <div className="workspace-toolbar"><div className="toolbar-left"><span className="view-label"><Columns3 size={15} />Min tavla</span></div><div className="toolbar-right"><label className="search-field"><Search size={16} /><input type="search" aria-label="Sök uppgifter" placeholder="Sök uppgifter" value={query} onChange={event => setQuery(event.target.value)} /></label></div></div>
-          {query && <p className="filter-caption">{visibleTasks.length} uppgifter visas<button className="button ghost small" onClick={() => { setQuery('') }}>Rensa filter<X size={13} /></button></p>}
-          <Board workspace={workspace} tasks={visibleTasks} onOpen={task => setEditor({ type: 'task', task })} onAdd={columnId => setEditor({ type: 'task', columnId })} onAddColumn={() => setEditor({ type: 'column' })} onEditColumn={column => setEditor({ type: 'column', column })} onMove={moveTask} onToggleHide={columnId => persistChange(current => ({ ...current, columns: current.columns.map(column => column.id === columnId ? { ...column, collapsed: !column.collapsed } : column) }))} />
+          <div className="filter-chips" role="group" aria-label="Filtrera uppgifter">{([['all', 'Alla'], ['today', 'Idag'], ['overdue', 'Försenat'], ['high', 'Hög prioritet']] as const).map(([value, label]) => <button className={`filter-chip${plannerFilter === value ? ' active' : ''}`} type="button" key={value} aria-pressed={plannerFilter === value} onClick={() => setPlannerFilter(value)}>{label}</button>)}</div>
+          <p className="others-help">Klart = färdig uppgift. Avslutat = avslutad och undanlagd.</p>
+          {(query || plannerFilter !== 'all') && <p className="filter-caption">{visibleTasks.length} uppgifter visas<button className="button ghost small" onClick={() => { setQuery(''); setPlannerFilter('all') }}>Rensa filter<X size={13} /></button></p>}
+          <Board onToggle={toggleTaskStatus} workspace={workspace} tasks={visibleTasks} onOpen={task => setEditor({ type: 'task', task })} onAdd={columnId => setEditor({ type: 'task', columnId })} onAddColumn={() => setEditor({ type: 'column' })} onEditColumn={column => setEditor({ type: 'column', column })} onMove={moveTask} onToggleHide={columnId => persistChange(current => ({ ...current, columns: current.columns.map(column => column.id === columnId ? { ...column, collapsed: !column.collapsed } : column) }))} />
         </>}
         {page === 'projects' && (project ? null : <Projects workspace={workspace} onOpen={project => openProject(project.id)} onAdd={() => setEditor({ type: 'project' })} />)}
-        {project && <ProjectDetail project={project} workspace={workspace} onClose={closeProject} onEdit={() => setEditor({ type: 'project', project })} onAddTask={() => setEditor({ type: 'project-task', projectId: project.id })} onOpenTask={(task, focusSubtaskId) => setEditor({ type: 'project-task', task, projectId: project.id, focusSubtaskId })} onToggleSubtask={(taskId, itemId) => persistChange(current => {
+        {project && <ProjectDetail onToggleTask={task => toggleProjectTaskStatus(project.id, task)} project={project} workspace={workspace} onClose={closeProject} onEdit={() => setEditor({ type: 'project', project })} onAddTask={() => setEditor({ type: 'project-task', projectId: project.id })} onOpenTask={(task, focusSubtaskId) => setEditor({ type: 'project-task', task, projectId: project.id, focusSubtaskId })} onToggleSubtask={(taskId, itemId) => persistChange(current => {
       const task = current.projects.find(existing => existing.id === project.id)?.tasks?.find(task => task.id === taskId)
       if (!task?.checklist.some(item => item.id === itemId)) throw new Error('Deluppgiften har tagits bort i en annan flik.')
       return { ...current, projects: current.projects.map(existing => existing.id === project.id ? { ...existing, tasks: existing.tasks?.map(task => task.id === taskId ? { ...task, checklist: task.checklist.map(item => item.id === itemId ? { ...item, completed: !item.completed } : item) } : task) } : existing) }
@@ -462,6 +493,7 @@ export default function App() {
       return { ...current, columns: current.columns.filter(column => column.id !== removed), tasks: cards.length ? current.tasks.map(task => task.columnId === removed ? { ...task, columnId: moveTo! } : task) : current.tasks }
     }, moveTo ? `Kolumnen är borttagen. Korten flyttades till ${workspace.columns.find(column => column.id === moveTo)?.title}.` : 'Kolumnen är borttagen', () => setEditor(null)) : undefined} onSave={saveColumn} />}
     {editor?.type === 'project' && <ProjectEditor project={editor.project} onClose={() => setEditor(null)} onSave={saveProject} />}
+    {statusUndo && <div className="toast toast-undo" role="status"><span>Status ändrad.</span><button className="button ghost small" type="button" onClick={undoStatus}>Ångra</button></div>}
     {undo && editor?.type !== 'birthdays' ? <div className="toast toast-undo" role="status" data-testid="undo-toast"><span>{undo.text}</span><button className="button ghost small" type="button" onClick={undoRemoval}>Ångra</button></div>
       : toast && <div className="toast" role="status"><Check size={16} />{toast}</div>}
   </>

@@ -1,13 +1,26 @@
-import { useEffect, useRef, type ReactNode, type RefObject } from 'react'
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { X } from 'lucide-react'
 
-export function Modal({ title, subtitle, children, onClose, footer, error, wide = false, phoneFullscreen = false, initialFocusRef }: {
-  title: string; subtitle?: string; children: ReactNode; onClose: () => void; footer?: ReactNode; error?: string | null;
-  wide?: boolean; phoneFullscreen?: boolean; initialFocusRef?: RefObject<HTMLInputElement | null>;
+export function Modal({ title, subtitle, children, onClose, footer, error, wide = false, phoneFullscreen = false, initialFocusRef, dirty = false }: {
+  title: string; subtitle?: string; children: ReactNode; onClose: () => void; footer?: ReactNode | ((requestClose: () => void) => ReactNode); error?: string | null;
+  dirty?: boolean; wide?: boolean; phoneFullscreen?: boolean; initialFocusRef?: RefObject<HTMLInputElement | null>;
 }) {
   const ref = useRef<HTMLDialogElement>(null)
-  const closeRef = useRef(onClose)
-  closeRef.current = onClose
+  const [confirming, setConfirming] = useState(false)
+  const continueRef = useRef<HTMLButtonElement>(null)
+  const returnFocusRef = useRef<HTMLElement | null>(null)
+  function requestClose() {
+    if (confirming) { setConfirming(false); return }
+    if (!dirty) { onClose(); return }
+    returnFocusRef.current = document.activeElement as HTMLElement | null
+    setConfirming(true)
+  }
+  useEffect(() => {
+    if (confirming) continueRef.current?.focus()
+    else if (returnFocusRef.current?.isConnected) { returnFocusRef.current.focus(); returnFocusRef.current = null }
+  }, [confirming])
+  const closeRef = useRef(requestClose)
+  closeRef.current = requestClose
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null
     const dialog = ref.current!
@@ -69,11 +82,12 @@ export function Modal({ title, subtitle, children, onClose, footer, error, wide 
   }} onPointerDown={event => { pressedOutside.current = outside(event) }} onClick={event => {
     const started = pressedOutside.current
     pressedOutside.current = false
-    if (started && outside(event)) onClose()
+    if (started && outside(event)) requestClose()
   }}>
-    <div className="modal-header"><div>{subtitle && <p className="eyebrow">{subtitle}</p>}<h2 id="modal-title">{title}</h2></div><button className="icon-button" aria-label="Stäng" onClick={onClose}><X size={20} /></button></div>
-    <div className="modal-content">{children}</div>
-    {error && <p className="modal-error" role="alert">{error}</p>}
-    {footer && <div className="modal-footer">{footer}</div>}
+    <div className="modal-header"><div>{subtitle && <p className="eyebrow">{subtitle}</p>}<h2 id="modal-title">{title}</h2></div><button className="icon-button" aria-label="Stäng" onClick={requestClose}><X size={20} /></button></div>
+    {confirming && <div className="modal-discard" role="alert" aria-label="Osparade ändringar"><h3>Osparade ändringar</h3><p>Vill du fortsätta redigera eller kasta ändringarna?</p><div className="discard-actions"><button ref={continueRef} className="button primary" type="button" onClick={() => setConfirming(false)}>Fortsätt redigera</button><button className="button secondary" type="button" onClick={onClose}>Kasta ändringar</button></div></div>}
+    <div className="modal-content" hidden={confirming}>{children}</div>
+    {!confirming && error && <p className="modal-error" role="alert">{error}</p>}
+    {footer && <div className="modal-footer" hidden={confirming}>{typeof footer === 'function' ? footer(requestClose) : footer}</div>}
   </dialog>
 }

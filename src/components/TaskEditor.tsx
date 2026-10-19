@@ -1,7 +1,7 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { Plus, Trash2, Send, Check, MessageSquare } from 'lucide-react'
 import type { Task, Workspace } from '../lib/types'
-import { TASK_PRIORITIES, newId } from '../lib/helpers'
+import { TASK_PRIORITIES, columnDisplayTitle, newId } from '../lib/helpers'
 import { Modal } from './Modal'
 
 export function TaskEditor({ task, columnId, workspace, onSave, onDelete, onClose }: {
@@ -16,6 +16,8 @@ export function TaskEditor({ task, columnId, workspace, onSave, onDelete, onClos
   const [checklistTitle, setChecklistTitle] = useState('')
   const [comment, setComment] = useState('')
   const [saveError, setSaveError] = useState<string | null>(null)
+  const initial = useRef(JSON.stringify({ draft, labels }))
+  const dirty = JSON.stringify({ draft, labels }) !== initial.current || !!checklistTitle.trim() || !!comment.trim()
   const completed = draft.checklist.filter(item => item.completed).length
   function addItem() {
     if (!checklistTitle.trim()) return
@@ -30,6 +32,7 @@ export function TaskEditor({ task, columnId, workspace, onSave, onDelete, onClos
   function save(event: FormEvent) {
     event.preventDefault()
     if (!draft.title.trim()) { setSaveError('Ange en titel.'); return }
+    if (draft.checklist.some(item => !item.title.trim())) { setSaveError('Ange text för varje deluppgift.'); return }
     const checklist = checklistTitle.trim() ? [...draft.checklist, { id: newId(), title: checklistTitle.trim(), completed: false }] : draft.checklist
     const comments = comment.trim() ? [...draft.comments, { id: newId(), text: comment.trim(), createdAt: new Date().toISOString() }] : draft.comments
     const nextTask = { ...draft, title: draft.title.trim(), description: draft.description.trim(), checklist, comments, labels: [...new Set(labels.split(',').map(label => label.trim()).filter(Boolean))] }
@@ -39,14 +42,14 @@ export function TaskEditor({ task, columnId, workspace, onSave, onDelete, onClos
     const failure = onSave(nextTask)
     if (failure) setSaveError(failure)
   }
-  return <Modal title={task ? 'Uppgift' : 'Ny uppgift'} error={saveError} onClose={onClose} footer={<>
+  return <Modal dirty={dirty} title={task ? 'Uppgift' : 'Ny uppgift'} error={saveError} onClose={onClose} footer={requestClose => <>
     {task && <button className="icon-button danger" aria-label="Ta bort uppgift" onClick={() => { const failure = onDelete(draft.id); if (failure) setSaveError(failure) }}><Trash2 size={19} /></button>}
-    <button className="button secondary" onClick={onClose}>Avbryt</button><button className="button primary" form="task-form" type="submit"><Check size={17} />{task ? 'Spara ändringar' : 'Skapa uppgift'}</button>
+    <button className="button secondary" onClick={requestClose}>Avbryt</button><button className="button primary" form="task-form" type="submit"><Check size={17} />{task ? 'Spara ändringar' : 'Skapa uppgift'}</button>
   </>}>
     <form id="task-form" onSubmit={save}>
       <label className="field">Titel<input className="input title-input" autoFocus required maxLength={160} value={draft.title} onChange={event => setDraft({ ...draft, title: event.target.value })} /></label>
       <label className="field">Beskrivning<textarea className="textarea" rows={3} value={draft.description} onChange={event => setDraft({ ...draft, description: event.target.value })} /></label>
-      <label className="field">Status<select className="select" value={draft.columnId} onChange={event => setDraft({ ...draft, columnId: event.target.value })}>{workspace.columns.map(column => <option key={column.id} value={column.id}>{column.title}</option>)}</select></label>
+      <label className="field">Status<select className="select" value={draft.columnId} onChange={event => setDraft({ ...draft, columnId: event.target.value })}>{workspace.columns.map(column => <option key={column.id} value={column.id}>{columnDisplayTitle(column)}</option>)}</select></label>
       <fieldset className="tag-field priority-field"><legend>Prioritet</legend><div className="tag-options">
         <button className={`tag-chip${draft.priority ? '' : ' active'}`} type="button" aria-pressed={!draft.priority} onClick={() => setDraft({ ...draft, priority: null })}>Ingen</button>
         {TASK_PRIORITIES.map(option => <button key={option.value} className={`tag-chip priority-option${draft.priority === option.value ? ' active' : ''}`} data-priority={option.value} type="button" aria-pressed={draft.priority === option.value} onClick={() => setDraft({ ...draft, priority: option.value })}>{option.label}</button>)}
@@ -54,7 +57,7 @@ export function TaskEditor({ task, columnId, workspace, onSave, onDelete, onClos
       <div className="field-row"><label className="field">Deadline<input className="input" type="date" value={draft.deadline ?? ''} onChange={event => setDraft({ ...draft, deadline: event.target.value || null, deadlineTime: event.target.value ? draft.deadlineTime : null })} /></label><label className="field">Tid (valfri)<input className="input" type="time" disabled={!draft.deadline} value={draft.deadlineTime ?? ''} onChange={event => setDraft({ ...draft, deadlineTime: event.target.value || null })} /></label></div>
       <label className="field">Etiketter<input className="input" placeholder="Privat, Idé" value={labels} onChange={event => setLabels(event.target.value)} /><span className="field-help">Separera med kommatecken</span></label>
       <div className="section-label"><span>Checklista</span><span>{completed}/{draft.checklist.length}</span></div>
-      <div className="checklist">{draft.checklist.map(item => <div className="checklist-row" key={item.id}><label><input type="checkbox" checked={item.completed} onChange={() => setDraft({ ...draft, checklist: draft.checklist.map(current => current.id === item.id ? { ...current, completed: !current.completed } : current) })} /><span className={item.completed ? 'completed' : ''}>{item.title}</span></label><button className="icon-button" type="button" aria-label={`Ta bort ${item.title}`} onClick={() => setDraft({ ...draft, checklist: draft.checklist.filter(current => current.id !== item.id) })}><Trash2 size={15} /></button></div>)}</div>
+      <div className="checklist">{draft.checklist.map(item => <div className="checklist-row" key={item.id}><label><input type="checkbox" aria-label={`Markera ${item.title} som klar`} checked={item.completed} onChange={() => setDraft({ ...draft, checklist: draft.checklist.map(current => current.id === item.id ? { ...current, completed: !current.completed } : current) })} /><input className="input" aria-label={`Ändra deluppgift ${item.title}`} required maxLength={160} value={item.title} onChange={event => setDraft(current => ({ ...current, checklist: current.checklist.map(entry => entry.id === item.id ? { ...entry, title: event.target.value } : entry) }))} /></label><button className="icon-button" type="button" aria-label={`Ta bort ${item.title}`} onClick={() => setDraft({ ...draft, checklist: draft.checklist.filter(current => current.id !== item.id) })}><Trash2 size={15} /></button></div>)}</div>
       <div className="checklist-add"><input className="input" aria-label="Ny deluppgift" placeholder="Lägg till deluppgift" value={checklistTitle} onChange={event => setChecklistTitle(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); addItem() } }} /><button type="button" className="icon-button" aria-label="Lägg till deluppgift" onClick={addItem}><Plus size={19} /></button></div>
       <div className="section-label"><span><MessageSquare size={15} /> Kommentarer</span><span>{draft.comments.length}</span></div>
       <div className="comments">{draft.comments.map(entry => <div key={entry.id} className="comment"><div className="comment-meta"><span>Du</span><time dateTime={entry.createdAt}>{new Date(entry.createdAt).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' })}</time></div><p>{entry.text}</p></div>)}</div>

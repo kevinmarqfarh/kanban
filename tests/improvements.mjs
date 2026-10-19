@@ -133,3 +133,24 @@ assert.equal(restoreRemoved(before, after, after).columns, after.columns)
 console.log('Improvements passed: quick-add dates (weekdays, idag/imorgon/övermorgon, 24/10, 2 maj, ISO, kl/HH:MM, false friends left alone), supplements by time of day, the weather sentence incl. tomorrow and frost, sun-based dark mode, and Ångra restoring exactly what was removed.')
 
 assert.deepEqual(orderHabitsByTime([{ id: 'am', time: 'morning' }, { id: 'any', time: 'anytime' }, { id: 'noon', time: 'midday' }, { id: 'old' }], at(12)).map(h => h.id), ['noon', 'any', 'old', 'am'])
+
+const helpers = await module('../src/lib/helpers.ts')
+const { filterPlannerTasks } = await module('../src/lib/plannerFilters.ts', { './helpers': helpers })
+const now = new Date()
+const day = now.toLocaleDateString('sv-SE')
+const previousDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).toLocaleDateString('sv-SE')
+const plannerWorkspace = { columns: [{ id: 'todo' }, { id: 'done' }, { id: 'finalized' }], tasks: [
+  { id: 'today', title: 'Planera maten', description: '', labels: ['Familj'], columnId: 'todo', deadline: day, priority: 'high' },
+  { id: 'late', title: 'Handla maten', description: '', labels: [], columnId: 'todo', deadline: previousDay },
+  { id: 'done', title: 'Planera maten', description: '', labels: [], columnId: 'done', deadline: previousDay, priority: 'high' },
+  { id: 'archived', title: 'Äldre', description: '', labels: [], columnId: 'finalized', deadline: day, priority: 'high' },
+] }
+assert.deepEqual(filterPlannerTasks(plannerWorkspace, '', 'today', day).map(t => t.id), ['today'])
+assert.deepEqual(filterPlannerTasks(plannerWorkspace, '', 'overdue', day).map(t => t.id), ['late'])
+assert.deepEqual(filterPlannerTasks(plannerWorkspace, 'FAMILJ maten', 'high', day).map(t => t.id), ['today'])
+assert.equal(filterPlannerTasks(plannerWorkspace, 'saknas', 'all', day).length, 0)
+assert.equal(filterPlannerTasks(plannerWorkspace, '', 'all', day).length, 4)
+assert.equal(helpers.priorityLabel('high'), 'Hög')
+
+assert.equal(helpers.columnDisplayTitle({ id: 'finalized', title: 'Finalized' }), 'Avslutat')
+assert.equal(helpers.columnDisplayTitle({ id: 'finalized', title: 'Mitt arkiv' }), 'Mitt arkiv')

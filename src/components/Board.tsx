@@ -8,7 +8,7 @@ import { SortableContext, defaultAnimateLayoutChanges, useSortable, sortableKeyb
 import { CSS } from '@dnd-kit/utilities'
 import { Plus, GripVertical, CalendarDays, ListChecks, MessageSquare, Pencil, CircleCheck } from 'lucide-react'
 import type { Column, Task, Workspace } from '../lib/types'
-import { dateLabel, isTaskDone, overdue, priorityLabel } from '../lib/helpers'
+import { columnDisplayTitle, dateLabel, isTaskDone, overdue, priorityLabel } from '../lib/helpers'
 
 type Layout = Record<string, string[]>
 
@@ -37,22 +37,23 @@ function CardContent({ task, workspace }: { task: Task; workspace: Workspace }) 
   </>
 }
 
-const TaskCard = memo(function TaskCard({ task, workspace, onOpen }: { task: Task; workspace: Workspace; onOpen: (task: Task) => void }) {
+const TaskCard = memo(function TaskCard({ task, workspace, onOpen, onToggle }: { task: Task; workspace: Workspace; onOpen: (task: Task) => void; onToggle: (task: Task) => void }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: task.id, data: { columnId: task.columnId, type: 'task' }, animateLayoutChanges, transition: { duration: 180, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' } })
   return <article ref={setNodeRef} className={`task-card ${isTaskDone(task, workspace) ? 'task-complete' : ''} ${isDragging ? 'is-dragging' : ''}`} data-task-id={task.id} data-priority={task.priority ?? undefined} style={{ transform: CSS.Translate.toString(transform), transition }}>
     <button className="task-open" onClick={() => onOpen(task)} aria-label={`Öppna ${task.title}`}><CardContent task={task} workspace={workspace} /></button>
+    <button className="icon-button task-quick-complete" type="button" aria-label={`${isTaskDone(task, workspace) ? 'Återöppna' : 'Klarmarkera'} ${task.title}`} aria-pressed={isTaskDone(task, workspace)} onClick={() => onToggle(task)}><CircleCheck size={18} /></button>
     <button ref={setActivatorNodeRef} className="drag-handle" {...attributes} {...listeners} aria-label={`Dra ${task.title}`} title="Dra för att flytta · mellanslag + piltangenter"><GripVertical size={16} /></button>
   </article>
 })
 
-function BoardColumn({ column, tasks, workspace, onOpen, onAdd, onEdit, onToggleHide }: {
-  column: Column; tasks: Task[]; workspace: Workspace; onOpen: (task: Task) => void; onAdd: () => void; onEdit: () => void; onToggleHide: () => void;
+function BoardColumn({ column, tasks, workspace, onOpen, onAdd, onEdit, onToggleHide, onToggle }: {
+  column: Column; tasks: Task[]; workspace: Workspace; onOpen: (task: Task) => void; onAdd: () => void; onEdit: () => void; onToggleHide: () => void; onToggle: (task: Task) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id, data: { type: 'column' } })
-  return <section ref={setNodeRef} className={`column ${isOver ? 'column-over' : ''}`} data-column-id={column.id} aria-label={column.title}>
-    <div className="column-header"><div className="column-title"><span className="status-dot" data-status={column.id} /><h2>{column.title}</h2><span className="count-badge">{tasks.length}</span></div><div className="column-actions">{column.id === 'finalized' && <button className="button ghost small" aria-label={column.collapsed ? 'Show Finalized' : 'Hide Finalized'} aria-expanded={!column.collapsed} onClick={onToggleHide}>{column.collapsed ? 'Show' : 'Hide'}</button>}<button className="icon-button" aria-label={`Redigera kolumn ${column.title}`} onClick={onEdit}><Pencil size={14} /></button></div></div>
-    {column.collapsed ? <div className="column-empty"><CircleCheck size={22} strokeWidth={1.25} /><p>{tasks.length} kort dolda.</p><p>Dra kort hit för att avsluta.</p></div> : <><SortableContext items={tasks.map(task => task.id)} strategy={liveLayoutStrategy}>
-      <div className="task-list">{tasks.map(task => <TaskCard key={task.id} task={task} workspace={workspace} onOpen={onOpen} />)}
+  return <section ref={setNodeRef} className={`column ${isOver ? 'column-over' : ''}`} data-column-id={column.id} aria-label={columnDisplayTitle(column)}>
+    <div className="column-header"><div className="column-title"><span className="status-dot" data-status={column.id} /><h2>{columnDisplayTitle(column)}</h2><span className="count-badge">{tasks.length}</span></div><div className="column-actions">{column.id === 'finalized' && <button className="button ghost small" aria-label={column.collapsed ? 'Visa avslutade' : 'Dölj avslutade'} aria-expanded={!column.collapsed} onClick={onToggleHide}>{column.collapsed ? 'Visa' : 'Dölj'}</button>}<button className="icon-button" aria-label={`Redigera kolumn ${column.title}`} onClick={onEdit}><Pencil size={14} /></button></div></div>
+    {column.collapsed ? <div className="column-empty"><CircleCheck size={22} strokeWidth={1.25} /><p>{tasks.length} kort dolda.</p><p>Klart = färdig uppgift. Avslutat = avslutad och undanlagd.</p></div> : <><SortableContext items={tasks.map(task => task.id)} strategy={liveLayoutStrategy}>
+      <div className="task-list">{tasks.map(task => <TaskCard key={task.id} task={task} workspace={workspace} onOpen={onOpen} onToggle={onToggle} />)}
         {tasks.length === 0 && <div className="column-empty"><CircleCheck size={22} strokeWidth={1.25} /><p>Inga uppgifter.</p></div>}
       </div>
     </SortableContext>
@@ -61,10 +62,10 @@ function BoardColumn({ column, tasks, workspace, onOpen, onAdd, onEdit, onToggle
   </section>
 }
 
-export function Board({ workspace, tasks, onOpen, onAdd, onEditColumn, onAddColumn, onMove, onToggleHide }: {
+export function Board({ workspace, tasks, onOpen, onAdd, onEditColumn, onAddColumn, onMove, onToggleHide, onToggle }: {
   workspace: Workspace; tasks: Task[]; onOpen: (task: Task) => void; onAdd: (columnId: string) => void;
   onEditColumn: (column: Column) => void; onAddColumn: () => void; onMove: (taskId: string, columnId: string, beforeId?: string) => void;
-  onToggleHide: (columnId: string) => void;
+  onToggleHide: (columnId: string) => void; onToggle: (task: Task) => void;
 }) {
   const boardRef = useRef<HTMLDivElement>(null)
   const keyboardColumn = useRef<string | null>(null)
@@ -248,7 +249,7 @@ export function Board({ workspace, tasks, onOpen, onAdd, onEditColumn, onAddColu
       onDragCancel: () => 'Flytten avbröts.',
     } }}>
       <div className={`board ${workspace.columns.length > 3 ? 'board-many' : ''} ${activeId ? 'board-dragging' : ''}`} ref={boardRef} onScroll={boardScrolled}>
-        {workspace.columns.map(column => <BoardColumn key={column.id} column={column} tasks={(view[column.id] ?? []).map(id => byId.get(id)).filter((task): task is Task => !!task)} workspace={workspace} onOpen={onOpen} onAdd={() => onAdd(column.id)} onEdit={() => onEditColumn(column)} onToggleHide={() => onToggleHide(column.id)} />)}
+        {workspace.columns.map(column => <BoardColumn key={column.id} column={column} tasks={(view[column.id] ?? []).map(id => byId.get(id)).filter((task): task is Task => !!task)} workspace={workspace} onOpen={onOpen} onAdd={() => onAdd(column.id)} onEdit={() => onEditColumn(column)} onToggle={onToggle} onToggleHide={() => onToggleHide(column.id)} />)}
         <button className="add-column" onClick={onAddColumn}><Plus size={20} /><span>Ny kolumn</span></button>
       </div>
       <DragOverlay dropAnimation={dropAnimation}>{activeTask && <div className="task-card drag-overlay" data-priority={activeTask.priority ?? undefined}><CardContent task={activeTask} workspace={workspace} /></div>}</DragOverlay>

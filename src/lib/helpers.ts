@@ -34,8 +34,11 @@ export function projectProgress(projectId: string, workspace: Workspace) {
 }
 
 export const TASK_PRIORITIES: { value: TaskPriority; label: string }[] = [
-  { value: 'high', label: 'High' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'low', label: 'Low' },
+  { value: 'high', label: 'Hög' },
+  { value: 'medium', label: 'Medel' },
+  { value: 'low', label: 'Låg' },
 ]
 export const priorityLabel = (priority?: TaskPriority | null) => TASK_PRIORITIES.find(option => option.value === priority)?.label ?? null
+
+/** Translate only the built-in legacy title; preserve user-named columns. */
+export const columnDisplayTitle = (column: { id: string; title: string }): string => column.id === 'finalized' && column.title === 'Finalized' ? 'Avslutat' : column.title
