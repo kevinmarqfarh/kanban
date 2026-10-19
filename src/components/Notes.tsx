@@ -24,6 +24,7 @@ function NoteEditor({ note, workspace, onSave, onDelete, onOpenLink, onBack, ini
 }) {
   const editorRef = useRef<HTMLDivElement>(null)
   const rangeRef = useRef<Range | null>(null)
+  const hasSavedRef = useRef(!!workspace.notes?.some(entry => entry.id === note.id))
   const baseRef = useRef(note)
   const draftRef = useRef(structuredClone(note))
   const [title, setTitle] = useState(note.title === 'Ny anteckning' ? '' : note.title)
@@ -109,9 +110,10 @@ function NoteEditor({ note, workspace, onSave, onDelete, onOpenLink, onBack, ini
     const next = { ...draftRef.current, content: sanitizeNoteHtml(editorRef.current?.innerHTML ?? draftRef.current.content), ...values, updatedAt: new Date().toISOString() }
     next.title = next.title.trim() || 'Ny anteckning'
     draftRef.current = next
-    const failure = saveRef.current(next, baseRef.current)
+    if (!hasSavedRef.current && next.title === 'Ny anteckning' && !notePlainText(next.content).trim()) return null
+    const failure = saveRef.current(next, hasSavedRef.current ? baseRef.current : undefined)
     setError(failure); setSaved(!failure); setWords(wordCount(next.content))
-    if (!failure) baseRef.current = next
+    if (!failure) { baseRef.current = next; hasSavedRef.current = true }
     return failure
   }
   function list(command: 'insertUnorderedList' | 'insertOrderedList') {
@@ -221,8 +223,7 @@ export function Notes({ workspace, onSave, onDelete, onRestore, onPurge, onEmpty
   function create() {
     const now = new Date().toISOString()
     const note: Note = { id: newId(), title: 'Ny anteckning', content: '', font: 'system', createdAt: now, updatedAt: now }
-    const failure = onSave(note)
-    setOpened(note); setQuery(''); setError(failure); setView('list')
+    setOpened(note); setQuery(''); setError(null); setView('list')
   }
   function restore(note: Note) { const failure = onRestore(note); setError(failure); setConfirmPurge(null) }
   function purge(id: string) { const failure = onPurge(id); setError(failure); setConfirmPurge(null) }

@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
-import { Check, Copy, Dumbbell, History, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { Check, Copy, Dumbbell, History, Pencil, Plus, RotateCcw, Trash2, X } from 'lucide-react'
 import type { Workout, WorkoutRow } from '../lib/types'
 import { newId } from '../lib/helpers'
 import { isValidBirthDate, localDateString } from '../lib/birthdays'
@@ -53,14 +53,15 @@ function ExerciseNameField({ id, index, value, history, onChange, onPick, onNext
   </div>
 }
 
-export function WorkoutEditor({ workout, history = [], onSave, onDelete, onClose }: {
+export function WorkoutEditor({ workout, history = [], isNew = false, onSave, onDelete, onClose }: {
   workout?: Workout;
   history?: Workout[];
+  isNew?: boolean;
   onSave: (edited: Workout, original?: Workout) => string | null;
   onDelete: (id: string) => string | null;
   onClose: () => void;
 }) {
-  const [original] = useState(() => workout ? structuredClone(workout) : undefined)
+  const [original] = useState(() => workout && !isNew ? structuredClone(workout) : undefined)
   const [draft, setDraft] = useState<Workout>(() => workout ? structuredClone(workout) : {
     id: newId(), date: localDateString(new Date()), title: '', rows: [newRow()], createdAt: new Date().toISOString(),
   })
@@ -90,8 +91,8 @@ export function WorkoutEditor({ workout, history = [], onSave, onDelete, onClose
     setDraft(current => ({ ...current, rows: [...current.rows, row] }))
     setFocusRow(row.id)
   }
-  return <Modal phoneFullscreen title={workout ? 'Redigera pass' : 'Nytt pass'} onClose={onClose} error={error} footer={<>
-    {workout && <button className="icon-button danger" type="button" aria-label="Ta bort pass" onClick={() => { const failure = onDelete(draft.id); if (failure) setError(failure); else onClose() }}><Trash2 size={18} /></button>}
+  return <Modal phoneFullscreen title={workout && !isNew ? 'Redigera pass' : 'Nytt pass'} onClose={onClose} error={error} footer={<>
+    {workout && !isNew && <button className="icon-button danger" type="button" aria-label="Ta bort pass" onClick={() => { const failure = onDelete(draft.id); if (failure) setError(failure); else onClose() }}><Trash2 size={18} /></button>}
     <button className="button secondary" type="button" onClick={onClose}>Avbryt</button><button className="button primary" form="workout-form" type="submit"><Check size={16} />Spara pass</button>
   </>}>
     <form id="workout-form" className="workout-form" onSubmit={save}>
@@ -142,6 +143,12 @@ export function Workouts({ workouts, onSave, onDelete, onRestore, initialId }: {
     if (!failure) setRemoved(null)
   }
   const [editing, setEditing] = useState<Workout | null | undefined>(() => initialId ? workouts.find(workout => workout.id === initialId) : undefined)
+  const [repeating, setRepeating] = useState(false)
+  function repeatWorkout(workout: Workout) {
+    const now = new Date()
+    setRepeating(true)
+    setEditing({ ...workout, id: newId(), date: localDateString(now), createdAt: now.toISOString(), rows: workout.rows.map(row => ({ ...row, id: newId() })) })
+  }
   const [rawText, setRawText] = useState<string | null>(null)
   const [copyStatus, setCopyStatus] = useState('')
   const [copying, setCopying] = useState(false)
@@ -159,13 +166,13 @@ export function Workouts({ workouts, onSave, onDelete, onRestore, initialId }: {
     finally { setCopying(false) }
   }
   return <div className="others-content">
-    <div className="others-list-toolbar"><span>{workouts.length} pass</span><button className="button primary" type="button" onClick={() => setEditing(null)}><Plus size={16} />Nytt pass</button></div>
+    <div className="others-list-toolbar"><span>{workouts.length} pass</span><button className="button primary" type="button" onClick={() => { setRepeating(false); setEditing(null) }}><Plus size={16} />Nytt pass</button></div>
     {removed && <div className="notes-undo" role="status"><span>Passet är borttaget.</span><button className="button ghost small" type="button" onClick={undoRemove}>Ångra</button></div>}
     {listError && <p className="others-error" role="alert">{listError}</p>}
-    <div className="others-record-list">{ordered.map(workout => <SwipeRow key={workout.id} className="workout-swipe" open={swiped === workout.id} onOpenChange={open => setSwiped(open ? workout.id : current => current === workout.id ? null : current)} onDelete={() => removeWorkout(workout)} deleteLabel={`Ta bort pass ${workout.title || workout.date}`}><article className="others-record-row" data-workout-id={workout.id}><button className="others-record-open" type="button" aria-label={`Redigera pass ${workout.title || workout.date}`} onClick={() => setEditing(workout)}><span className="others-record-icon"><Dumbbell size={19} strokeWidth={1.5} /></span><span className="others-record-copy"><strong>{workout.title || 'Träningspass'}</strong><span><time dateTime={workout.date}>{new Date(`${workout.date}T12:00:00`).toLocaleDateString('sv-SE', { day: 'numeric', month: 'long', year: 'numeric' })}</time> · {workout.rows.length} övningar</span></span><Pencil size={15} /></button><button className="icon-button" type="button" disabled={copying} aria-label={`Kopiera råtext för ${workout.title || 'träningspass'}`} onClick={() => { void copy(workout) }}><Copy size={17} /></button></article></SwipeRow>)}</div>
+    <div className="others-record-list">{ordered.map(workout => <SwipeRow key={workout.id} className="workout-swipe" open={swiped === workout.id} onOpenChange={open => setSwiped(open ? workout.id : current => current === workout.id ? null : current)} onDelete={() => removeWorkout(workout)} deleteLabel={`Ta bort pass ${workout.title || workout.date}`}><article className="others-record-row" data-workout-id={workout.id}><button className="others-record-open" type="button" aria-label={`Redigera pass ${workout.title || workout.date}`} onClick={() => { setRepeating(false); setEditing(workout) }}><span className="others-record-icon"><Dumbbell size={19} strokeWidth={1.5} /></span><span className="others-record-copy"><strong>{workout.title || 'Träningspass'}</strong><span><time dateTime={workout.date}>{new Date(`${workout.date}T12:00:00`).toLocaleDateString('sv-SE', { day: 'numeric', month: 'long', year: 'numeric' })}</time> · {workout.rows.length} övningar</span></span><Pencil size={15} /></button><button className="icon-button" type="button" title="Upprepa pass" aria-label={`Upprepa pass ${workout.title || workout.date}`} onClick={() => repeatWorkout(workout)}><RotateCcw size={17} /></button><button className="icon-button" type="button" disabled={copying} aria-label={`Kopiera råtext för ${workout.title || 'träningspass'}`} onClick={() => { void copy(workout) }}><Copy size={17} /></button></article></SwipeRow>)}</div>
     {ordered.length === 0 && <p className="others-empty">Inga träningspass ännu.</p>}
     {copyStatus && <p className="others-status" role="status"><Check size={14} />{copyStatus}</p>}
     {rawText !== null && <div className="others-copy-fallback"><div className="others-copy-heading"><p>Kopiera texten manuellt.</p><button className="icon-button" type="button" aria-label="Dölj kopiering" onClick={() => setRawText(null)}><X size={17} /></button></div><textarea className="textarea" rows={6} readOnly autoFocus aria-label="Råtext för träningspass" value={rawText} onFocus={event => event.currentTarget.select()} /></div>}
-    {editing !== undefined && <WorkoutEditor key={editing?.id ?? 'new-workout'} workout={editing ?? undefined} history={workouts} onSave={onSave} onDelete={id => { const failure = onDelete(id); const deleted = workouts.find(workout => workout.id === id); if (!failure && deleted) setRemoved(deleted); return failure }} onClose={() => setEditing(undefined)} />}
+    {editing !== undefined && <WorkoutEditor key={editing?.id ?? 'new-workout'} workout={editing ?? undefined} isNew={repeating} history={workouts} onSave={onSave} onDelete={id => { const failure = onDelete(id); const deleted = workouts.find(workout => workout.id === id); if (!failure && deleted) setRemoved(deleted); return failure }} onClose={() => setEditing(undefined)} />}
   </div>
 }
