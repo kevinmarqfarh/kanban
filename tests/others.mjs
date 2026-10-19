@@ -59,6 +59,7 @@ const recipe = { id: 'recipe', title: 'Soppa', url: 'https://example.com/recept'
 const notification = { id: birthdays.birthdayNotificationId('anna', '2026-11-04', 'month'), birthdayId: 'anna', date: '2026-11-04', reminder: 'month', name: 'Anna', age: 31, createdAt, readAt: null, dismissedAt: null }
 const workspace = { ...createEmptyWorkspace(), workouts: [workout], nutritionHabits: [habit], nutritionCompletions: [completion], recipes: [recipe], birthdayNotifications: [notification] }
 assert.ok(isWorkspace(workspace))
+assert.ok(isWorkspace({ ...workspace, recipes: [{ ...recipe, ingredients: '2 dl linser', notes: '4 portioner' }] }))
 assert.ok(isWorkspace({ ...workspace, recipes: [{ ...recipe, favorite: true }] }))
 assert.ok(isWorkspace({ ...workspace, recipes: [{ ...recipe, favorite: false }] }))
 const favoriteMerge = mergeRecordChanges(recipe, { ...recipe, favorite: true }, { ...recipe, title: 'Ny titel', steps: 'Nya steg' })
@@ -77,6 +78,8 @@ assert.equal(isNutritionComplete(workspace, 'water', '2026-10-06'), true)
 assert.equal(isNutritionComplete(workspace, 'water', '2026-10-07'), false, 'Each day has independent habit state.')
 assert.ok(isWorkspace({ columns: workspace.columns, tasks: [], projects: [] }), 'Old workspaces without any Others collections remain supported.')
 const bad = [
+  { ...workspace, recipes: [{ ...recipe, ingredients: ['fel'] }] },
+  { ...workspace, recipes: [{ ...recipe, notes: 42 }] },
   { ...workspace, recipes: [{ ...recipe, favorite: 'true' }] },
   { ...workspace, recipes: [{ ...recipe, favorite: null }] },
   { ...workspace, workouts: null },
@@ -122,3 +125,25 @@ assert.ok(isWorkspace(merged))
 assert.equal(mergeWorkspaceChanges(workspace, local, { ...remote, workouts: [] }).workouts.length, 0, 'A removed workout is not resurrected by a stale cache.')
 
 console.log('Others domain passed: Monday/ISO weeks, DST, day navigation, raw workout copy, daily nutrition state, safe recipe links, optional-collection validation and stale merges.')
+
+const { recipeContent } = await module('../src/lib/recipeContent.ts')
+const { recipeCatalog, availableRecipes } = await module('../src/lib/recipeCatalog.ts')
+assert.equal(recipeCatalog.length, 100)
+assert.ok(isWorkspace({ ...createEmptyWorkspace(), recipes: recipeCatalog }))
+for (const item of recipeCatalog) {
+  assert.ok(item.ingredients.length > 40)
+  assert.ok(item.steps.length > 80)
+  assert.ok(!item.steps.includes('https://'), 'Sources belong in the subtle inspiration link.')
+  assert.ok(!item.steps.includes('Ingredienser:'), 'Ingredients and method are separate fields.')
+}
+assert.equal(recipeCatalog.filter(item => item.labels.includes('Chilenskt')).length, 15)
+assert.equal(recipeCatalog.filter(item => item.labels.includes('Persiskt')).length, 12)
+const staleFavorite = { ...recipeCatalog[0], labels: ['middag', 'Receptbanken'], steps: 'Gammal sammanslagen text', favorite: true }
+delete staleFavorite.ingredients
+const refreshed = availableRecipes([staleFavorite]).find(item => item.id === staleFavorite.id)
+assert.equal(refreshed.favorite, true)
+assert.ok(refreshed.labels.includes('Chilenskt'))
+assert.equal(refreshed.ingredients, recipeCatalog[0].ingredients)
+assert.deepEqual(recipeContent(recipe), { ingredients: '', method: recipe.steps, notes: '' })
+assert.deepEqual(recipeContent({ ...recipe, steps: '4 portioner\n\nIngredienser: 2 dl linser\n\nGör så här: Koka linser.\n\nFrys: Ja.' }), { ingredients: '2 dl linser', method: 'Koka linser.', notes: '4 portioner\n\nFrys: Ja.' })
+console.log('Recipe structure passed: 100 complete recipes, cuisine labels, refreshed favorites and legacy personal recipe text.')

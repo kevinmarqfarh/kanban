@@ -232,11 +232,11 @@ const screenshot = async (page, name) => { await page.evaluate(() => document.fo
   await check('Manual and URL recipes preserve steps, predefined and own labels as literal text', async () => {
     await withPage({}, async page => {
       await openSection(page, 'recipes'); await newRecipe(page); const steps = 'Rör ihop havre.\n\n<h1>Vanlig text</h1>\n<img src="x" onerror="window.__recipeExecuted=true">';
-      await dialog(page).getByLabel(/^Steg/).fill(steps); await dialog(page).getByRole('button', { name: 'Frukost', exact: true }).click(); await dialog(page).getByRole('button', { name: 'Snacks', exact: true }).click(); for (const label of ['Vegetariskt', 'Snabbt', 'snabbt']) await addRecipeLabel(page, label); await saveRecipe(page);
+      await dialog(page).getByLabel(/^Gör så här/).fill(steps); await dialog(page).getByRole('button', { name: 'Frukost', exact: true }).click(); await dialog(page).getByRole('button', { name: 'Snacks', exact: true }).click(); for (const label of ['Vegetariskt', 'Snabbt', 'snabbt']) await addRecipeLabel(page, label); await saveRecipe(page);
       const [manual] = (await cache(page)).recipes; assert.equal(manual.url, ''); assert.equal(manual.steps, steps); assert.deepEqual(manual.labels, ['frukost', 'snacks', 'Vegetariskt', 'Snabbt']);
-      await newRecipe(page, 'Recept med sparad källa'); await dialog(page).getByLabel('Länk', { exact: true }).fill('https://example.org/recept?portioner=2'); await dialog(page).getByLabel(/^Steg/).fill('Mina egna steg för den sparade källan.'); await dialog(page).getByRole('button', { name: 'Middag', exact: true }).click(); await saveRecipe(page);
+      await newRecipe(page, 'Recept med sparad källa'); await dialog(page).getByLabel('Inspiration', { exact: true }).fill('https://example.org/recept?portioner=2'); await dialog(page).getByLabel(/^Gör så här/).fill('Mina egna steg för den sparade källan.'); await dialog(page).getByRole('button', { name: 'Middag', exact: true }).click(); await saveRecipe(page);
       await page.reload(); await openSection(page, 'recipes'); await openRecipe(page, manual.id); assert.equal(await dialog(page).locator('.recipe-steps').textContent(), steps); assert.equal(await dialog(page).locator('.recipe-steps img, .recipe-steps h1, .recipe-steps script').count(), 0); assert.equal(await page.evaluate(() => !!window.__recipeExecuted), false); assert.equal(await dialog(page).getByRole('link').count(), 0); await closeDialog(page);
-      const linked = (await cache(page)).recipes.find(entry => entry.title === 'Recept med sparad källa'); await openRecipe(page, linked.id); const link = dialog(page).getByRole('link', { name: 'Öppna länk' }); assert.equal(await link.getAttribute('href'), linked.url); assert.equal(await link.getAttribute('rel'), 'noopener noreferrer'); await closeDialog(page); await preserveCore(page);
+      const linked = (await cache(page)).recipes.find(entry => entry.title === 'Recept med sparad källa'); await openRecipe(page, linked.id); const link = dialog(page).getByRole('link', { name: /Inspiration/ }); assert.equal(await link.getAttribute('href'), linked.url); assert.equal(await link.getAttribute('rel'), 'noopener noreferrer'); await closeDialog(page); await preserveCore(page);
     });
   });
 
@@ -244,23 +244,23 @@ const screenshot = async (page, name) => { await page.evaluate(() => document.fo
     await withPage({}, async page => {
       await openSection(page, 'recipes'); await newRecipe(page, 'En länk som måste valideras');
       for (const url of ['javascript:alert(1)', 'data:text/html,<script>alert(1)</script>', 'ftp://example.org/recept', 'https://user:password@example.org/recept', 'inte en länk']) {
-        await dialog(page).getByLabel('Länk', { exact: true }).fill(url); await dialog(page).getByRole('button', { name: 'Spara recept', exact: true }).click(); assert.deepEqual((await cache(page)).recipes, []); assert.equal(await dialog(page).count(), 1);
+        await dialog(page).getByLabel('Inspiration', { exact: true }).fill(url); await dialog(page).getByRole('button', { name: 'Spara recept', exact: true }).click(); assert.deepEqual((await cache(page)).recipes, []); assert.equal(await dialog(page).count(), 1);
       }
-      await dialog(page).getByLabel('Länk', { exact: true }).fill('http://example.org/recept'); await saveRecipe(page); assert.equal((await cache(page)).recipes.length, 1); await preserveCore(page);
+      await dialog(page).getByLabel('Inspiration', { exact: true }).fill('http://example.org/recept'); await saveRecipe(page); assert.equal((await cache(page)).recipes.length, 1); await preserveCore(page);
     });
   });
 
   await check('Recipe quota retry retains the typed link, steps and labels and saves exactly once', async () => {
     await withPage({}, async page => {
-      await openSection(page, 'recipes'); await newRecipe(page, 'Ett recept vid lagringsfel'); await dialog(page).getByLabel('Länk', { exact: true }).fill('https://example.org/recept'); await dialog(page).getByLabel(/^Steg/).fill('Alla mina egna steg.'); await addRecipeLabel(page, 'Egen'); await blockStorage(page); await dialog(page).getByRole('button', { name: 'Spara recept', exact: true }).click();
-      assert.deepEqual((await cache(page)).recipes, []); assert.equal(await dialog(page).getByLabel(/^Steg/).inputValue(), 'Alla mina egna steg.'); await dialog(page).getByRole('alert').waitFor(); await noSavedToast(page); await page.evaluate(() => window.__restoreOthersStorage()); await saveRecipe(page); await page.reload(); const [saved] = (await cache(page)).recipes; assert.equal((await cache(page)).recipes.length, 1); assert.equal(saved.steps, 'Alla mina egna steg.'); assert.equal(saved.url, 'https://example.org/recept'); assert.deepEqual(saved.labels, ['Egen']); await preserveCore(page);
+      await openSection(page, 'recipes'); await newRecipe(page, 'Ett recept vid lagringsfel'); await dialog(page).getByLabel('Inspiration', { exact: true }).fill('https://example.org/recept'); await dialog(page).getByLabel(/^Gör så här/).fill('Alla mina egna steg.'); await addRecipeLabel(page, 'Egen'); await blockStorage(page); await dialog(page).getByRole('button', { name: 'Spara recept', exact: true }).click();
+      assert.deepEqual((await cache(page)).recipes, []); assert.equal(await dialog(page).getByLabel(/^Gör så här/).inputValue(), 'Alla mina egna steg.'); await dialog(page).getByRole('alert').waitFor(); await noSavedToast(page); await page.evaluate(() => window.__restoreOthersStorage()); await saveRecipe(page); await page.reload(); const [saved] = (await cache(page)).recipes; assert.equal((await cache(page)).recipes.length, 1); assert.equal(saved.steps, 'Alla mina egna steg.'); assert.equal(saved.url, 'https://example.org/recept'); assert.deepEqual(saved.labels, ['Egen']); await preserveCore(page);
     });
   });
 
   await check('Two recipe tabs preserve new recipes and another tab’s changed steps', async () => {
     const context = await fresh({ recipes: [recipe] });
     try {
-      const a = await load(context), b = await load(context); await openSection(a, 'recipes'); await openSection(b, 'recipes'); await editRecipe(b); await editRecipe(a); await dialog(a).getByLabel(/^Steg/).fill('De senaste stegen från flik A.'); await saveRecipe(a); await newRecipe(a, 'Ett extra recept från flik A'); await saveRecipe(a); await dialog(b).getByLabel('Titel', { exact: true }).fill('Titeln från flik B'); await saveRecipe(b);
+      const a = await load(context), b = await load(context); await openSection(a, 'recipes'); await openSection(b, 'recipes'); await editRecipe(b); await editRecipe(a); await dialog(a).getByLabel(/^Gör så här/).fill('De senaste stegen från flik A.'); await saveRecipe(a); await newRecipe(a, 'Ett extra recept från flik A'); await saveRecipe(a); await dialog(b).getByLabel('Titel', { exact: true }).fill('Titeln från flik B'); await saveRecipe(b);
       const entries = (await cache(a)).recipes; assert.equal(entries.length, 2); assert.equal(entries.find(entry => entry.id === recipe.id).title, 'Titeln från flik B'); assert.equal(entries.find(entry => entry.id === recipe.id).steps, 'De senaste stegen från flik A.'); await a.reload(); assert.equal((await cache(a)).recipes.length, 2); await preserveCore(a);
     } finally { await context.close(); }
   });

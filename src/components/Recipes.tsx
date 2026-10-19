@@ -7,6 +7,7 @@ import { prepareRecipeImage } from '../lib/recipeImage'
 import { Modal } from './Modal'
 import { TagAdder } from './TagAdder'
 import { isCatalogRecipe } from '../lib/recipeCatalog'
+import { cuisineLabels, isCuisineLabel, recipeContent } from '../lib/recipeContent'
 
 const displayLabel = (label: string) => predefinedRecipeLabels.includes(recipeLabelKey(label)) ? `${label[0].toLocaleUpperCase('sv')}${label.slice(1)}` : label
 
@@ -17,8 +18,8 @@ function RecipeEditor({ recipe, recipes, onSave, onClose }: {
   onClose: () => void;
 }) {
   const [original] = useState(() => recipe ? structuredClone(recipe) : undefined)
-  const [draft, setDraft] = useState<Recipe>(() => recipe ? structuredClone(recipe) : {
-    id: newId(), title: '', url: '', steps: '', labels: [], createdAt: new Date().toISOString(),
+  const [draft, setDraft] = useState<Recipe>(() => recipe ? { ...structuredClone(recipe), ingredients: recipeContent(recipe).ingredients, steps: recipeContent(recipe).method, notes: recipeContent(recipe).notes } : {
+    id: newId(), title: '', url: '', ingredients: '', steps: '', notes: '', labels: [], createdAt: new Date().toISOString(),
   })
   const [error, setError] = useState<string | null>(null)
   const [imageBusy, setImageBusy] = useState(false)
@@ -49,7 +50,7 @@ function RecipeEditor({ recipe, recipes, onSave, onClose }: {
     const chosen = predefinedRecipeLabels.filter(label => selected(label))
     const own = draft.labels.filter(label => !predefinedRecipeLabels.includes(recipeLabelKey(label))).map(label => label.trim()).filter(Boolean)
     const labels = [...chosen, ...own.filter((label, index) => own.findIndex(other => recipeLabelKey(other) === recipeLabelKey(label)) === index)]
-    const next = { ...draft, title: draft.title.trim(), url: draft.url.trim(), steps: draft.steps.trim(), labels }
+    const next = { ...draft, title: draft.title.trim(), url: draft.url.trim(), ingredients: draft.ingredients?.trim() ?? '', steps: draft.steps.trim(), notes: draft.notes?.trim() ?? '', labels }
     setDraft(next)
     const failure = onSave(next, original)
     if (failure) setError(failure)
@@ -61,7 +62,7 @@ function RecipeEditor({ recipe, recipes, onSave, onClose }: {
         <input ref={fileRef} className="sr-only" type="file" accept="image/*" aria-label="Välj bild till receptet" tabIndex={-1} onChange={event => { void chooseImage(event) }} />
         {draft.image && isRecipeImage(draft.image) ? <div className="recipe-image-preview"><img src={draft.image} alt="Vald bild för receptet" /><div className="recipe-image-actions"><button className="button secondary small" type="button" disabled={imageBusy} onClick={() => fileRef.current?.click()}><RefreshCw size={14} />Byt bild</button><button className="button secondary small danger" type="button" onClick={removeImage}><Trash2 size={14} />Ta bort bild</button></div></div>
           : <button className="recipe-image-add" type="button" disabled={imageBusy} onClick={() => fileRef.current?.click()}><ImagePlus size={22} strokeWidth={1.5} /><span>{imageBusy ? 'Förbereder bilden…' : 'Lägg till bild'}</span><small>Från kamerarullen eller kameran</small></button>}
-      </div><label className="field">Länk <span className="field-help">Valfri</span><input className="input" type="url" inputMode="url" aria-label="Länk" placeholder="https://" value={draft.url} onChange={event => setDraft({ ...draft, url: event.target.value })} /></label><label className="field">Steg<textarea className="textarea" rows={6} value={draft.steps} onChange={event => setDraft({ ...draft, steps: event.target.value })} /></label>
+      </div><label className="field">Inspiration <span className="field-help">Valfri · originalsida</span><input className="input" type="url" inputMode="url" aria-label="Inspiration" placeholder="https://" value={draft.url} onChange={event => setDraft({ ...draft, url: event.target.value })} /></label><label className="field">Ingredienser<textarea aria-label="Ingredienser" className="textarea" rows={5} placeholder="Mängder och råvaror, gärna en per rad" value={draft.ingredients ?? ''} onChange={event => setDraft({ ...draft, ingredients: event.target.value })} /></label><label className="field">Gör så här<textarea aria-label="Gör så här" className="textarea" rows={6} value={draft.steps} onChange={event => setDraft({ ...draft, steps: event.target.value })} /></label><label className="field">Övrigt <span className="field-help">Valfritt · tid, portioner och förvaring</span><textarea aria-label="Övrigt" className="textarea" rows={3} value={draft.notes ?? ''} onChange={event => setDraft({ ...draft, notes: event.target.value })} /></label>
       <fieldset className="tag-field"><legend>Etiketter</legend><div className="tag-options">{options.map(label => <button className={`tag-chip${selected(label) ? ' active' : ''}`} type="button" aria-pressed={selected(label)} key={recipeLabelKey(label)} onClick={() => toggleLabel(label)}>{displayLabel(label)}</button>)}<TagAdder label="Lägg till etikett" placeholder="Ny etikett" onAdd={addLabel} /></div></fieldset>
     </form>
   </Modal>
@@ -82,6 +83,8 @@ export function Recipes({ recipes, onSave, onDelete, initialId }: {
   const [favoritesOnly, setFavoritesOnly] = useState(false)
   const favoriteCount = recipes.filter(recipe => recipe.favorite).length
   const used = recipeLabelOptions(recipes).filter(label => recipes.some(recipe => recipe.labels.some(value => recipeLabelKey(value) === recipeLabelKey(label))))
+  used.sort((a, b) => { const ai = cuisineLabels.indexOf(a); const bi = cuisineLabels.indexOf(b); return (ai < 0 ? cuisineLabels.length : ai) - (bi < 0 ? cuisineLabels.length : bi) })
+  const content = selected ? recipeContent(selected) : null
   const activeFilter = filter && used.some(label => recipeLabelKey(label) === filter) ? filter : null
   const ordered = [...recipes].filter(recipe => (!favoritesOnly || recipe.favorite) && (!activeFilter || recipe.labels.some(label => recipeLabelKey(label) === activeFilter))).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   const link = selected ? safeRecipeUrl(selected.url) : null
@@ -101,15 +104,20 @@ export function Recipes({ recipes, onSave, onDelete, initialId }: {
     <p className="others-help">100 recept i Receptbanken för middag och matlådor, cirka 4 vuxenportioner. Tryck på hjärtat för att spara favoriter. Kostnaderna är uppskattningar; recepten är inte provlagade eller exakt näringsberäknade.</p>
     <div className="filter-chips" role="group" aria-label="Visa recept"><button className={`filter-chip${favoritesOnly ? '' : ' active'}`} type="button" aria-pressed={!favoritesOnly} onClick={() => setFavoritesOnly(false)}>Alla recept<span className="filter-count">{recipes.length}</span></button><button className={`filter-chip${favoritesOnly ? ' active' : ''}`} type="button" aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly(true)}><Heart size={15} fill={favoritesOnly ? 'currentColor' : 'none'} />Favoriter<span className="filter-count">{favoriteCount}</span></button></div>
     {error && !selected && <p className="others-error" role="alert">{error}</p>}
+    {used.length > 0 && <p className="others-help recipe-filter-help">Filtrera efter kök och etiketter. Kök anger smak och inspiration.</p>}
     {used.length > 0 && <div className="filter-chips" role="group" aria-label="Filtrera recept efter etikett"><button className={`filter-chip${activeFilter ? '' : ' active'}`} type="button" aria-pressed={!activeFilter} onClick={() => setFilter(null)}>Alla<span className="filter-count">{recipes.length}</span></button>{used.map(label => { const count = recipes.filter(recipe => recipe.labels.some(value => recipeLabelKey(value) === recipeLabelKey(label))).length; return <button className={`filter-chip${activeFilter === recipeLabelKey(label) ? ' active' : ''}`} type="button" key={recipeLabelKey(label)} aria-pressed={activeFilter === recipeLabelKey(label)} onClick={() => setFilter(activeFilter === recipeLabelKey(label) ? null : recipeLabelKey(label))}>{displayLabel(label)}<span className="filter-count">{count}</span></button> })}</div>}
-    <div className="others-record-list">{ordered.map(recipe => <article className="others-record-row recipe-list-row" key={recipe.id} data-recipe-id={recipe.id}><button className="others-record-open" type="button" aria-label={`Öppna recept ${recipe.title}`} onClick={() => open(recipe)}>{recipe.image && isRecipeImage(recipe.image) ? <img className="recipe-thumb" src={recipe.image} alt="" loading="lazy" decoding="async" /> : <span className="others-record-icon"><CookingPot size={19} strokeWidth={1.5} /></span>}<span className="others-record-copy"><strong>{recipe.title}</strong>{recipe.labels.length > 0 && <span className="recipe-list-labels">{recipe.labels.map(label => <span className="label-chip" key={label}>{displayLabel(label)}</span>)}</span>}</span><ArrowUpRight size={16} /></button>{favoriteButton(recipe)}</article>)}</div>
+    <div className="others-record-list">{ordered.map(recipe => <article className="others-record-row recipe-list-row" key={recipe.id} data-recipe-id={recipe.id}><button className="others-record-open" type="button" aria-label={`Öppna recept ${recipe.title}`} onClick={() => open(recipe)}>{recipe.image && isRecipeImage(recipe.image) ? <img className="recipe-thumb" src={recipe.image} alt="" loading="lazy" decoding="async" /> : <span className="others-record-icon"><CookingPot size={19} strokeWidth={1.5} /></span>}<span className="others-record-copy"><strong>{recipe.title}</strong>{recipe.labels.length > 0 && <span className="recipe-list-labels">{recipe.labels.map(label => <span className={`label-chip${isCuisineLabel(label) ? ' recipe-cuisine-chip' : ''}`} key={label}>{displayLabel(label)}</span>)}</span>}</span><ArrowUpRight size={16} /></button>{favoriteButton(recipe)}</article>)}</div>
     {recipes.length === 0 && <p className="others-empty">Inga recept ännu.</p>}
     {recipes.length > 0 && ordered.length === 0 && <p className="others-empty">{favoritesOnly ? (activeFilter ? 'Inga favoriter med den etiketten.' : 'Inga favoriter ännu. Tryck på hjärtat vid ett recept för att spara det här.') : 'Inga recept med den etiketten.'}</p>}
     {selected && editing === undefined && <Modal title={selected.title} onClose={() => setSelected(null)} error={error} footer={<>{favoriteButton(selected)}{!isCatalogRecipe(selected.id) && <button className="icon-button danger" type="button" aria-label="Ta bort recept" onClick={() => { const failure = onDelete(selected.id); if (failure) setError(failure); else setSelected(null) }}><Trash2 size={18} /></button>}<button className="button secondary" type="button" onClick={() => setSelected(null)}>Stäng</button><button className="button primary" type="button" onClick={() => { setEditing(isCatalogRecipe(selected.id) ? { ...selected, id: newId(), favorite: false, labels: selected.labels.filter(label => recipeLabelKey(label) !== 'receptbanken') } : selected); setSelected(null) }}><Pencil size={15} />{isCatalogRecipe(selected.id) ? 'Skapa egen kopia' : 'Redigera'}</button></>}>
       {selected.image && isRecipeImage(selected.image) && <img className="recipe-hero" src={selected.image} alt={`Bild till ${selected.title}`} />}
-      {selected.labels.length > 0 && <div className="recipe-detail-labels">{selected.labels.map(label => <span className="label-chip" key={label}>{displayLabel(label)}</span>)}</div>}
-      {link && <a className="button secondary recipe-link" href={link} target="_blank" rel="noopener noreferrer">Öppna länk<ArrowUpRight size={16} /></a>}
-      {selected.steps ? <div className="recipe-steps">{selected.steps}</div> : <p className="others-help">Inga steg tillagda.</p>}
+      {selected.labels.length > 0 && <div className="recipe-detail-labels">{selected.labels.map(label => <span className={`label-chip${isCuisineLabel(label) ? ' recipe-cuisine-chip' : ''}`} key={label}>{displayLabel(label)}</span>)}</div>}
+      {content && <div className="recipe-content-sections">
+        <section className="recipe-content-box" aria-labelledby="recipe-ingredients-heading"><h3 id="recipe-ingredients-heading">Ingredienser</h3>{content.ingredients ? <div className="recipe-steps">{content.ingredients}</div> : <p className="others-help">Inga ingredienser tillagda.</p>}</section>
+        <section className="recipe-content-box" aria-labelledby="recipe-method-heading"><h3 id="recipe-method-heading">Gör så här</h3>{content.method ? <div className="recipe-steps">{content.method}</div> : <p className="others-help">Inga steg tillagda.</p>}</section>
+        {content.notes && <p className="recipe-notes">{content.notes}</p>}
+      </div>}
+      {link && <a className="recipe-inspiration" href={link} target="_blank" rel="noopener noreferrer"><span>Inspiration</span><span>{new URL(link).hostname.replace(/^www\./, '')}</span><ArrowUpRight size={12} /></a>}
     </Modal>}
     {editing !== undefined && <RecipeEditor key={editing?.id ?? 'new-recipe'} recipe={editing ?? undefined} recipes={recipes} onSave={onSave} onClose={() => setEditing(undefined)} />}
   </div>
