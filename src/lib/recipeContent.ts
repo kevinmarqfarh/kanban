@@ -27,8 +27,23 @@ export function recipeSummary(notes: string): string[] {
 }
 
 export function recipeIngredientLines(text: string): string[] {
-  // A comma inside a decimal quantity must stay intact.
-  return text.split(/\n+|,\s+/u).map(line => line.trim()).filter(Boolean)
+  // Preserve decimal quantities and qualifiers enclosed in parentheses.
+  const lines: string[] = []
+  let start = 0
+  let depth = 0
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index]
+    if (char === '(') depth += 1
+    else if (char === ')') depth = Math.max(0, depth - 1)
+    if (char === '\n' || (char === ',' && depth === 0 && /\s/u.test(text[index + 1] ?? ''))) {
+      const line = text.slice(start, index).trim()
+      if (line) lines.push(line)
+      start = index + 1
+    }
+  }
+  const last = text.slice(start).trim()
+  if (last) lines.push(last)
+  return lines
 }
 
 export function recipeMethodSteps(text: string): string[] {

@@ -157,3 +157,5 @@ for (const item of recipeCatalog) assert.equal(recipeSummary(item.notes).length,
 const pinnedNote = { id: 'pinned', title: 'En anteckning', content: '', font: 'system', createdAt: '2026-10-19T12:00:00.000Z', updatedAt: '2026-10-19T12:00:00.000Z', pinned: true }
 assert.ok(isWorkspace({ ...createEmptyWorkspace(), notes: [pinnedNote] }))
 assert.equal(isWorkspace({ ...createEmptyWorkspace(), notes: [{ ...pinnedNote, pinned: 'yes' }] }), false)
+
+assert.deepEqual(recipeIngredientLines('1 kålhuvud (cirka 1,2 kg, resten sparas), 2 ägg'), ['1 kålhuvud (cirka 1,2 kg, resten sparas)', '2 ägg'])
