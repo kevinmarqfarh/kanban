@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { Check, ChevronLeft, ChevronRight, Moon, Pencil, Plus, Sun, Trash2 } from 'lucide-react'
+import { Clock, Check, ChevronLeft, ChevronRight, Moon, Pencil, Plus, Sun, Trash2 } from 'lucide-react'
 import type { NutritionHabit, NutritionUnit, Workspace } from '../lib/types'
 import { newId } from '../lib/helpers'
 import { isValidBirthDate } from '../lib/birthdays'
@@ -35,10 +35,10 @@ function HabitEditor({ habit, onSave, onDelete, onClose }: {
     {habit && <button className="icon-button danger" type="button" aria-label="Ta bort kostvana" onClick={() => { const failure = onDelete(draft.id); if (failure) setError(failure); else onClose() }}><Trash2 size={18} /></button>}
     <button className="button secondary" type="button" onClick={onClose}>Avbryt</button><button className="button primary" type="submit" form="habit-form"><Check size={16} />Spara</button>
   </>}>
-    <form id="habit-form" onSubmit={save}><label className="field">Titel<input className="input" required autoFocus maxLength={160} value={draft.title} onChange={event => setDraft({ ...draft, title: event.target.value })} /></label><div className="field-row"><label className="field">Mängd<input className="input" type="text" required inputMode="decimal" pattern="[0-9]+([.,][0-9]+)?" value={draft.amount} onChange={event => setDraft({ ...draft, amount: event.target.value })} /></label><label className="field">Enhet<select className="select" value={draft.unit} onChange={event => setDraft({ ...draft, unit: event.target.value as NutritionUnit })}>{units.map(unit => <option key={unit} value={unit}>{unit}</option>)}</select></label></div>
+    <p className="others-help">En daglig vana som du bockar av när du är klar. Mängden är ditt mål för dagen, inte en registrering av varje måltid.</p><form id="habit-form" onSubmit={save}><label className="field">Titel<input className="input" required autoFocus placeholder="T.ex. Vatten eller Grönsaker" maxLength={160} value={draft.title} onChange={event => setDraft({ ...draft, title: event.target.value })} /></label><div className="field-row"><label className="field">Mängd<input className="input" type="text" required placeholder="T.ex. 2" inputMode="decimal" pattern="[0-9]+([.,][0-9]+)?" value={draft.amount} onChange={event => setDraft({ ...draft, amount: event.target.value })} /></label><label className="field">Enhet<select className="select" value={draft.unit} onChange={event => setDraft({ ...draft, unit: event.target.value as NutritionUnit })}>{units.map(unit => <option key={unit} value={unit}>{unit}</option>)}</select></label></div>
       <div className="field" role="group" aria-labelledby="habit-time-label"><span id="habit-time-label" className="field-label">När</span>
         <div className="segmented-control habit-time-options">{NUTRITION_TIME_OPTIONS.map(option => {
-          const Icon = option.value === 'morning' ? Sun : Moon
+          const Icon = option.value === 'morning' ? Sun : option.value === 'evening' ? Moon : Clock
           const active = draft.time === option.value
           return <button key={option.label} type="button" className={active ? 'active' : ''} aria-pressed={active} onClick={() => setDraft({ ...draft, time: option.value })}><Icon size={15} aria-hidden="true" />{option.label}</button>
         })}</div>
@@ -84,7 +84,7 @@ export function Nutrition({ workspace, onSave, onDelete, onToggle, initialHabitI
       const done = isNutritionComplete(workspace, habit.id, selectedDate)
       return <article className={`nutrition-habit-row ${done ? 'completed' : ''}`} key={habit.id} data-habit-id={habit.id} data-date={selectedDate}><label><input type="checkbox" autoFocus={habit.id === initialHabitId} checked={done} aria-label={`Klarmarkera ${habit.title}`} onChange={() => setError(onToggle(habit.id, selectedDate))} /><span><strong>{habit.title}</strong><span className="habit-meta"><small>{habit.amount} {habit.unit}</small><NutritionTimePill time={habit.time} /></span></span></label><button className="icon-button" type="button" aria-label={`Redigera kostvana ${habit.title}`} onClick={() => setEditing(habit)}><Pencil size={16} /></button></article>
     })}</div>
-    {habits.length === 0 && <p className="others-empty">Inga kostvanor ännu.</p>}
+    {habits.length === 0 && <p className="others-empty">Lägg till din första dagliga vana, till exempel vatten eller en portion grönsaker.</p>}
     {editing !== undefined && <HabitEditor key={editing?.id ?? 'new-habit'} habit={editing ?? undefined} onSave={onSave} onDelete={onDelete} onClose={() => setEditing(undefined)} />}
   </div>
 }

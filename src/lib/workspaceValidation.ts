@@ -46,7 +46,7 @@ export function isWorkspace(value: unknown): value is Workspace {
       && isNonnegativeDecimal(row.load, true) && typeof row.loadUnit === 'string' && ['time', 'kg', 'level'].includes(row.loadUnit) && isNonnegativeInteger(row.bpm, true)))) return false
   if (!optional('nutritionHabits', entry => object(entry) && filled(entry.id) && filled(entry.title)
     && isNonnegativeDecimal(entry.amount) && typeof entry.unit === 'string' && ['st', 'ml', 'l', 'g', 'portion'].includes(entry.unit) && timestamp(entry.createdAt)
-    && (entry.time === undefined || entry.time === null || entry.time === 'morning' || entry.time === 'evening'))) return false
+    && (entry.time === undefined || entry.time === null || entry.time === 'morning' || entry.time === 'evening' || entry.time === 'midday' || entry.time === 'anytime'))) return false
   if (!optional('nutritionCompletions', entry => object(entry) && filled(entry.habitId) && date(entry.date)
     && entry.id === nutritionCompletionId(entry.habitId, entry.date) && typeof entry.completed === 'boolean')) return false
   if (!optional('recipes', entry => object(entry) && filled(entry.id) && filled(entry.title) && typeof entry.url === 'string'
@@ -57,6 +57,7 @@ export function isWorkspace(value: unknown): value is Workspace {
     && (entry.notes === undefined || typeof entry.notes === 'string'))) return false
   if (!optional('notes', entry => object(entry) && filled(entry.id) && filled(entry.title) && entry.title.length <= 160
     && typeof entry.content === 'string' && entry.content.length <= 200_000
+    && (entry.pinned === undefined || typeof entry.pinned === 'boolean')
     && typeof entry.font === 'string' && ['system', 'serif', 'mono'].includes(entry.font)
     && timestamp(entry.createdAt) && timestamp(entry.updatedAt)
     && (entry.deletedAt === undefined || entry.deletedAt === null || timestamp(entry.deletedAt)))) return false

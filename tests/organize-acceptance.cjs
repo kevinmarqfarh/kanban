@@ -252,7 +252,7 @@ async function mouseDrag(page, fromName, target, position = 'top') {
   const note = { id: 'note-one', title: 'Idéer', content: '<div>Första raden.</div>', font: 'system', createdAt: stamp, updatedAt: stamp };
   await check('Notes always open fullscreen: the editor covers the window, fades the chrome while typing, keeps saving and closes with Escape', async () => {
     await withPage({ notes: [note] }, async page => {
-      await openOthers(page, 'Notes'); await page.getByRole('button', { name: 'Öppna anteckning Idéer', exact: true }).click();
+      await openOthers(page, 'Anteckningar'); await page.getByRole('button', { name: 'Öppna anteckning Idéer', exact: true }).click();
       const editor = page.locator('.note-editor.is-focus'); await editor.waitFor(); await pause(250);
       assert.equal(await page.getByRole('button', { name: 'Skriv i helskärm' }).count(), 0, 'Fullscreen is the only mode; there is no toggle.');
       const box = await editor.boundingBox(); const viewport = page.viewportSize();
@@ -285,7 +285,7 @@ async function mouseDrag(page, fromName, target, position = 'top') {
 
   await check('Notes fullscreen on iPhone covers the app, keeps safe margins and closes with Anteckningar', async () => {
     await withPage({ notes: [note] }, async page => {
-      await openOthers(page, 'Notes'); await page.getByRole('button', { name: 'Öppna anteckning Idéer', exact: true }).click();
+      await openOthers(page, 'Anteckningar'); await page.getByRole('button', { name: 'Öppna anteckning Idéer', exact: true }).click();
       const editor = page.locator('.note-editor.is-focus'); await editor.waitFor(); await pause(250);
       await noOverflow(page);
       const box = await editor.boundingBox(); assert.ok(box.width >= 429 && box.height >= 931);
@@ -300,7 +300,7 @@ async function mouseDrag(page, fromName, target, position = 'top') {
 
   await check('Notes: select text to get a format bar; bold and italic apply, show their state and survive reload', async () => {
     await withPage({ notes: [{ ...note, content: '<div>Det här är viktigt idag.</div>' }] }, async page => {
-      await openOthers(page, 'Notes'); await page.getByRole('button', { name: 'Öppna anteckning Idéer', exact: true }).click();
+      await openOthers(page, 'Anteckningar'); await page.getByRole('button', { name: 'Öppna anteckning Idéer', exact: true }).click();
       const text = page.getByRole('textbox', { name: 'Anteckningens text', exact: true });
       const selectWord = word => text.evaluate((element, word) => {
         const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT); let node = walker.nextNode();
@@ -325,7 +325,7 @@ async function mouseDrag(page, fromName, target, position = 'top') {
       assert.match((await cache(page)).notes[0].content, /<b>Det<\/b>/, 'The keyboard shortcut also saves.');
       await text.press('ControlOrMeta+End'); await pause(100);
       assert.equal(await bubble.count(), 0, 'The bar disappears when nothing is selected.');
-      await page.reload(); await openOthers(page, 'Notes'); await page.getByRole('button', { name: /^Öppna anteckning/ }).click();
+      await page.reload(); await openOthers(page, 'Anteckningar'); await page.getByRole('button', { name: /^Öppna anteckning/ }).click();
       assert.equal(await text.locator('b').count(), 2); assert.equal(await text.locator('i').count(), 1);
       await screenshot(page, 'notes-bold-italic.png');
     });
@@ -333,7 +333,7 @@ async function mouseDrag(page, fromName, target, position = 'top') {
 
   await check('Notes on iPhone: the format bar appears below the selection, clear of the native menu', async () => {
     await withPage({ notes: [{ ...note, content: '<div>Markera mig snabbt.</div>' }] }, async page => {
-      await openOthers(page, 'Notes'); await page.getByRole('button', { name: 'Öppna anteckning Idéer', exact: true }).tap();
+      await openOthers(page, 'Anteckningar'); await page.getByRole('button', { name: 'Öppna anteckning Idéer', exact: true }).tap();
       const text = page.getByRole('textbox', { name: 'Anteckningens text', exact: true });
       await text.tap();
       await text.evaluate(element => { const node = element.querySelector('div').firstChild; const range = document.createRange(); range.setStart(node, 8); range.setEnd(node, 11); const selection = getSelection(); selection.removeAllRanges(); selection.addRange(range); });
@@ -351,7 +351,7 @@ async function mouseDrag(page, fromName, target, position = 'top') {
   const notes = [note, { id: 'note-two', title: 'Inköp', content: '<div>Mjölk</div>', font: 'system', createdAt: stamp, updatedAt: '2026-10-02T09:00:00.000Z' }];
   if (engine === 'chromium') await check('Swiping a note from right to left reveals Ta bort; tap closes, delete removes and Ångra restores', async () => {
     await withPage({ notes }, async (page, context) => {
-      await openOthers(page, 'Notes');
+      await openOthers(page, 'Anteckningar');
       const item = page.getByRole('button', { name: 'Öppna anteckning Idéer', exact: true });
       const remove = page.getByRole('button', { name: 'Ta bort anteckning Idéer', exact: true });
       assert.equal(await remove.isVisible(), false, 'The delete action is hidden until swiped.');
@@ -388,7 +388,7 @@ async function mouseDrag(page, fromName, target, position = 'top') {
 
   await check('A mouse drag to the left also reveals delete on desktop, and Escape closes it', async () => {
     await withPage({ notes }, async page => {
-      await openOthers(page, 'Notes');
+      await openOthers(page, 'Anteckningar');
       const box = await page.getByRole('button', { name: 'Öppna anteckning Inköp', exact: true }).boundingBox();
       await page.mouse.move(box.x + box.width - 20, box.y + box.height / 2); await page.mouse.down();
       await page.mouse.move(box.x + box.width - 140, box.y + box.height / 2, { steps: 10 }); await page.mouse.up(); await pause(320);
@@ -759,11 +759,11 @@ async function mouseDrag(page, fromName, target, position = 'top') {
     });
   });
 
-  await check('Birthdays show an Upcoming · 30 dagar overview at the top, soonest first, with colours, opening the person on tap', async () => {
+  await check('Birthdays show an Kommande · 30 dagar overview at the top, soonest first, with colours, opening the person on tap', async () => {
     const people = [person('far', 'Långt bort', '1962-12-03', 'Familj'), person('g', 'Grön', '1980-11-05', null), person('r', 'Röd', '1988-10-13', 'Vänner'), person('y', 'Gul', '1990-10-20', null)];
     await withPage({ birthdays: people }, async page => {
       await openBirthdays(page);
-      const section = dialog(page).getByRole('region', { name: 'Upcoming · 30 dagar' });
+      const section = dialog(page).getByRole('region', { name: 'Kommande · 30 dagar' });
       assert.ok((await section.boundingBox()).y < (await dialog(page).locator('.birthday-toolbar').boundingBox()).y, 'The overview sits above the list.');
       assert.deepEqual(await section.locator('[data-upcoming-id]').evaluateAll(rows => rows.map(row => `${row.dataset.upcomingId}:${row.dataset.urgency}`)), ['r:red', 'y:yellow', 'g:green']);
       assert.match(await section.locator('[data-upcoming-id="r"]').textContent(), /7 dagar kvar/);
@@ -773,7 +773,7 @@ async function mouseDrag(page, fromName, target, position = 'top') {
     });
     await withPage({ birthdays: [person('far', 'Långt bort', '1962-12-03', null)] }, async page => {
       await openBirthdays(page);
-      assert.match(await dialog(page).getByRole('region', { name: 'Upcoming · 30 dagar' }).textContent(), /Inga födelsedagar de närmaste 30 dagarna/);
+      assert.match(await dialog(page).getByRole('region', { name: 'Kommande · 30 dagar' }).textContent(), /Inga födelsedagar de närmaste 30 dagarna/);
     });
   });
 
@@ -817,7 +817,7 @@ async function mouseDrag(page, fromName, target, position = 'top') {
       { id: 'idea', title: 'Idéer', content: '<div>Första raden.</div>', font: 'system', createdAt: stamp, updatedAt: '2026-10-06T09:00:00.000Z' },
     ];
     await withPage({ notes: trashNotes }, async page => {
-      await openOthers(page, 'Notes');
+      await openOthers(page, 'Anteckningar');
       assert.deepEqual((await cache(page)).notes.map(entry => entry.id).sort(), ['idea', 'keep', 'old-trash'], 'A note trashed over 30 days ago is removed for good on load.');
       assert.equal(await page.getByRole('button', { name: 'Öppna anteckning Gammal', exact: true }).count(), 0, 'Trashed notes are not in the list.');
       assert.match(await page.locator('.notes-trash-open').textContent(), /Papperskorg1/);
@@ -838,7 +838,7 @@ async function mouseDrag(page, fromName, target, position = 'top') {
       assert.match(await trash.textContent(), /Papperskorgen är tom/);
       await trash.getByRole('button', { name: 'Anteckningar', exact: true }).click();
       await page.getByRole('button', { name: 'Öppna anteckning Idéer', exact: true }).waitFor();
-      await page.reload(); await openOthers(page, 'Notes');
+      await page.reload(); await openOthers(page, 'Anteckningar');
       assert.equal(await page.getByRole('button', { name: /^Öppna anteckning/ }).count(), 2);
     });
   });
@@ -846,7 +846,7 @@ async function mouseDrag(page, fromName, target, position = 'top') {
   if (engine === 'chromium') await check('Notes trash on iPhone: swipe-delete goes to the trash and Töm papperskorgen empties it after confirming', async () => {
     const notes = [{ id: 'a', title: 'Alfa', content: '<div>A</div>', font: 'system', createdAt: stamp, updatedAt: '2026-10-06T09:00:00.000Z' }, { id: 'b', title: 'Beta', content: '<div>B</div>', font: 'system', createdAt: stamp, updatedAt: '2026-10-05T09:00:00.000Z' }];
     await withPage({ notes }, async (page, context) => {
-      await openOthers(page, 'Notes');
+      await openOthers(page, 'Anteckningar');
       const cdp = await context.newCDPSession(page);
       for (const title of ['Alfa', 'Beta']) {
         const box = await page.getByRole('button', { name: `Öppna anteckning ${title}`, exact: true }).boundingBox(); const point = { x: box.x + box.width - 20, y: box.y + box.height / 2, radiusX: 5, radiusY: 5, force: 1, id: 1 };

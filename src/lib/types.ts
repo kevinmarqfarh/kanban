@@ -93,7 +93,7 @@ export interface Workout {
 
 export type NutritionUnit = 'st' | 'ml' | 'l' | 'g' | 'portion'
 
-export type NutritionTime = 'morning' | 'evening'
+export type NutritionTime = 'morning' | 'midday' | 'evening' | 'anytime'
 
 export interface NutritionHabit {
   id: string
@@ -133,6 +133,7 @@ export interface Note {
   title: string
   content: string
   font: NoteFont
+  pinned?: boolean
   createdAt: string
   updatedAt: string
   // Set when the note is moved to the trash; it is removed for good 30 days later.

@@ -1,4 +1,4 @@
-import { Moon, Sun } from 'lucide-react'
+import { Clock, Moon, Sun } from 'lucide-react'
 import type { NutritionTime } from '../lib/types'
 import { nutritionTimeLabel } from '../lib/nutritionTime'
 
@@ -6,6 +6,6 @@ import { nutritionTimeLabel } from '../lib/nutritionTime'
 export function NutritionTimePill({ time, className = '' }: { time?: NutritionTime | null; className?: string }) {
   const label = nutritionTimeLabel(time)
   if (!label || !time) return null
-  const Icon = time === 'morning' ? Sun : Moon
+  const Icon = time === 'morning' ? Sun : time === 'evening' ? Moon : Clock
   return <span className={`time-pill time-pill-${time} ${className}`} data-time={time}><Icon size={11} strokeWidth={2.2} aria-hidden="true" />{label}</span>
 }

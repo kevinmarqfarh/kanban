@@ -24,7 +24,7 @@ const navNotes = async page => {
   // Notes open fullscreen, so return to the list first when a note is open.
   if (await page.locator('.note-editor').count()) { await page.getByRole('button', { name: 'Anteckningar', exact: true }).click(); await page.locator('.note-editor').waitFor({ state: 'detached' }); return; }
   await page.locator('.bottom-nav').getByRole('button', { name: 'Others', exact: true }).click();
-  await page.getByRole('button', { name: /^Notes(?:\s|$)/ }).click();
+  await page.getByRole('button', { name: /^Anteckningar(?:\s|$)/ }).click();
 };
 const text = page => page.getByRole('textbox', { name: 'Anteckningens text', exact: true });
 const openNote = async (page, title) => { await navNotes(page); await page.getByRole('button', { name: `Öppna anteckning ${title}`, exact: true }).click(); };

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowLeft, Bold, RotateCcw, Check, FileText, Italic, List, ListOrdered, Plus, Search, Trash2 } from 'lucide-react'
+import { ArrowLeft, Bold, RotateCcw, Check, FileText, Italic, List, ListOrdered, Pin, Plus, Search, Trash2 } from 'lucide-react'
 import type { Note, NoteFont, NoteLinkKind, Workspace } from '../lib/types'
 import { newId } from '../lib/helpers'
 import { NOTE_TRASH_DAYS, isTrashed, noteLinkItems, noteLinkLabels, notePlainText, sanitizeNoteHtml, trashDaysLeft, type NoteLinkItem } from '../lib/notes'
@@ -166,6 +166,7 @@ function NoteEditor({ note, workspace, onSave, onDelete, onOpenLink, onBack, ini
       <button className="button ghost note-focus-exit" onClick={onBack} title="Tillbaka till anteckningar (Esc)"><ArrowLeft size={16} /><span>Anteckningar</span></button>
       <span className="note-save-state" role="status">{saved ? <><Check size={13} />Sparat</> : 'Inte sparat'}</span>
       {focusMode && <span className="note-word-count" aria-live="off">{words === 1 ? '1 ord' : `${words} ord`}</span>}
+      <button className="icon-button" aria-label={note.pinned ? "Lossa anteckning" : "Fäst överst"} title={note.pinned ? "Lossa anteckning" : "Fäst överst"} aria-pressed={!!note.pinned} onClick={() => persist({ pinned: !note.pinned })}><Pin size={17} /></button>
       <button className="icon-button danger note-focus-delete" aria-label="Ta bort anteckning" title="Ta bort anteckning" onClick={() => { const failure = onDelete(note.id); if (failure) setError(failure); else onBack() }}><Trash2 size={17} /></button>
     </div>
     <input className="note-title-input" aria-label="Anteckningens titel" placeholder="Ny anteckning" maxLength={160} value={title} onChange={event => { setTitle(event.target.value); persist({ title: event.target.value }); if (focusMode) setTyping(true) }} />
@@ -215,7 +216,7 @@ export function Notes({ workspace, onSave, onDelete, onRestore, onPurge, onEmpty
     if (!failure) setRemoved(null)
   }
   const all = workspace.notes ?? []
-  const notes = all.filter(note => !isTrashed(note)).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+  const notes = all.filter(note => !isTrashed(note)).sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned) || b.updatedAt.localeCompare(a.updatedAt))
   const trash = all.filter(isTrashed).sort((a, b) => (b.deletedAt ?? '').localeCompare(a.deletedAt ?? ''))
   // A note moved to the trash (here or in another tab) closes.
   const active = opened && !trash.some(note => note.id === opened.id) ? notes.find(note => note.id === opened.id) ?? opened : null
@@ -237,14 +238,14 @@ export function Notes({ workspace, onSave, onDelete, onRestore, onPurge, onEmpty
       {error && <p className="note-error" role="alert">{error}</p>}
       {confirmPurge === 'all' && <div className="form-message delete-confirm notes-trash-confirm"><p>Radera {trash.length === 1 ? 'anteckningen' : `alla ${trash.length} anteckningar`} för alltid?</p><button className="button secondary" type="button" onClick={() => setConfirmPurge(null)}>Behåll</button><button className="button primary danger" type="button" onClick={emptyTrash}>Radera</button></div>}
       <div className="notes-list">{trash.map(note => { const days = trashDaysLeft(note); return <article className="notes-trash-row" key={note.id} data-trash-note-id={note.id}>
-        <div className="note-list-item"><strong>{noteTitle(note)}</strong><span>{preview(note)}</span><time dateTime={note.deletedAt ?? undefined}>{days <= 1 ? 'Raderas idag' : `${days} dagar kvar`}</time></div>
+        <div className="note-list-item"><strong>{note.pinned && <Pin size={13} aria-label="Fäst" />} {noteTitle(note)}</strong><span>{preview(note)}</span><time dateTime={note.deletedAt ?? undefined}>{days <= 1 ? 'Raderas idag' : `${days} dagar kvar`}</time></div>
         {confirmPurge === note.id ? <div className="notes-trash-actions"><button className="button secondary small" type="button" onClick={() => setConfirmPurge(null)}>Behåll</button><button className="button primary small danger" type="button" aria-label={`Radera ${noteTitle(note)} för alltid`} onClick={() => purge(note.id)}>Radera för alltid</button></div>
           : <div className="notes-trash-actions"><button className="button secondary small" type="button" aria-label={`Återställ ${noteTitle(note)}`} onClick={() => restore(note)}><RotateCcw size={14} />Återställ</button><button className="icon-button danger" type="button" aria-label={`Radera ${noteTitle(note)}`} onClick={() => setConfirmPurge(note.id)}><Trash2 size={16} /></button></div>}
       </article> })}</div>
       {!trash.length && <p className="notes-empty">Papperskorgen är tom.</p>}
     </aside> : <aside className="notes-sidebar" aria-label="Anteckningar"><div className="notes-list-heading"><span>{notes.length} {notes.length === 1 ? 'anteckning' : 'anteckningar'}</span><button className="button primary" onClick={create}><Plus size={16} />Ny</button></div><label className="notes-search"><Search size={16} /><input type="search" aria-label="Sök anteckningar" placeholder="Sök anteckningar" value={query} onChange={event => setQuery(event.target.value)} /></label>{removed && <div className="notes-undo" role="status"><span>Flyttad till papperskorgen.</span><button className="button ghost small" type="button" onClick={undoRemove}>Ångra</button></div>}
       {error && !active && <p className="note-error" role="alert">{error}</p>}
-      <div className="notes-list">{matches.map(note => <SwipeRow key={note.id} open={swiped === note.id} onOpenChange={open => setSwiped(open ? note.id : current => current === note.id ? null : current)} onDelete={() => removeFromList(note)} deleteLabel={`Ta bort anteckning ${noteTitle(note)}`}><button className={`note-list-item${active?.id === note.id ? ' active' : ''}`} data-note-list-id={note.id} aria-label={`Öppna anteckning ${noteTitle(note)}`} aria-pressed={active?.id === note.id} onClick={() => { setOpened(note); setError(null); setSwiped(null) }}><strong>{noteTitle(note)}</strong><span>{preview(note)}</span><time dateTime={note.updatedAt}>{new Date(note.updatedAt).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' })}</time></button></SwipeRow>)}</div>{!notes.length && <p className="notes-empty">Inga anteckningar ännu.</p>}{notes.length > 0 && !matches.length && <p className="notes-empty">Inga anteckningar hittades.</p>}
+      <div className="notes-list">{matches.map(note => <SwipeRow key={note.id} open={swiped === note.id} onOpenChange={open => setSwiped(open ? note.id : current => current === note.id ? null : current)} onDelete={() => removeFromList(note)} deleteLabel={`Ta bort anteckning ${noteTitle(note)}`}><button className={`note-list-item${active?.id === note.id ? ' active' : ''}`} data-note-list-id={note.id} aria-label={`Öppna anteckning ${noteTitle(note)}`} aria-pressed={active?.id === note.id} onClick={() => { setOpened(note); setError(null); setSwiped(null) }}><strong>{note.pinned && <Pin size={13} aria-label="Fäst" />} {noteTitle(note)}</strong><span>{preview(note)}</span><time dateTime={note.updatedAt}>{new Date(note.updatedAt).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' })}</time></button></SwipeRow>)}</div>{!notes.length && <p className="notes-empty">Inga anteckningar ännu.</p>}{notes.length > 0 && !matches.length && <p className="notes-empty">Inga anteckningar hittades.</p>}
       <button className="notes-trash-open" type="button" onClick={() => { setView('trash'); setSwiped(null) }}><Trash2 size={15} /><span>Papperskorg</span><span className="count-badge">{trash.length}</span></button>
     </aside>}
     <section className="notes-writing-area">{active ? <NoteEditor key={active.id} note={active} initialError={error} workspace={workspace} onSave={onSave} onDelete={id => { const failure = onDelete(id); if (!failure) { setRemoved(active); setView('list') } return failure }} onOpenLink={(kind, id) => onOpenLink(kind, id, active.id)} onBack={() => { setOpened(null); setError(null) }} /> : <div className="notes-start"><FileText size={28} strokeWidth={1.3} /><p>En plats för dina anteckningar.</p><button className="button secondary" onClick={create}><Plus size={16} />Ny anteckning</button></div>}</section>

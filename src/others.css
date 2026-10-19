@@ -162,3 +162,19 @@
 .recipe-cuisine-chip { background: var(--accent-soft); color: var(--ink); border: 1px solid var(--line-strong); }
 .recipe-filter-help { margin: 0 0 -7px; }
 @media (max-width: 760px) { .recipe-content-box { padding: 16px; } .recipe-content-box .recipe-steps { font-size: 15px; } }
+
+.others-module-copy { display: grid; gap: 5px; flex: 1; min-width: 0; text-align: left; }
+.others-module-copy small { color: var(--ink-secondary); font-size: 12px; line-height: 1.4; }
+.recipe-summary { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+.recipe-summary span { padding: 7px 10px; border: 1px solid var(--line); border-radius: 10px; font-size: 13px; }
+.recipe-ingredient-list { list-style: none; padding: 0; margin: 0; }
+.recipe-ingredient-list li + li { margin-top: 8px; }
+.recipe-ingredient-list label { display: flex; gap: 12px; align-items: baseline; padding: 5px 0; cursor: pointer; line-height: 1.6; }
+.recipe-ingredient-list input { flex-shrink: 0; }
+.recipe-ingredient-list input:checked + span { text-decoration: line-through; opacity: .65; }
+.recipe-method-list { padding-left: 24px; margin-bottom: 0; }
+.recipe-method-list li { padding-left: 6px; line-height: 1.7; margin-bottom: 12px; }
+.habit-time-options { flex-wrap: wrap; }
+.habit-time-options button { flex: 1 1 130px; }
+
+.others-module-copy strong { color: var(--ink); font-size: 15px; font-weight: 500; }

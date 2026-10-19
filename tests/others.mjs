@@ -126,7 +126,7 @@ assert.equal(mergeWorkspaceChanges(workspace, local, { ...remote, workouts: [] }
 
 console.log('Others domain passed: Monday/ISO weeks, DST, day navigation, raw workout copy, daily nutrition state, safe recipe links, optional-collection validation and stale merges.')
 
-const { recipeContent } = await module('../src/lib/recipeContent.ts')
+const { recipeContent, recipeSummary, recipeIngredientLines, recipeMethodSteps } = await module('../src/lib/recipeContent.ts')
 const { recipeCatalog, availableRecipes } = await module('../src/lib/recipeCatalog.ts')
 assert.equal(recipeCatalog.length, 100)
 assert.ok(isWorkspace({ ...createEmptyWorkspace(), recipes: recipeCatalog }))
@@ -147,3 +147,13 @@ assert.equal(refreshed.ingredients, recipeCatalog[0].ingredients)
 assert.deepEqual(recipeContent(recipe), { ingredients: '', method: recipe.steps, notes: '' })
 assert.deepEqual(recipeContent({ ...recipe, steps: '4 portioner\n\nIngredienser: 2 dl linser\n\nGör så här: Koka linser.\n\nFrys: Ja.' }), { ingredients: '2 dl linser', method: 'Koka linser.', notes: '4 portioner\n\nFrys: Ja.' })
 console.log('Recipe structure passed: 100 complete recipes, cuisine labels, refreshed favorites and legacy personal recipe text.')
+
+assert.deepEqual(recipeSummary('Cirka 4 vuxenportioner.\n35 minuter · budget cirka 15–25 kr/portion'), ['Cirka 4 vuxenportioner', '35 minuter', 'budget cirka 15–25 kr/portion'])
+assert.deepEqual(recipeSummary('En egen rätt utan angivna mängder.'), [])
+assert.deepEqual(recipeIngredientLines('1,5 dl ris, 2 ägg\nSalt'), ['1,5 dl ris', '2 ägg', 'Salt'])
+assert.deepEqual(recipeMethodSteps('Koka riset. Rör om. Servera varmt.'), ['Koka riset.', 'Rör om.', 'Servera varmt.'])
+assert.deepEqual(recipeMethodSteps('Koka riset. Rör om.\nServera.'), ['Koka riset. Rör om.', 'Servera.'])
+for (const item of recipeCatalog) assert.equal(recipeSummary(item.notes).length, 3, item.title)
+const pinnedNote = { id: 'pinned', title: 'En anteckning', content: '', font: 'system', createdAt: '2026-10-19T12:00:00.000Z', updatedAt: '2026-10-19T12:00:00.000Z', pinned: true }
+assert.ok(isWorkspace({ ...createEmptyWorkspace(), notes: [pinnedNote] }))
+assert.equal(isWorkspace({ ...createEmptyWorkspace(), notes: [{ ...pinnedNote, pinned: 'yes' }] }), false)

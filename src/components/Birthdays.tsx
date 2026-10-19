@@ -242,12 +242,12 @@ export function Birthdays({ birthdays, onSave, onDelete, onReorder, onClose, und
   }
 
   const selectedTag = resolveBirthdayTag(draft?.tag)
-  return <Modal title="Födelsedagar" error={error} onClose={onClose} footer={draft ? <>
+  return <Modal title={draft ? (originalRef.current ? 'Redigera födelsedag' : 'Ny födelsedag') : 'Födelsedagar'} error={error} onClose={onClose} footer={draft ? <>
     <button className="button secondary" type="button" onClick={returnToList}>Avbryt</button>
     <button className="button primary" type="submit" form="birthday-form"><Check size={17} />Spara födelsedag</button>
   </> : <>
     <button className="button secondary" type="button" onClick={onClose}>Stäng</button>
-    <button className="button primary" type="button" onClick={() => openForm()}><Plus size={17} />Lägg till födelsedag</button>
+    <button className="button primary" type="button" onClick={event => { event.preventDefault(); openForm() }}><Plus size={17} />Lägg till födelsedag</button>
   </>}>
     {draft ? <form id="birthday-form" className="birthday-form" onSubmit={save}>
       <label className="field" htmlFor="birthday-name">Namn<input ref={nameRef} id="birthday-name" name="birthday-name" className="input" required autoFocus maxLength={120} autoComplete="off" value={draft.name} onChange={event => { setDraft({ ...draft, name: event.target.value }); setError('') }} /></label>
@@ -276,7 +276,7 @@ export function Birthdays({ birthdays, onSave, onDelete, onReorder, onClose, und
             .map(person => ({ person, days: daysUntilBirthday(person.birthDate), occasion: nextBirthday(person.birthDate) }))
             .sort((a, b) => a.days - b.days || a.person.name.localeCompare(b.person.name, 'sv'))
           return <section className="birthday-upcoming" aria-labelledby="birthday-upcoming-title">
-            <div className="birthday-upcoming-heading"><h3 id="birthday-upcoming-title">Upcoming · 30 dagar</h3><span className="count-badge">{soon.length}</span></div>
+            <div className="birthday-upcoming-heading"><h3 id="birthday-upcoming-title">Kommande · 30 dagar</h3><span className="count-badge">{soon.length}</span></div>
             {soon.length ? <ul>{soon.map(({ person, days, occasion }) => <li key={person.id}><button type="button" className="birthday-upcoming-row" data-upcoming-id={person.id} data-urgency={birthdayUrgency(days) ?? undefined} aria-label={`${person.name}, ${birthdayCountdownLabel(days).toLocaleLowerCase('sv')}, fyller ${occasion.age} år`} onClick={() => openForm(person)}>
               <span className="birthday-upcoming-name"><strong>{person.name}</strong><small>fyller {occasion.age} · {occasionLabel(occasion.date, today)}{person.tag ? ` · ${person.tag}` : ''}</small></span>
               <span className="birthday-upcoming-when">{birthdayCountdownLabel(days)}</span>

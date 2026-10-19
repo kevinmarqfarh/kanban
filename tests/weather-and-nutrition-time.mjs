@@ -95,7 +95,7 @@ assert.deepEqual(parsePlaces(null), [])
 
 /* ---------------- Morgon / Kväll ---------------- */
 const { nutritionTimeLabel, NUTRITION_TIME_OPTIONS } = time
-assert.deepEqual(NUTRITION_TIME_OPTIONS.map(option => [option.value, option.label]), [['morning', 'Morgon'], ['evening', 'Kväll']], 'Each supplement is taken either in the morning or in the evening.')
+assert.deepEqual(NUTRITION_TIME_OPTIONS.map(option => [option.value, option.label]), [['morning', 'Morgon'], ['midday', 'Mitt på dagen'], ['evening', 'Kväll'], ['anytime', 'När som helst']], 'All supported daily habit times are available.')
 assert.equal(nutritionTimeLabel('morning'), 'Morgon')
 assert.equal(nutritionTimeLabel('evening'), 'Kväll')
 assert.equal(nutritionTimeLabel(undefined), null, 'Habits saved before the choice existed get no pill.')
@@ -110,3 +110,7 @@ assert.equal(isWorkspace({ ...workspace, nutritionHabits: [habit('a', 'noon')] ,
 assert.equal(isWorkspace({ ...workspace, nutritionHabits: [habit('a', 3)], nutritionCompletions: [] }), false)
 
 console.log('Weather and Morgon/Kväll passed: WMO icons, night icons, Monday–Sunday range, rain chance in the strip, forecast cache/staleness, place search; Morgon/Kväll labels, legacy habits without a pill, and validation.')
+
+assert.equal(nutritionTimeLabel('midday'), 'Mitt på dagen')
+assert.equal(nutritionTimeLabel('anytime'), 'När som helst')
+for (const value of ['midday', 'anytime']) assert.ok(isWorkspace({ ...workspace, nutritionHabits: [habit('new', value)] }))

@@ -65,7 +65,7 @@ const { orderHabitsByTime, currentNutritionTime } = time
 const habits = [{ id: 'd', time: 'morning' }, { id: 'm', time: 'evening' }, { id: 'o', time: 'morning' }, { id: 'w', time: null }, { id: 'z', time: 'evening' }, { id: 'p' }]
 const at = hour => new Date(2026, 9, 18, hour, 0)
 assert.equal(currentNutritionTime(at(7)), 'morning')
-assert.equal(currentNutritionTime(at(14)), 'morning')
+assert.equal(currentNutritionTime(at(14)), 'midday')
 assert.equal(currentNutritionTime(at(15)), 'evening')
 assert.equal(currentNutritionTime(at(23)), 'evening')
 assert.equal(currentNutritionTime(at(2)), 'evening', 'Late night is still evening.')
@@ -131,3 +131,5 @@ assert.equal(restoreRemoved(before, after, before).tasks.length, 3)
 assert.equal(restoreRemoved(before, after, after).columns, after.columns)
 
 console.log('Improvements passed: quick-add dates (weekdays, idag/imorgon/övermorgon, 24/10, 2 maj, ISO, kl/HH:MM, false friends left alone), supplements by time of day, the weather sentence incl. tomorrow and frost, sun-based dark mode, and Ångra restoring exactly what was removed.')
+
+assert.deepEqual(orderHabitsByTime([{ id: 'am', time: 'morning' }, { id: 'any', time: 'anytime' }, { id: 'noon', time: 'midday' }, { id: 'old' }], at(12)).map(h => h.id), ['noon', 'any', 'old', 'am'])
