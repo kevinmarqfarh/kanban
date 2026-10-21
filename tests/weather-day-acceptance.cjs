@@ -67,9 +67,12 @@ const noSidewaysScroll = page => page.evaluate(() => document.documentElement.sc
       assert.equal(await rows.count(), 24, 'Hour by hour.');
       const row = time => rows.filter({ has: page.locator('th', { hasText: time }) }).locator('td').allTextContents();
       assert.deepEqual((await row('11:00')).slice(1, 4), ['77 %', '1,2 mm', '14°']);
-      assert.ok(await sheet.locator('.wxp-chart .wxp-chart-bar').count() > 15, 'Chance of precipitation as bars.');
-      assert.equal(await sheet.locator('.wxp-chart .wxp-chart-line').count(), 1, 'Temperature as a line.');
-      assert.match(await sheet.locator('.wxp-chart').getAttribute('aria-label'), /högst 14 grader/);
+      assert.ok(await sheet.locator('.wxp-hour-chart .wxp-chart-bar').count() > 15, 'Precipitation amount as bars.');
+      assert.equal(await sheet.locator('.wxp-hour-chart .wxp-chart-line').count(), 1, 'Temperature as a line.');
+      assert.equal(await sheet.locator('.wxp-hour-chart').count(), 2);
+      assert.equal(await sheet.locator('.wxp-hour-symbols > div').count(), 24);
+      assert.match(await sheet.locator('.wxp-timeline-summary').textContent(), /Nederbörd väntas cirka kl/);
+      assert.ok(await sheet.locator('.wxp-timeline-scroll').evaluate(el => el.scrollWidth > el.clientWidth));
       assert.equal(await sheet.locator('.wxp-sheet-note').count(), 0, 'Hourly steps need no note.');
       assert.equal(state.smhiCalls.length, 1, 'The sheet uses the forecast Home already has.');
       await page.screenshot({ path: path.join(out, 'phone-day.png'), animations: 'disabled' });

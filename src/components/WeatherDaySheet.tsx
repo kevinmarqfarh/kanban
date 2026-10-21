@@ -64,26 +64,50 @@ export function WeatherDaySheet({ forecast, date, today, placeName, onSelect, on
   </Modal>
 }
 
-/** Temperature as a line, chance of precipitation as blue bars, on one shared time axis. */
+/** Temperature and precipitation share a scrollable time axis. Amounts cover the source interval. */
 function DayChart({ steps }: { steps: WeatherStep[] }) {
-  const width = 320, height = 132, top = 18, bottom = 22, left = 6, right = 6
-  const from = Math.min(...steps.map(step => Date.parse(step.start)))
-  const to = Math.max(...steps.map(step => Date.parse(step.time)))
-  const x = (ms: number) => left + ((ms - from) / Math.max(1, to - from)) * (width - left - right)
+  const from = Date.parse(steps[0].start)
+  const to = Date.parse(steps[steps.length - 1].time)
+  const width = Math.max(320, steps.length * 58), left = 30, right = 30
+  const x = (ms: number) => left + (ms - from) / Math.max(1, to - from) * (width - left - right)
   const temps = steps.map(step => step.temp)
-  const lo = Math.min(...temps) - 1, hi = Math.max(...temps) + 1
-  const y = (temp: number) => top + (1 - (temp - lo) / Math.max(1, hi - lo)) * (height - top - bottom - 18)
-  const barBase = height - bottom
-  const points = steps.map(step => [x(Date.parse(step.time)), y(step.temp)] as const)
-  const line = points.map(([px, py], index) => `${index ? 'L' : 'M'}${px.toFixed(1)} ${py.toFixed(1)}`).join('')
-  const warmest = steps.reduce((a, b) => b.temp > a.temp ? b : a), coldest = steps.reduce((a, b) => b.temp < a.temp ? b : a)
-  const ticks = steps.filter(step => new Date(step.time).getHours() % 6 === 0)
-  return <svg className="wxp-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`Temperaturen går från ${Math.round(steps[0].temp)} till ${Math.round(steps[steps.length - 1].temp)} grader, högst ${Math.round(warmest.temp)} grader klockan ${formatClock(warmest.time)}.`}>
-    <line className="wxp-chart-base" x1={left} x2={width - right} y1={barBase} y2={barBase} />
-    {steps.map(step => step.rain ? <rect key={`bar-${step.time}`} className="wxp-chart-bar" x={x(Date.parse(step.start)) + 0.6} width={Math.max(1.5, x(Date.parse(step.time)) - x(Date.parse(step.start)) - 1.2)} y={barBase - (step.rain / 100) * 34} height={(step.rain / 100) * 34} rx="1.5" /> : null)}
-    <path className="wxp-chart-line" d={line} />
-    {points.length === 1 && <circle className="wxp-chart-dot" cx={points[0][0]} cy={points[0][1]} r="3" />}
-    {[warmest, coldest].filter((step, index, all) => index === 0 || step !== all[0]).map(step => <text key={`t-${step.time}`} className="wxp-chart-label" x={Math.min(width - 14, Math.max(14, x(Date.parse(step.time))))} y={y(step.temp) - 6} textAnchor="middle">{degrees(step.temp)}</text>)}
-    {ticks.map(step => <text key={`x-${step.time}`} className="wxp-chart-tick" x={Math.min(width - 10, Math.max(10, x(Date.parse(step.time))))} y={height - 6} textAnchor="middle">{hourLabel(step.time)}</text>)}
-  </svg>
+  const lo = Math.min(...temps) - 2, hi = Math.max(...temps) + 2
+  const y = (temp: number) => 32 + (hi - temp) / (hi - lo) * 90
+  const line = steps.map((step, i) => `${i ? 'L' : 'M'}${x(Date.parse(step.time))} ${y(step.temp)}`).join(' ')
+  const amounts = steps.flatMap(step => step.mm === null ? [] : [step.mm])
+  const maximum = Math.max(1, ...amounts)
+  const wet = steps.find(step => (step.mm ?? 0) > 0)
+  const summary = wet
+    ? `Nederbörd väntas cirka kl. ${formatClock(wet.start)}–${formatClock(wet.time)}.`
+    : amounts.length === steps.length ? 'Ingen nederbörd väntas under perioden.' : 'Uppgifter om nederbörd saknas för delar av perioden.'
+  return <section className="wxp-timeline" aria-label="Prognos timme för timme">
+    <div className="wxp-timeline-heading"><strong>Timme för timme</strong><span>Svep för fler timmar →</span></div>
+    <p className="wxp-timeline-summary">{summary}</p>
+    <div className="wxp-timeline-scroll" tabIndex={0} role="region" aria-label="Temperatur och nederbörd, rulla i sidled">
+      <div style={{ width, minWidth: '100%' }}>
+        <div className="wxp-hour-symbols" style={{ width }}>{steps.map(step => <div key={step.time} style={{ left: x(Date.parse(step.time)) }}>
+          <span>{hourLabel(step.time)}</span><WeatherIcon kind={stepKind(step)} size={24} title={step.label} />
+        </div>)}</div>
+        <svg className="wxp-hour-chart" viewBox={`0 0 ${width} 150`} role="img" aria-label="Temperatur i grader per klockslag">
+          {[lo + 1, (lo + hi) / 2, hi - 1].map((temp, i) => <line key={i} className="wxp-chart-base" x1={left} x2={width - right} y1={y(temp)} y2={y(temp)} />)}
+          {steps.map(step => <line key={step.time} className="wxp-hour-guide" x1={x(Date.parse(step.time))} x2={x(Date.parse(step.time))} y1={20} y2={140} />)}
+          <path className="wxp-chart-line" d={line} />
+          {steps.map(step => <g key={step.time}><circle className="wxp-chart-dot" cx={x(Date.parse(step.time))} cy={y(step.temp)} r="3" /><text className="wxp-chart-label" x={x(Date.parse(step.time))} y={y(step.temp) - 12} textAnchor="middle">{degrees(step.temp)}</text></g>)}
+        </svg>
+        <div className="wxp-rain-heading">Nederbörd <span>mm per prognosintervall</span></div>
+        <svg className="wxp-hour-chart" viewBox={`0 0 ${width} 110`} role="img" aria-label={`Nederbörd i millimeter. ${summary}`}>
+          <line className="wxp-chart-base" x1={left} x2={width - right} y1="78" y2="78" />
+          {steps.map(step => {
+            const start = x(Date.parse(step.start)), end = x(Date.parse(step.time))
+            const height = (step.mm ?? 0) / maximum * 48
+            return <g key={step.time}><title>{formatClock(step.start)}–{formatClock(step.time)}: {step.mm === null ? 'uppgift saknas' : `${number(step.mm)} mm`}</title>
+              {height > 0 && <rect className="wxp-chart-bar" x={start + 3} width={Math.max(2, end - start - 6)} y={78 - height} height={height} rx="3" />}
+              <text className="wxp-chart-label" x={(start + end) / 2} y={height > 0 ? 70 - height : 70} textAnchor="middle">{step.mm === null ? '–' : number(step.mm)}</text>
+              <text className="wxp-chart-tick" x={end} y="100" textAnchor="middle">{hourLabel(step.time)}</text>
+            </g>
+          })}
+        </svg>
+      </div>
+    </div>
+  </section>
 }

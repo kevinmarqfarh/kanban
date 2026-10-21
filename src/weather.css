@@ -31,3 +31,19 @@
 
 .wxp-sheet-credit { color: var(--ink-muted); font-size: 11px; }
 .wxp-sheet-credit a { color: inherit; }
+
+.wxp-timeline { min-width: 0; padding: 14px 0; border-top: 1px solid var(--line-strong); border-bottom: 1px solid var(--line-strong); }
+.wxp-timeline-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.wxp-timeline-heading strong, .wxp-rain-heading { color: var(--ink); font-size: 14px; font-weight: 600; }
+.wxp-timeline-heading > span, .wxp-rain-heading span { color: var(--ink-muted); font-size: 11px; font-weight: 400; }
+.wxp-timeline-scroll { overflow-x: auto; overscroll-behavior-x: contain; margin-top: 16px; padding-bottom: 4px; }
+.wxp-timeline-scroll:focus-visible { outline: 2px solid #3a8fe6; outline-offset: 2px; }
+.wxp-hour-symbols { height: 64px; position: relative; }
+.wxp-hour-symbols > div { position: absolute; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--ink-secondary); font-size: 12px; font-variant-numeric: tabular-nums; }
+.wxp-hour-chart { display: block; width: 100%; height: auto; }
+.wxp-hour-chart .wxp-chart-label { font-size: 12px; }
+.wxp-hour-chart .wxp-chart-bar { opacity: .8; }
+.wxp-hour-guide { stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 2 5; opacity: .4; }
+.wxp-rain-heading { padding: 12px 12px 0; display: flex; gap: 10px; align-items: baseline; }
+
+.wxp-timeline-summary { color: var(--ink-secondary); font-size: 12px; line-height: 1.5; }
