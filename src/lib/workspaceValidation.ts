@@ -39,6 +39,10 @@ export function isWorkspace(value: unknown): value is Workspace {
     && isValidBirthdayTag(birthday.tag)))) return false
   const optional = (key: string, validate: (entry: unknown) => boolean) => value[key] === undefined
     || (Array.isArray(value[key]) && value[key].every(validate))
+  if (!optional('overtime', entry => object(entry) && filled(entry.id) && date(entry.date)
+    && typeof entry.startTime === 'string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(entry.startTime)
+    && typeof entry.endTime === 'string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(entry.endTime) && entry.startTime !== entry.endTime
+    && typeof entry.comment === 'string' && entry.comment.length <= 4000 && typeof entry.taken === 'boolean' && timestamp(entry.createdAt))) return false
   if (!optional('workouts', entry => object(entry) && filled(entry.id) && date(entry.date)
     && (entry.title === undefined || typeof entry.title === 'string') && timestamp(entry.createdAt)
     && Array.isArray(entry.rows) && entry.rows.every(row => object(row) && filled(row.id) && filled(row.title)
@@ -73,7 +77,7 @@ export function isWorkspace(value: unknown): value is Workspace {
     && unique(workspace.birthdays ?? [])
     && unique(workspace.birthdayNotifications ?? []) && unique(workspace.workouts ?? []) && unique(workspace.nutritionHabits ?? [])
     && unique(workspace.nutritionCompletions ?? []) && unique(workspace.recipes ?? [])
-    && unique(workspace.notes ?? [])
+    && unique(workspace.notes ?? []) && unique(workspace.overtime ?? [])
     && (workspace.workouts ?? []).every(workout => unique(workout.rows))
     && (workspace.nutritionCompletions ?? []).every(entry => workspace.nutritionHabits?.some(habit => habit.id === entry.habitId))
     && workspace.tasks.every(task => workspace.columns.some(column => column.id === task.columnId)

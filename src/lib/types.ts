@@ -83,6 +83,16 @@ export interface WorkoutRow {
   bpm: string
 }
 
+export interface OvertimeEntry {
+  id: string
+  date: string
+  startTime: string
+  endTime: string
+  comment: string
+  taken: boolean
+  createdAt: string
+}
+
 export interface Workout {
   id: string
   date: string
@@ -166,6 +176,7 @@ export interface Workspace {
   // Optional when loading workspaces created before birthdays were introduced.
   birthdays?: Birthday[]
   birthdayNotifications?: BirthdayNotification[]
+  overtime?: OvertimeEntry[]
   workouts?: Workout[]
   nutritionHabits?: NutritionHabit[]
   nutritionCompletions?: NutritionCompletion[]

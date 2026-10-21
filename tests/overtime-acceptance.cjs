@@ -1,0 +1,43 @@
+const assert = require('node:assert/strict');
+const { chromium } = require('playwright');
+(async () => {
+ const browser = await chromium.launch({ headless: true });
+ try {
+ const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+ const errors=[]; page.on('pageerror', e=>errors.push(e.message));
+ await page.goto(process.env.APP_URL || 'http://127.0.0.1:4178');
+ await page.locator('.bottom-nav').getByRole('button', {name:'Others',exact:true}).click();
+ await page.getByRole('button', {name:/^Övertid/}).click();
+ await page.getByRole('button', {name:'Registrera övertid',exact:true}).click();
+ const dialog = page.getByRole('dialog');
+ await dialog.getByLabel('Datum',{exact:true}).fill('2026-10-21');
+ await dialog.getByLabel('Från',{exact:true}).fill('23:30');
+ await dialog.getByLabel('Till',{exact:true}).fill('01:15');
+ await dialog.getByLabel('Kommentar',{exact:true}).fill('Jour – driftstörning');
+ await dialog.getByRole('button',{name:'Spara',exact:true}).click();
+ await page.locator('.overtime-row').waitFor();
+ assert.equal(await page.locator('.overtime-balance').innerText(),'1 h 45 min');
+ await page.reload();
+ await page.locator('.bottom-nav').getByRole('button', {name:'Others',exact:true}).click();
+ await page.getByRole('button', {name:/^Övertid/}).click();
+ assert.match(await page.locator('.overtime-row').innerText(),/Jour – driftstörning/);
+ await page.locator('.overtime-row input[type=checkbox]').check();
+ assert.equal(await page.locator('.overtime-balance').innerText(),'0 h 0 min');
+ await page.locator('.overtime-row input[type=checkbox]').uncheck();
+ assert.equal(await page.locator('.overtime-balance').innerText(),'1 h 45 min');
+ await page.getByRole('button',{name:/Redigera övertid/}).click();
+ await dialog.getByLabel('Till',{exact:true}).fill('02:00');
+ await dialog.getByRole('button',{name:'Spara',exact:true}).click();
+ assert.equal(await page.locator('.overtime-balance').innerText(),'2 h 30 min');
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth > innerWidth),false);
+ await page.screenshot({path:'/private/tmp/forma-overtime-mobile.png',fullPage:true});
+ await page.setViewportSize({width:1280,height:900});
+ await page.screenshot({path:'/private/tmp/forma-overtime-desktop.png',fullPage:true});
+ await page.getByRole('button',{name:/Redigera övertid/}).click();
+ await dialog.getByRole('button',{name:'Ta bort övertid',exact:true}).click();
+ await page.locator('.overtime-row').waitFor({state:'detached'});
+ assert.equal(await page.locator('.overtime-balance').innerText(),'0 h 0 min');
+ assert.deepEqual(errors,[]);
+ console.log('PASS mobile/desktop: overnight creation, reload, taken/undo, editing, deletion, no overflow or runtime errors');
+ } finally { await browser.close(); }
+})().catch(e=>{console.error(e);process.exit(1)});

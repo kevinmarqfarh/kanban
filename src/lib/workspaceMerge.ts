@@ -50,6 +50,7 @@ export function mergeRecordChanges<T extends { id: string }>(base: T, edited: T,
 export function mergeWorkspaceChanges(base: Workspace, edited: Workspace, latest: Workspace): Workspace {
   return {
     ...latest,
+    ...((base.overtime || edited.overtime || latest.overtime) ? { overtime: mergeList(base.overtime ?? [], edited.overtime ?? [], latest.overtime ?? []) } : {}),
     columns: mergeList(base.columns, edited.columns, latest.columns),
     tasks: mergeList(base.tasks, edited.tasks, latest.tasks),
     projects: mergeList(base.projects, edited.projects, latest.projects),
