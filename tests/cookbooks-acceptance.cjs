@@ -23,13 +23,14 @@ fs.mkdirSync(out, { recursive: true });
  }
  async function saveBook() { await dialog.getByRole('button', { name: 'Spara kokbok', exact: true }).click(); await dialog.waitFor({ state: 'detached' }); }
  await page.goto(base); await shelf();
- await create('Chile');
+ await page.getByRole('button', { name: 'Redigera kokbok Chile', exact: true }).click();
  const cover = await page.evaluate(() => { const c = document.createElement('canvas'); c.width = 400; c.height = 500; const ctx = c.getContext('2d'); const g = ctx.createLinearGradient(0, 0, 400, 500); g.addColorStop(0, '#814c2a'); g.addColorStop(1, '#dda669'); ctx.fillStyle = g; ctx.fillRect(0,0,400,500); ctx.fillStyle = '#fff2d6'; ctx.font = '50px Georgia'; ctx.fillText('Chile',120,250); return c.toDataURL('image/png').split(',')[1]; });
  await dialog.getByLabel('Välj omslagsbild', { exact: true }).setInputFiles({ name: 'chile.png', mimeType: 'image/png', buffer: Buffer.from(cover, 'base64') });
  await dialog.getByAltText('Kokbokens omslag').waitFor(); await saveBook();
  assert.equal(await page.locator('.cookbook-card img').count(), 1);
  await page.getByRole('button', { name: 'Öppna kokbok Chile', exact: true }).click();
  await page.getByRole('button', { name: 'Välj från befintliga recept', exact: true }).click();
+ for (const checkbox of await dialog.getByRole('checkbox').all()) await checkbox.uncheck();
  await dialog.getByLabel('Sök bland alla recept', { exact: true }).fill('Porotos');
  await dialog.getByRole('checkbox').first().check();
  await dialog.getByRole('button', { name: 'Spara urval', exact: true }).click();

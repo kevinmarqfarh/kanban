@@ -28,3 +28,18 @@ assert.equal(isWorkspace({ ...base, cookbooks: [book, second] }), true, 'A recip
 const image = 'data:image/jpeg;base64,/9j/2Q=='
 assert.equal(isWorkspace({ ...base, cookbooks: [{ ...book, image }] }), true)
 console.log('PASS cookbook validation, legacy workspaces, images, multiple membership and concurrent edits/deletion')
+
+const catalog = await load('../src/lib/recipeCatalog.ts')
+const { organizeCuisineCookbooks } = await load('../src/lib/cookbooks.ts', { './recipeCatalog': catalog })
+const organized = organizeCuisineCookbooks(createEmptyWorkspace())
+assert.deepEqual(organized.cookbooks.map(book => [book.title, book.recipeIds.length]), [['Chile', 15], ['Iran', 12]])
+assert.equal(organizeCuisineCookbooks(organized), organized, 'Only organize once')
+assert.equal(isWorkspace(organized), true)
+const custom = { ...createEmptyWorkspace(), cookbooks: [{ ...book, title: 'Chile', image }], recipes: [{ id: 'recipe1', title: 'Eget recept', labels: ['Persiskt'] }] }
+const updated = organizeCuisineCookbooks(custom)
+assert.equal(updated.cookbooks[0].id, book.id)
+assert.equal(updated.cookbooks[0].image, image)
+assert.equal(updated.cookbooks[0].recipeIds.filter(id => id === 'recipe1').length, 1)
+assert.ok(updated.cookbooks[1].recipeIds.includes('recipe1'))
+assert.equal(organizeCuisineCookbooks({ ...organized, cookbooks: [] }).cookbooks.length, 0, 'Respect later deletions')
+console.log('PASS Chile/Iran organization, existing covers, personal recipes and one-time import')

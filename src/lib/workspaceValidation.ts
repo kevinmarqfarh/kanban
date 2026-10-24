@@ -53,6 +53,7 @@ export function isWorkspace(value: unknown): value is Workspace {
     && (entry.time === undefined || entry.time === null || entry.time === 'morning' || entry.time === 'evening' || entry.time === 'midday' || entry.time === 'anytime'))) return false
   if (!optional('nutritionCompletions', entry => object(entry) && filled(entry.habitId) && date(entry.date)
     && entry.id === nutritionCompletionId(entry.habitId, entry.date) && typeof entry.completed === 'boolean')) return false
+  if (value.cuisineCookbooksOrganized !== undefined && typeof value.cuisineCookbooksOrganized !== 'boolean') return false
   if (!optional('cookbooks', entry => object(entry) && filled(entry.id) && filled(entry.title) && entry.title.length <= 80
     && timestamp(entry.createdAt) && strings(entry.recipeIds) && entry.recipeIds.every(filled)
     && new Set(entry.recipeIds).size === entry.recipeIds.length && (entry.image === undefined || isRecipeImage(entry.image)))) return false

@@ -188,6 +188,7 @@ export interface Workspace {
   workouts?: Workout[]
   nutritionHabits?: NutritionHabit[]
   nutritionCompletions?: NutritionCompletion[]
+  cuisineCookbooksOrganized?: boolean
   cookbooks?: Cookbook[]
   recipes?: Recipe[]
   notes?: Note[]

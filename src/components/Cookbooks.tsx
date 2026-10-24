@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { ArrowLeft, ArrowRight, BookOpen, Check, Heart, ImagePlus, Library, Pencil, Plus, Trash2 } from 'lucide-react'
 import type { Cookbook, Recipe } from '../lib/types'
 import { newId } from '../lib/helpers'
@@ -60,10 +60,13 @@ function RecipePicker({ book, recipes, onSave, onClose }: { book: Cookbook; reci
   </Modal>
 }
 
-export function Cookbooks({ books, recipes, initialId, onSaveBook, onDeleteBook, onSave, onDelete }: {
+export function Cookbooks({ organized, onOrganize, books, recipes, initialId, onSaveBook, onDeleteBook, onSave, onDelete }: {
+  organized: boolean; onOrganize: () => string | null;
   books: Cookbook[]; recipes: Recipe[]; initialId?: string; onSaveBook: SaveBook; onDeleteBook: (id: string) => string | null;
   onSave: (recipe: Recipe, original?: Recipe, cookbookId?: string) => string | null; onDelete: (id: string) => string | null;
 }) {
+  const [organizeError, setOrganizeError] = useState<string | null>(null)
+  useEffect(() => { if (!organized) setOrganizeError(onOrganize()) }, [organized])
   const [scope, setScope] = useState<string | null>(() => initialId ? 'all' : null)
   const [editing, setEditing] = useState<Cookbook | null | undefined>(undefined)
   const [picking, setPicking] = useState<Cookbook | null>(null)
@@ -79,6 +82,7 @@ export function Cookbooks({ books, recipes, initialId, onSaveBook, onDeleteBook,
     return <span className="cookbook-cover-placeholder"><BookOpen size={38} strokeWidth={1.2} /><span>{entry.title.slice(0, 1).toLocaleUpperCase('sv')}</span></span>
   }
   return <div className="others-content cookbooks">
+    {organizeError && <p className="others-error" role="alert">{organizeError}</p>}
     {!active ? <>
       <header className="cookbooks-heading"><div><p className="eyebrow">Din receptsamling</p><h3>Mina kokböcker</h3><p className="others-help">Smaker, stunder och egna favoriter. Samla dem i en bok.</p></div><button className="button primary" type="button" onClick={() => setEditing(null)}><Plus size={17} />Ny kokbok</button></header>
       <div className="cookbook-library-links"><button type="button" onClick={() => setScope('all')}><Library size={22} /><span><strong>Alla recept</strong><small>{recipes.length} recept · dina egna och Receptbanken</small></span><ArrowRight size={17} /></button><button type="button" onClick={() => setScope('favorites')}><Heart size={22} /><span><strong>Favoriter</strong><small>{favorites.length} sparade recept</small></span><ArrowRight size={17} /></button></div>

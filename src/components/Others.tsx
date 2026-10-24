@@ -14,7 +14,7 @@ import { Overtime } from './Overtime'
 import { formatOvertime, overtimeBalance } from '../lib/overtime'
 
 type Section = 'overtime' | 'workouts' | 'nutrition' | 'recipes' | 'notes'
-export function Others({ workspace, initialSection, initialRecord, initialNoteId, onBirthdays, onSaveOvertime, onDeleteOvertime, onSaveWorkout, onDeleteWorkout, onRestoreWorkout, onSaveHabit, onToggleHabit, onDeleteHabit, onSaveCookbook, onDeleteCookbook, onSaveRecipe, onDeleteRecipe, onSaveNote, onDeleteNote, onRestoreNote, onPurgeNote, onEmptyNoteTrash, onOpenNoteLink }: {
+export function Others({ workspace, initialSection, initialRecord, initialNoteId, onBirthdays, onSaveOvertime, onDeleteOvertime, onSaveWorkout, onDeleteWorkout, onRestoreWorkout, onSaveHabit, onToggleHabit, onDeleteHabit, onOrganizeCookbooks, onSaveCookbook, onDeleteCookbook, onSaveRecipe, onDeleteRecipe, onSaveNote, onDeleteNote, onRestoreNote, onPurgeNote, onEmptyNoteTrash, onOpenNoteLink }: {
   workspace: Workspace;
   initialSection?: Section | null;
   initialRecord?: { kind: NoteLinkKind; id: string } | null;
@@ -28,6 +28,7 @@ export function Others({ workspace, initialSection, initialRecord, initialNoteId
   onSaveHabit: (edited: NutritionHabit, original?: NutritionHabit) => string | null;
   onToggleHabit: (habitId: string, date: string) => string | null;
   onDeleteHabit: (id: string) => string | null;
+  onOrganizeCookbooks: () => string | null;
   onSaveCookbook: (edited: Cookbook, original?: Cookbook) => string | null;
   onDeleteCookbook: (id: string) => string | null;
   onSaveRecipe: (edited: Recipe, original?: Recipe, cookbookId?: string) => string | null;
@@ -61,7 +62,7 @@ export function Others({ workspace, initialSection, initialRecord, initialNoteId
     {section === 'overtime' && <Overtime entries={workspace.overtime ?? []} onSave={onSaveOvertime} onDelete={onDeleteOvertime} />}
     {section === 'workouts' && <Workouts workouts={workspace.workouts ?? []} initialId={initialRecord?.kind === 'workout' ? initialRecord.id : undefined} onSave={onSaveWorkout} onDelete={onDeleteWorkout} onRestore={onRestoreWorkout} />}
     {section === 'nutrition' && <Nutrition workspace={workspace} initialHabitId={initialRecord?.kind === 'nutrition' ? initialRecord.id : undefined} onSave={onSaveHabit} onDelete={onDeleteHabit} onToggle={onToggleHabit} />}
-    {section === 'recipes' && <Cookbooks books={workspace.cookbooks ?? []} onSaveBook={onSaveCookbook} onDeleteBook={onDeleteCookbook} recipes={recipes} initialId={initialRecord?.kind === 'recipe' ? initialRecord.id : undefined} onSave={(edited, original, cookbookId) => onSaveRecipe(edited, workspace.recipes?.some(recipe => recipe.id === edited.id) ? original : undefined, cookbookId)} onDelete={onDeleteRecipe} />}
+    {section === 'recipes' && <Cookbooks organized={!!workspace.cuisineCookbooksOrganized} onOrganize={onOrganizeCookbooks} books={workspace.cookbooks ?? []} onSaveBook={onSaveCookbook} onDeleteBook={onDeleteCookbook} recipes={recipes} initialId={initialRecord?.kind === 'recipe' ? initialRecord.id : undefined} onSave={(edited, original, cookbookId) => onSaveRecipe(edited, workspace.recipes?.some(recipe => recipe.id === edited.id) ? original : undefined, cookbookId)} onDelete={onDeleteRecipe} />}
     {section === 'notes' && <Notes workspace={workspace} initialId={initialNoteId} onSave={onSaveNote} onDelete={onDeleteNote} onRestore={onRestoreNote} onPurge={onPurgeNote} onEmptyTrash={onEmptyNoteTrash} onOpenLink={onOpenNoteLink} />}
   </section>
 }
