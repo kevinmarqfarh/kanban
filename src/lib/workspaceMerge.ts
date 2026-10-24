@@ -51,6 +51,7 @@ export function mergeWorkspaceChanges(base: Workspace, edited: Workspace, latest
   return {
     ...latest,
     ...((base.overtime || edited.overtime || latest.overtime) ? { overtime: mergeList(base.overtime ?? [], edited.overtime ?? [], latest.overtime ?? []) } : {}),
+    ...((base.cookbooks || edited.cookbooks || latest.cookbooks) ? { cookbooks: mergeList(base.cookbooks ?? [], edited.cookbooks ?? [], latest.cookbooks ?? []) } : {}),
     columns: mergeList(base.columns, edited.columns, latest.columns),
     tasks: mergeList(base.tasks, edited.tasks, latest.tasks),
     projects: mergeList(base.projects, edited.projects, latest.projects),

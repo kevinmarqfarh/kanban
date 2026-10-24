@@ -122,6 +122,14 @@ export interface NutritionCompletion {
   completed: boolean
 }
 
+export interface Cookbook {
+  id: string
+  title: string
+  image?: string
+  recipeIds: string[]
+  createdAt: string
+}
+
 export interface Recipe {
   ingredients?: string
   notes?: string
@@ -180,6 +188,7 @@ export interface Workspace {
   workouts?: Workout[]
   nutritionHabits?: NutritionHabit[]
   nutritionCompletions?: NutritionCompletion[]
+  cookbooks?: Cookbook[]
   recipes?: Recipe[]
   notes?: Note[]
 }

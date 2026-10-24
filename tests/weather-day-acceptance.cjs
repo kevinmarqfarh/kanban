@@ -61,6 +61,8 @@ const noSidewaysScroll = page => page.evaluate(() => document.documentElement.sc
       await dialog.getByRole('heading', { name: 'Torsdag 15 oktober' }).waitFor();
       assert.equal(await dialog.locator('.eyebrow').textContent(), 'Väder i Göteborg');
       const sheet = dialog.getByTestId('weather-day');
+      assert.equal(await sheet.locator('.wxp-details').getAttribute('open'), null, 'Details start collapsed.');
+      await sheet.locator('.wxp-details').evaluate(el => { el.open = true });
       assert.equal(await sheet.locator('.wxp-sheet-label').textContent(), 'Regn');
       assert.equal(await sheet.locator('.wxp-sheet-meta').textContent(), 'H: 14°L: 10°87 % risk9,7 mmByar 14 m/s');
       const rows = sheet.locator('.wxp-table tbody tr');
@@ -84,6 +86,8 @@ const noSidewaysScroll = page => page.evaluate(() => document.documentElement.sc
       const { context, page, errors } = await open(browser);
       const dialog = await openDay(page, '2026-10-15');
       const sheet = dialog.getByTestId('weather-day');
+      assert.equal(await sheet.locator('.wxp-details').getAttribute('open'), null, 'Details start collapsed.');
+      await sheet.locator('.wxp-details').evaluate(el => { el.open = true });
       const rows = sheet.locator('.wxp-table tbody tr');
       assert.equal(await sheet.getByRole('button', { name: /oktober$/ }).count(), 10, 'Ten days to choose from.');
       assert.equal(await sheet.getByRole('button', { name: 'Torsdag 15 oktober' }).getAttribute('aria-pressed'), 'true');
@@ -94,6 +98,7 @@ const noSidewaysScroll = page => page.evaluate(() => document.documentElement.sc
       await sheet.getByRole('button', { name: 'Onsdag 14 oktober' }).click();
       await dialog.getByRole('heading', { name: 'Onsdag 14 oktober' }).waitFor();
       assert.equal(await rows.first().locator('th').textContent(), '08:00', 'Today starts at the current hour.');
+      assert.equal(await rows.count(), 24, 'Today continues into tomorrow for a full 24-hour window.');
       assert.deepEqual(errors, []);
       await context.close();
     });

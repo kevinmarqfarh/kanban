@@ -3,9 +3,9 @@ import {
   AlarmClock, ArrowRight, Archive, CalendarRange, Check, ChevronDown, CircleAlert, Clock, Copy, Gift, Hourglass,
   Layers, Leaf, ListPlus, Moon, PartyPopper, Play, Cake, Sunrise, Zap, type LucideIcon,
 } from 'lucide-react'
-import type { DailyDebrief, Workspace } from '../lib/types'
+import type { Workspace } from '../lib/types'
 import { useNow } from '../hooks/useNow'
-import { briefingDebriefPayload, briefingToText, buildDailyBriefing, type BriefingTip, type GiftTaskDraft, type TipKind } from '../lib/briefing'
+import { briefingToText, buildDailyBriefing, type BriefingTip, type GiftTaskDraft, type TipKind } from '../lib/briefing'
 
 const tipIcons: Record<TipKind, LucideIcon> = {
   overload: Layers, overdue: CircleAlert, timed: Clock, wip: Hourglass, start: Play, 'quick-win': Zap,
@@ -26,24 +26,20 @@ function usePhone() {
   return phone
 }
 
-export function Briefing({ workspace, today, weatherNote = '', debriefs, onOpenTask, onOpenPlanner, onOpenBirthdays, onCreateGiftTask, onSave }: {
+export function Briefing({ workspace, today, weatherNote = '', onOpenTask, onOpenPlanner, onOpenBirthdays, onCreateGiftTask }: {
   workspace: Workspace
   /** One sentence about the weather, added to the summary. */
   weatherNote?: string
   today: string
-  debriefs: DailyDebrief[]
   onOpenTask: (taskId: string) => void
   onOpenPlanner: () => void
   onOpenBirthdays: () => void
   onCreateGiftTask: (draft: GiftTaskDraft) => string | null
-  onSave: (payload: unknown) => Promise<string | null>
 }) {
   const now = useNow()
   const briefing = useMemo(() => buildDailyBriefing(workspace, today, now), [workspace, today, now])
   const [showAllTips, setShowAllTips] = useState(false)
   const [status, setStatus] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null)
-  const [saving, setSaving] = useState(false)
-  const savedToday = debriefs.some(entry => entry.date === today)
   const taskIds = new Set(workspace.tasks.map(task => task.id))
   const phone = usePhone()
   const preview = phone ? PREVIEW_TIPS_PHONE : PREVIEW_TIPS
@@ -58,19 +54,6 @@ export function Briefing({ workspace, today, weatherNote = '', debriefs, onOpenT
       setStatus({ tone: 'ok', text: 'Briefingen är kopierad.' })
     } catch {
       setStatus({ tone: 'error', text: 'Kunde inte kopiera. Webbläsaren tillåter inte urklipp här.' })
-    }
-  }
-
-  async function save() {
-    if (saving || savedToday) return
-    setSaving(true)
-    try {
-      const problem = await onSave(briefingDebriefPayload(briefing))
-      setStatus(problem === null ? { tone: 'ok', text: 'Sparad under Daglig sammanfattning.' } : { tone: 'error', text: problem || 'Briefingen kunde inte sparas. Försök igen.' })
-    } catch {
-      setStatus({ tone: 'error', text: 'Briefingen kunde inte sparas. Försök igen.' })
-    } finally {
-      setSaving(false)
     }
   }
 
@@ -97,7 +80,6 @@ export function Briefing({ workspace, today, weatherNote = '', debriefs, onOpenT
       </div>
       <div className="briefing-tools">
         <button className="icon-button" type="button" aria-label="Kopiera briefingen som text" title="Kopiera som text" onClick={copy}><Copy size={17} /></button>
-        <button className="icon-button" type="button" aria-label={savedToday ? 'Dagens sammanfattning finns redan i historiken' : 'Spara briefingen i Daglig sammanfattning'} title={savedToday ? 'Finns redan i historiken' : 'Spara i historiken'} disabled={saving || savedToday} onClick={save}>{savedToday ? <Check size={17} /> : <Archive size={17} />}</button>
       </div>
     </header>
 

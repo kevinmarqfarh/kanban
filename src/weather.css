@@ -47,3 +47,19 @@
 .wxp-rain-heading { padding: 12px 12px 0; display: flex; gap: 10px; align-items: baseline; }
 
 .wxp-timeline-summary { color: var(--ink-secondary); font-size: 12px; line-height: 1.5; }
+
+/* Keep the overview centred; every plot uses the same hour-column centres. */
+.wxp-sheet { width: 100%; max-width: 880px; margin-inline: auto; }
+.wxp-sheet-head { justify-content: center; padding-block: 8px; }
+.wxp-timeline-heading { align-items: center; flex-wrap: wrap; }
+.wxp-timeline-scroll > div { margin-inline: auto; }
+.wxp-rain-heading { position: sticky; left: 0; width: fit-content; padding: 8px 0 0; }
+.wxp-hour-symbols { height: 60px; }
+.wxp-hour-symbols > div > span { max-width: 60px; min-height: 26px; text-align: center; font-size: 10px; line-height: 1.25; }
+.wxp-timeline-scroll { margin-top: 12px; scrollbar-width: thin; }
+.wxp-swipe-hint { margin-top: 5px; color: var(--ink-muted); font-size: 10px; }
+.wxp-details { border-bottom: 1px solid var(--line); }
+.wxp-details summary { cursor: pointer; padding: 12px 0; font-size: 12px; color: var(--ink-secondary); }
+.wxp-details[open] summary { margin-bottom: 8px; }
+.wxp-time-zone { display: block; color: var(--ink-muted); font-size: 9px; font-weight: 400; }
+@media (min-width: 700px) { .wxp-chips { justify-content: center; } }

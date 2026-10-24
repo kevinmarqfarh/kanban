@@ -20,17 +20,15 @@ const pad = (value: number) => String(value).padStart(2, '0')
  * Hemskärm: everything for the day on one screen for a docked tablet.
  * Read at a glance from across the kitchen, act with one tap, never scroll the page.
  */
-export function HomeScreen({ workspace, today, syncStatus, signedIn, unreadDebriefs, onOpenTask, onOpenPlanner, onOpenBirthdays, onOpenNutrition, onOpenDebriefs, onToggleHabit, onQuickAdd, onReadNotification, onDismissNotification }: {
+export function HomeScreen({ workspace, today, syncStatus, signedIn, onOpenTask, onOpenPlanner, onOpenBirthdays, onOpenNutrition, onToggleHabit, onQuickAdd, onReadNotification, onDismissNotification }: {
   workspace: Workspace
   today: string
   syncStatus: SyncStatus
   signedIn: boolean
-  unreadDebriefs: number
   onOpenTask: (taskId: string) => void
   onOpenPlanner: () => void
   onOpenBirthdays: () => void
   onOpenNutrition: () => void
-  onOpenDebriefs: () => void
   onToggleHabit: (habitId: string, date: string) => string | null
   onQuickAdd: (title: string, deadline: string | null, deadlineTime: string | null) => string | null
   onReadNotification: (id: string) => string | null
@@ -107,7 +105,6 @@ export function HomeScreen({ workspace, today, syncStatus, signedIn, unreadDebri
             <span className="hs-focus-copy"><strong>{item.task.title}</strong>{item.reasons[0] && <small className={/^Försenad/.test(item.reasons[0]) ? 'is-late' : /^Deadline idag/.test(item.reasons[0]) ? 'is-today' : ''}>{item.reasons.slice(0, 2).join(' · ')}</small>}</span>
           </button>
         </li>)}</ol> : <button type="button" className="button secondary hs-empty-action" onClick={onOpenPlanner}>Inget öppet i Planner<ArrowRight size={15} /></button>}
-        {unreadDebriefs > 0 && <button type="button" className="button ghost hs-debrief-link" onClick={onOpenDebriefs}><Bell size={15} />{unreadDebriefs === 1 ? 'Ny daglig sammanfattning' : `${unreadDebriefs} nya sammanfattningar`}<ArrowRight size={14} /></button>}
       </div>
       {nextTip && <div className="hs-tip" data-tip={nextTip.kind}><Sparkles size={15} aria-hidden="true" /><p><strong>{nextTip.title}.</strong> {nextTip.detail}</p></div>}
     </section>

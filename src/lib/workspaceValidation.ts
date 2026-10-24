@@ -53,6 +53,9 @@ export function isWorkspace(value: unknown): value is Workspace {
     && (entry.time === undefined || entry.time === null || entry.time === 'morning' || entry.time === 'evening' || entry.time === 'midday' || entry.time === 'anytime'))) return false
   if (!optional('nutritionCompletions', entry => object(entry) && filled(entry.habitId) && date(entry.date)
     && entry.id === nutritionCompletionId(entry.habitId, entry.date) && typeof entry.completed === 'boolean')) return false
+  if (!optional('cookbooks', entry => object(entry) && filled(entry.id) && filled(entry.title) && entry.title.length <= 80
+    && timestamp(entry.createdAt) && strings(entry.recipeIds) && entry.recipeIds.every(filled)
+    && new Set(entry.recipeIds).size === entry.recipeIds.length && (entry.image === undefined || isRecipeImage(entry.image)))) return false
   if (!optional('recipes', entry => object(entry) && filled(entry.id) && filled(entry.title) && typeof entry.url === 'string'
     && validateRecipeUrl(entry.url) && typeof entry.steps === 'string' && strings(entry.labels) && timestamp(entry.createdAt)
     && (entry.image === undefined || isRecipeImage(entry.image))
@@ -77,7 +80,7 @@ export function isWorkspace(value: unknown): value is Workspace {
     && unique(workspace.birthdays ?? [])
     && unique(workspace.birthdayNotifications ?? []) && unique(workspace.workouts ?? []) && unique(workspace.nutritionHabits ?? [])
     && unique(workspace.nutritionCompletions ?? []) && unique(workspace.recipes ?? [])
-    && unique(workspace.notes ?? []) && unique(workspace.overtime ?? [])
+    && unique(workspace.cookbooks ?? []) && unique(workspace.notes ?? []) && unique(workspace.overtime ?? [])
     && (workspace.workouts ?? []).every(workout => unique(workout.rows))
     && (workspace.nutritionCompletions ?? []).every(entry => workspace.nutritionHabits?.some(habit => habit.id === entry.habitId))
     && workspace.tasks.every(task => workspace.columns.some(column => column.id === task.columnId)

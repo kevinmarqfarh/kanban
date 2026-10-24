@@ -3,8 +3,7 @@ import { doneColumnId, isTaskDone, newId } from './lib/helpers'
 import { useEffect, useRef, useState } from 'react'
 import { Columns3, Folder, House, LayoutList, Settings, Plus, Search, Sun, Moon, CircleCheck, Sparkles, Cloud, HardDrive, X, Trash2, Check, NotebookText, Bell } from 'lucide-react'
 import { useWorkspace } from './hooks/useWorkspace'
-import { useDebriefs } from './hooks/useDebriefs'
-import type { Birthday, Column, Task, Project, ProjectTask, Workspace, OvertimeEntry, Workout, NutritionHabit, Recipe, Note, NoteLinkKind } from './lib/types'
+import type { Birthday, Column, Task, Project, ProjectTask, Workspace, Cookbook, OvertimeEntry, Workout, NutritionHabit, Recipe, Note, NoteLinkKind } from './lib/types'
 import { mergeRecordChanges } from './lib/workspaceMerge'
 import { isWorkspace } from './lib/workspaceValidation'
 import { Board } from './components/Board'
@@ -13,7 +12,6 @@ import { Projects, ProjectDetail, ProjectEditor, ProjectTaskEditor } from './com
 import { Profile, type ThemePreference } from './components/Profile'
 import { Modal } from './components/Modal'
 import { Birthdays, type BirthdayOrderGroup } from './components/Birthdays'
-import { DebriefNotice } from './components/Summary'
 import { Home } from './components/Home'
 import { Others } from './components/Others'
 import { useLocalDay } from './hooks/useLocalDay'
@@ -26,8 +24,8 @@ import { intakeColumn, type GiftTaskDraft } from './lib/briefing'
 import { scrollToTop } from './lib/crashReport'
 
 type Page = 'home' | 'planner' | 'projects' | 'others'
-type OtherEntry = OvertimeEntry | Workout | NutritionHabit | Recipe | Note
-type OtherCollection = 'overtime' | 'workouts' | 'nutritionHabits' | 'recipes' | 'notes'
+type OtherEntry = Cookbook | OvertimeEntry | Workout | NutritionHabit | Recipe | Note
+type OtherCollection = 'cookbooks' | 'overtime' | 'workouts' | 'nutritionHabits' | 'recipes' | 'notes'
 type Editor = { type: 'task'; task?: Task; columnId?: string }
   | { type: 'project-task'; task?: ProjectTask; projectId: string; focusSubtaskId?: string }
   | { type: 'project'; project?: Project }
@@ -62,7 +60,6 @@ function ColumnEditor({ column, count, columns, onSave, onDelete, onClose }: {
 export default function App() {
   const data = useWorkspace()
   const { workspace, setWorkspace } = data
-  const debriefs = useDebriefs(data.user?.id ?? null, !data.loading)
   const today = useLocalDay()
   const homeScreen = useHomeScreen()
   const [othersSection, setOthersSection] = useState<'workouts' | 'nutrition' | 'recipes' | 'notes' | null>(null)
@@ -71,8 +68,7 @@ export default function App() {
   const [noteReturn, setNoteReturn] = useState<string | null>(null)
   const [initialNoteId, setInitialNoteId] = useState<string | undefined>()
   const [page, setPage] = useState<Page>('home')
-  const [summaryInitialId, setSummaryInitialId] = useState<string | undefined>()
-  const [summaryVisit, setSummaryVisit] = useState(0)
+  const [homeVisit, setHomeVisit] = useState(0)
   const [editor, setEditor] = useState<Editor>(null)
   // An open project is a page of its own (with Back), not a dialog, so task editors can sit on top of it.
   const [openProjectId, setOpenProjectId] = useState<string | null>(null)
@@ -87,7 +83,7 @@ export default function App() {
   const creationSnapshots = useRef({ tasks: new Map<string, Task>(), columns: new Map<string, Column>(), projects: new Map<string, Project>(), birthdays: new Map<string, Birthday>(), initialTasks: new Map<string, ProjectTask>(), projectTasks: new Map<string, ProjectTask>(), otherEntries: new Map<string, OtherEntry>() })
   useEffect(() => { for (const records of Object.values(creationSnapshots.current)) records.clear() }, [editor, page, othersVisit])
   const [theme, setTheme] = useState<ThemePreference>(() => {
-    try { const saved = localStorage.getItem('forma-theme'); return saved === 'light' || saved === 'dark' ? saved : 'system' } catch { return 'system' }
+    try { const saved = localStorage.getItem('forma-theme'); return saved === 'light' || saved === 'dark' || saved === 'bento' ? saved : 'system' } catch { return 'system' }
   })
   const [resolvedTheme, setResolvedTheme] = useState('light')
   // On the docked home screen, System means: follow the sun (dark after sunset).
@@ -97,7 +93,7 @@ export default function App() {
     const apply = () => {
       const resolved = theme === 'system' ? sunTheme ?? (media.matches ? 'dark' : 'light') : theme
       document.documentElement.dataset.theme = resolved
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', resolved === 'dark' ? '#191919' : '#f6f6f6')
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', resolved === 'bento' ? '#7c9eac' : resolved === 'dark' ? '#191919' : '#f6f6f6')
       setResolvedTheme(resolved)
     }
     apply()
@@ -107,7 +103,7 @@ export default function App() {
   }, [theme, sunTheme])
   useEffect(() => { if (!toast) return; const timer = setTimeout(() => setToast(''), 3500); return () => clearTimeout(timer) }, [toast])
   useEffect(() => { if (!undo) return; const timer = setTimeout(() => setUndo(null), UNDO_MS); return () => clearTimeout(timer) }, [undo])
-  useEffect(() => { setEditor(null); setQuery(''); setSummaryInitialId(undefined); setSummaryVisit(value => value + 1); setOthersSection(null); setOthersVisit(value => value + 1); setNoteTarget(null); setNoteReturn(null); setInitialNoteId(undefined); setPage('home'); setOpenProjectId(null); setActionError(null) }, [data.user?.id])
+  useEffect(() => { setEditor(null); setQuery(''); setHomeVisit(value => value + 1); setOthersSection(null); setOthersVisit(value => value + 1); setNoteTarget(null); setNoteReturn(null); setInitialNoteId(undefined); setPage('home'); setOpenProjectId(null); setActionError(null) }, [data.user?.id])
   const done = workspace.tasks.filter(task => isTaskDone(task, workspace)).length
   useEffect(() => {
     if (data.loading || workspace.columns.some(column => column.id === 'finalized')) return
@@ -118,7 +114,7 @@ export default function App() {
   const visibleTasks = filterPlannerTasks(workspace, query, plannerFilter, today)
   const project = page === 'projects' && openProjectId ? workspace.projects.find(project => project.id === openProjectId) : undefined
   const birthdayUnread = unreadBirthdayNotifications(workspace)
-  const unreadCount = birthdayUnread.length + debriefs.unread.length
+  const unreadCount = birthdayUnread.length
   const statusText = { local: 'Sparas på enheten', synced: 'Allt är synkat', syncing: 'Synkar…', offline: 'Offline · sparat lokalt', error: 'Sparandet behöver hjälp', conflict: 'Välj version' }[data.syncStatus]
   // Docked tablet: drift back to Home after a few untouched minutes, but never close an open form.
   const pageRef = useRef(page); pageRef.current = page
@@ -129,7 +125,7 @@ export default function App() {
     const arm = () => {
       window.clearTimeout(timer)
       timer = window.setTimeout(() => {
-        if (pageRef.current !== 'home' && !editorRef.current) { setPage('home'); setSummaryInitialId(undefined); setSummaryVisit(value => value + 1); scrollToTop() }
+        if (pageRef.current !== 'home' && !editorRef.current) { setPage('home'); setHomeVisit(value => value + 1); scrollToTop() }
         else arm()
       }, IDLE_RETURN_MS)
     }
@@ -169,12 +165,7 @@ export default function App() {
   function switchPage(next: Page) {
     setPage(next); setEditor(null); setOpenProjectId(null); setNoteTarget(null); setNoteReturn(null); setInitialNoteId(undefined)
     if (next === 'others') { setOthersSection(null); setOthersVisit(value => value + 1) }
-    if (next === 'home') { setSummaryInitialId(undefined); setSummaryVisit(value => value + 1) }
-    scrollToTop()
-  }
-  function openDebrief(id?: string) {
-    setPage('home'); setEditor(null); setSummaryInitialId(id); setSummaryVisit(value => value + 1)
-    if (id) debriefs.markRead(id)
+    if (next === 'home') { setHomeVisit(value => value + 1) }
     scrollToTop()
   }
   function openOthers(section: 'workouts' | 'nutrition' | 'recipes' | 'notes' | null = null) {
@@ -185,8 +176,7 @@ export default function App() {
     setEditor({ type: 'birthdays' })
   }
   function openNotifications() {
-    if (!birthdayUnread.length && debriefs.unread.length) openDebrief(debriefs.unread[0].id)
-    else switchPage('home')
+    switchPage('home')
   }
   function openTaskFromHome(taskId: string) {
     const task = workspace.tasks.find(item => item.id === taskId)
@@ -380,15 +370,18 @@ export default function App() {
       if (!initialTask) creationSnapshots.current.initialTasks.delete(project.id)
     })
   }
-  function saveOther(kind: OtherCollection, entry: OtherEntry, base?: OtherEntry, quiet = false): string | null {
+  function saveOther(kind: OtherCollection, entry: OtherEntry, base?: OtherEntry, quiet = false, cookbookId?: string): string | null {
     const key = `${kind}:${entry.id}`
     const original = base ?? creationSnapshots.current.otherEntries.get(key)
     return persistChange(current => {
+      if (cookbookId && !current.cookbooks?.some(book => book.id === cookbookId)) throw new Error('Kokboken har tagits bort. Öppna kokböcker igen för att fortsätta.')
       const entries: OtherEntry[] = current[kind] ?? []
       const latest = entries.find(existing => existing.id === entry.id)
       if (original && !latest) throw new Error('Posten har tagits bort i en annan flik. Stäng redigeringen för att fortsätta.')
       const merged = original && latest ? mergeRecordChanges(original, entry, latest) : entry
-      return { ...current, [kind]: latest ? entries.map(existing => existing.id === entry.id ? merged : existing) : [...entries, merged] }
+      return { ...current, [kind]: latest ? entries.map(existing => existing.id === entry.id ? merged : existing) : [...entries, merged],
+        ...(cookbookId ? { cookbooks: current.cookbooks!.map(book => book.id === cookbookId ? { ...book, recipeIds: [...new Set([...book.recipeIds, entry.id])] } : book) } : {}),
+      }
     }, quiet ? undefined : 'Sparat', undefined, next => {
       if (!original) creationSnapshots.current.otherEntries.set(key, structuredClone(next[kind]!.find(existing => existing.id === entry.id)!))
     })
@@ -443,7 +436,7 @@ export default function App() {
     openOthers('notes'); setInitialNoteId(id ?? undefined); setNoteReturn(null)
   }
   function exportWorkspace() {
-    const blob = new Blob([JSON.stringify({ ...workspace, debriefs: debriefs.debriefs }, null, 2)], { type: 'application/json' })
+    const blob = new Blob([JSON.stringify(workspace, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a'); link.href = url; link.download = `forma-${today}.json`; link.click(); URL.revokeObjectURL(url)
     setToast('Din säkerhetskopia är nedladdad')
@@ -457,10 +450,8 @@ export default function App() {
         {!(homeScreen.active && page === 'home') && !project && <div className="page-heading"><h1>{({ home: 'Home', planner: 'Planner', projects: 'Projects', others: 'Others' })[page]}</h1>{(page === 'planner' || page === 'projects') && <div className="page-actions"><button className="button primary" aria-label={page === 'planner' ? 'Ny uppgift' : 'Nytt projekt'} onClick={() => setEditor(page === 'planner' ? { type: 'task' } : { type: 'project' })}><Plus size={18} /><span>{page === 'planner' ? 'Ny uppgift' : 'Nytt projekt'}</span></button></div>}</div>}
         {actionError && actionError !== data.syncError && <div className="sync-banner" role="alert"><HardDrive size={18} /><p>{actionError}</p><button className="icon-button" aria-label="Stäng meddelande" onClick={() => setActionError(null)}><X size={18} /></button></div>}
         {data.syncError && <div className="sync-banner" role="status">{data.user ? <Cloud size={18} /> : <HardDrive size={18} />}<p>{data.syncError}</p>{data.syncStatus === 'conflict' ? <><button className="button secondary small" onClick={() => data.resolveConflict('remote')}>Behåll molnets</button><button className="button primary small" onClick={() => data.resolveConflict('local')}>Behåll min</button></> : <button className="button secondary small" onClick={data.retrySync}>Försök igen</button>}</div>}
-        {page === 'home' && <Home key={summaryVisit} workspace={workspace} today={today} reports={debriefs} initialId={summaryInitialId} localOnly={!data.user} homeScreen={homeScreen.active} syncStatus={data.syncStatus} onQuickAdd={quickAddTask} onOpenDebriefs={() => openDebrief(debriefs.unread[0]?.id)} onBirthdays={openBirthdays} onNutrition={() => openOthers('nutrition')} onOpenTask={openTaskFromHome} onOpenPlanner={() => switchPage('planner')} onCreateGiftTask={createGiftTask} onToggleHabit={toggleHabit} onReadNotification={id => updateNotification(id, 'read')} onDismissNotification={id => updateNotification(id, 'dismiss')} />}
+        {page === 'home' && <Home key={homeVisit} workspace={workspace} today={today} localOnly={!data.user} homeScreen={homeScreen.active} syncStatus={data.syncStatus} onQuickAdd={quickAddTask} onBirthdays={openBirthdays} onNutrition={() => openOthers('nutrition')} onOpenTask={openTaskFromHome} onOpenPlanner={() => switchPage('planner')} onCreateGiftTask={createGiftTask} onToggleHabit={toggleHabit} onReadNotification={id => updateNotification(id, 'read')} onDismissNotification={id => updateNotification(id, 'dismiss')} />}
         {page === 'planner' && <>
-          {debriefs.error && <div className="sync-banner" role="status"><NotebookText size={18} /><p>{debriefs.error}</p><button className="button secondary small" onClick={debriefs.retry}>Försök igen</button></div>}
-          {debriefs.unread[0] && <DebriefNotice debrief={debriefs.unread[0]} onRead={() => openDebrief(debriefs.unread[0].id)} onDismiss={() => debriefs.dismiss(debriefs.unread[0].id)} />}
           <div className="summary-grid"><div className="summary-card feature"><span className="stat-icon"><Sparkles size={19} /></span><div><p className="stat-label">Pågår</p><p className="stat-value">{ongoing}</p></div></div><div className="summary-card"><span className="stat-icon"><Columns3 size={19} /></span><div><p className="stat-label">Aktiva</p><p className="stat-value">{active}</p></div></div><div className="summary-card"><span className="stat-icon"><CircleCheck size={19} /></span><div><p className="stat-label">Klara</p><p className="stat-value">{done}</p></div></div></div>
           <div className="workspace-toolbar"><div className="toolbar-left"><span className="view-label"><Columns3 size={15} />Min tavla</span></div><div className="toolbar-right"><label className="search-field"><Search size={16} /><input type="search" aria-label="Sök uppgifter" placeholder="Sök uppgifter" value={query} onChange={event => setQuery(event.target.value)} /></label></div></div>
           <div className="filter-chips" role="group" aria-label="Filtrera uppgifter">{([['all', 'Alla'], ['today', 'Idag'], ['overdue', 'Försenat'], ['high', 'Hög prioritet']] as const).map(([value, label]) => <button className={`filter-chip${plannerFilter === value ? ' active' : ''}`} type="button" key={value} aria-pressed={plannerFilter === value} onClick={() => setPlannerFilter(value)}>{label}</button>)}</div>
@@ -474,11 +465,11 @@ export default function App() {
       if (!task?.checklist.some(item => item.id === itemId)) throw new Error('Deluppgiften har tagits bort i en annan flik.')
       return { ...current, projects: current.projects.map(existing => existing.id === project.id ? { ...existing, tasks: existing.tasks?.map(task => task.id === taskId ? { ...task, checklist: task.checklist.map(item => item.id === itemId ? { ...item, completed: !item.completed } : item) } : task) } : existing) }
     })} onDelete={() => removeWithUndo(current => ({ ...current, projects: current.projects.filter(existing => existing.id !== project.id) }), 'Projektet är borttaget', () => { setEditor(null); closeProject() })} />}
-        {page === 'others' && <Others key={othersVisit} workspace={workspace} initialSection={othersSection} initialRecord={noteTarget} initialNoteId={initialNoteId} onBirthdays={openBirthdays} onSaveOvertime={(entry, base) => saveOther('overtime', entry, base)} onDeleteOvertime={id => deleteOther('overtime', id, 'Övertiden är borttagen')} onSaveWorkout={(entry, base) => saveOther('workouts', entry, base)} onDeleteWorkout={id => deleteOther('workouts', id)} onRestoreWorkout={entry => persistChange(current => ({ ...current, workouts: [...(current.workouts ?? []).filter(item => item.id !== entry.id), entry] }), 'Passet är återställt')} onSaveHabit={(entry, base) => saveOther('nutritionHabits', entry, base)} onToggleHabit={toggleHabit} onDeleteHabit={id => deleteOther('nutritionHabits', id, 'Kostvanan är borttagen')} onSaveRecipe={(entry, base) => saveOther('recipes', entry, base)} onDeleteRecipe={id => deleteOther('recipes', id, 'Receptet är borttaget')} onSaveNote={(entry, base) => saveOther('notes', entry, base, true)} onDeleteNote={id => persistChange(current => { const stamp = new Date().toISOString(); return { ...current, notes: (current.notes ?? []).map(note => note.id === id ? { ...note, deletedAt: stamp } : note) } })} onPurgeNote={id => persistChange(current => ({ ...current, notes: (current.notes ?? []).filter(note => note.id !== id) }), 'Anteckningen är raderad')} onEmptyNoteTrash={() => persistChange(current => ({ ...current, notes: (current.notes ?? []).filter(note => !note.deletedAt) }), 'Papperskorgen är tömd')} onRestoreNote={note => persistChange(current => { const existing = current.notes?.find(entry => entry.id === note.id); const { deletedAt: _deleted, ...restored } = existing ?? note; return { ...current, notes: existing ? current.notes!.map(entry => entry.id === note.id ? { ...restored, deletedAt: null } : entry) : [...(current.notes ?? []), { ...restored, deletedAt: null }] } }, 'Anteckningen är återställd')} onOpenNoteLink={openNoteLink} />}
+        {page === 'others' && <Others key={othersVisit} workspace={workspace} initialSection={othersSection} initialRecord={noteTarget} initialNoteId={initialNoteId} onBirthdays={openBirthdays} onSaveOvertime={(entry, base) => saveOther('overtime', entry, base)} onDeleteOvertime={id => deleteOther('overtime', id, 'Övertiden är borttagen')} onSaveWorkout={(entry, base) => saveOther('workouts', entry, base)} onDeleteWorkout={id => deleteOther('workouts', id)} onRestoreWorkout={entry => persistChange(current => ({ ...current, workouts: [...(current.workouts ?? []).filter(item => item.id !== entry.id), entry] }), 'Passet är återställt')} onSaveHabit={(entry, base) => saveOther('nutritionHabits', entry, base)} onToggleHabit={toggleHabit} onDeleteHabit={id => deleteOther('nutritionHabits', id, 'Kostvanan är borttagen')} onSaveCookbook={(entry, base) => saveOther('cookbooks', entry, base)} onDeleteCookbook={id => deleteOther('cookbooks', id, 'Kokboken är borttagen')} onSaveRecipe={(entry, base, cookbookId) => saveOther('recipes', entry, base, false, cookbookId)} onDeleteRecipe={id => deleteOther('recipes', id, 'Receptet är borttaget')} onSaveNote={(entry, base) => saveOther('notes', entry, base, true)} onDeleteNote={id => persistChange(current => { const stamp = new Date().toISOString(); return { ...current, notes: (current.notes ?? []).map(note => note.id === id ? { ...note, deletedAt: stamp } : note) } })} onPurgeNote={id => persistChange(current => ({ ...current, notes: (current.notes ?? []).filter(note => note.id !== id) }), 'Anteckningen är raderad')} onEmptyNoteTrash={() => persistChange(current => ({ ...current, notes: (current.notes ?? []).filter(note => !note.deletedAt) }), 'Papperskorgen är tömd')} onRestoreNote={note => persistChange(current => { const existing = current.notes?.find(entry => entry.id === note.id); const { deletedAt: _deleted, ...restored } = existing ?? note; return { ...current, notes: existing ? current.notes!.map(entry => entry.id === note.id ? { ...restored, deletedAt: null } : entry) : [...(current.notes ?? []), { ...restored, deletedAt: null }] } }, 'Anteckningen är återställd')} onOpenNoteLink={openNoteLink} />}
       </main>
       <nav className="bottom-nav" aria-label="Huvudnavigation">{([{ id: 'home', label: 'Home', Icon: House }, { id: 'planner', label: 'Planner', Icon: Columns3 }, { id: 'projects', label: 'Projects', Icon: Folder }, { id: 'others', label: 'Others', Icon: LayoutList }] as const).map(({ id, label, Icon }) => <button key={id} className={`nav-item ${page === id ? 'active' : ''}`} aria-label={label} aria-current={page === id ? 'page' : undefined} onClick={() => switchPage(id)}><Icon className="nav-icon" size={18} /><span className="nav-label">{label}</span>{id === 'home' && unreadCount > 0 && <span className="nav-unread" aria-hidden="true">{unreadCount > 9 ? '9+' : unreadCount}</span>}</button>)}</nav>
     </div>
-    {editor?.type === 'profile' && <Modal title="Inställningar" onClose={() => setEditor(null)} footer={<button className="button secondary" onClick={() => setEditor(null)}>Stäng</button>}><div className="settings-content"><Profile data={data} theme={theme} onTheme={setTheme} onExport={exportWorkspace} syncText={statusText} homeScreen={homeScreen} /></div></Modal>}
+    {editor?.type === 'profile' && <Modal title="Inställningar" focusForm={false} onClose={() => setEditor(null)} footer={<button className="button secondary" onClick={() => setEditor(null)}>Stäng</button>}><div className="settings-content"><Profile data={data} theme={theme} onTheme={setTheme} onExport={exportWorkspace} syncText={statusText} homeScreen={homeScreen} /></div></Modal>}
     {editor?.type === 'birthdays' && <Birthdays birthdays={workspace.birthdays ?? []} undo={undo ? { text: undo.text, onUndo: undoRemoval } : null} onClose={() => setEditor(null)} onSave={saveBirthday} onReorder={reorderBirthdays} onDelete={id => removeWithUndo(current => ({ ...current, birthdays: (current.birthdays ?? []).filter(person => person.id !== id), birthdayNotifications: (current.birthdayNotifications ?? []).filter(note => note.birthdayId !== id) }), 'Födelsedagen är borttagen')} />}
     {editor?.type === 'task' && <TaskEditor key={editor.task?.id ?? 'new-task'} task={editor.task} columnId={editor.columnId} workspace={workspace} onClose={closeTask} onSave={saveTask} onDelete={id => removeWithUndo(current => ({ ...current, tasks: current.tasks.filter(task => task.id !== id) }), 'Uppgiften är borttagen', closeTask)} />}
     {editor?.type === 'project-task' && <ProjectTaskEditor key={editor.task?.id ?? 'new-project-task'} task={editor.task} focusSubtaskId={editor.focusSubtaskId} onClose={closeTask} onSave={saveProjectTask} onDelete={id => removeWithUndo(current => {

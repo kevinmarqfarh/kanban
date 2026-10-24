@@ -398,7 +398,7 @@ export function useWorkspace() {
     if (cacheConflict.current) return { error: storageFailure.current }
     if (current.workspace.tasks.length || current.workspace.projects.length || current.workspace.birthdays?.length
       || current.workspace.overtime?.length || current.workspace.workouts?.length || current.workspace.nutritionHabits?.length || current.workspace.nutritionCompletions?.length
-      || current.workspace.recipes?.length || current.workspace.notes?.length || current.workspace.birthdayNotifications?.length) return { error: 'Din molntavla innehåller redan innehåll. Importera bara till en tom tavla.' }
+      || current.workspace.cookbooks?.length || current.workspace.recipes?.length || current.workspace.notes?.length || current.workspace.birthdayNotifications?.length) return { error: 'Din molntavla innehåller redan innehåll. Importera bara till en tom tavla.' }
     const error = setWorkspace(guest.workspace)
     return { error, message: error ? undefined : 'Din lokala tavla har kopierats till kontot. Originalet finns kvar på enheten.' }
   }, [ownerId, loading, setWorkspace, latestContext])

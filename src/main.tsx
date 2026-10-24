@@ -16,6 +16,7 @@ import './notes.css'
 import './tags.css'
 import './responsive.css'
 import './compat.css'
+import './bento.css'
 
 // A reload starts on Home, so a previous tab's scroll position must not carry over.
 window.history.scrollRestoration = 'manual'

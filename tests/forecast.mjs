@@ -217,3 +217,18 @@ const farDay = stepsOn(merged, '2026-10-23', NOW)
 assert.deepEqual(farDay.map(step => hm(new Date(step.time))), ['02:00', '14:00'], 'Ten days out SMHI gives two steps a day.')
 
 console.log('Forecast passed: sunrise/sunset incl. polar night, SMHI URL/symbols/parsing of the real Göteborg forecast (9999, 12-hour steps), Open-Meteo hours, day symbols, SMHI+Open-Meteo merge without overlap, fallback both ways, outside SMHI’s area, the current hour and a day’s hours.')
+
+// The day sheet uses a real 24-hour window, including tomorrow and DST's repeated hour.
+const hourlyWindow = (start, count = 50) => ({ steps: Array.from({ length: count }, (_, i) => ({
+  start: new Date(Date.parse(start) + (i - 1) * 3600000).toISOString(),
+  time: new Date(Date.parse(start) + i * 3600000).toISOString(),
+})) })
+const rolling = forecast.forecastHours(hourlyWindow('2026-10-23T07:00:00+02:00'), '2026-10-23', new Date('2026-10-23T07:29:00+02:00'))
+assert.equal(rolling.length, 24)
+assert.equal(new Date(rolling[0].time).getHours(), 8)
+assert.equal(new Date(rolling.at(-1).time).getDate(), 24)
+const dst = forecast.forecastHours(hourlyWindow('2026-10-25T00:00:00+02:00'), '2026-10-25', new Date('2026-10-23T12:00:00+02:00'))
+assert.equal(dst.length, 24)
+assert.equal(dst.filter(step => new Date(step.time).getHours() === 2).length, 2)
+assert.equal(Date.parse(dst.at(-1).time) - Date.parse(dst[0].time), 23 * 3600000)
+console.log('24-hour forecast windows passed: tomorrow and repeated DST hour preserved.')

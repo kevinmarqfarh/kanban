@@ -1,10 +1,8 @@
 import { useState } from 'react'
 import { ArrowRight, Bell, Cake, Check, Utensils, X } from 'lucide-react'
 import type { Workspace } from '../lib/types'
-import type { useDebriefs } from '../hooks/useDebriefs'
 import { birthdayCountdownLabel, birthdayUrgency, birthdayGroupKey, currentAge, groupBirthdays, isValidBirthDate, nextBirthday, unreadBirthdayNotifications } from '../lib/birthdays'
 import { daysBetween, isoWeek, isNutritionComplete, nutritionDayStatus, parseLocalDate, weekDates } from '../lib/others'
-import { Summary } from './Summary'
 import { Briefing } from './Briefing'
 import { HomeScreen } from './HomeScreen'
 import { NutritionTimePill } from './NutritionTimePill'
@@ -22,15 +20,14 @@ function dateText(date: string, today: string) {
   return parseLocalDate(date).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', ...(date.slice(0, 4) === today.slice(0, 4) ? {} : { year: 'numeric' }) })
 }
 
-export function Home({ workspace, today, reports, initialId, localOnly, homeScreen = false, syncStatus = 'local', onQuickAdd, onOpenDebriefs, onBirthdays, onNutrition, onOpenTask, onOpenPlanner, onCreateGiftTask, onToggleHabit, onReadNotification, onDismissNotification }: {
-  workspace: Workspace; today: string; reports: ReturnType<typeof useDebriefs>; initialId?: string; localOnly: boolean;
-  homeScreen?: boolean; syncStatus?: SyncStatus; onQuickAdd?: (title: string, deadline: string | null, deadlineTime: string | null) => string | null; onOpenDebriefs?: () => void;
+export function Home({ workspace, today, localOnly, homeScreen = false, syncStatus = 'local', onQuickAdd, onBirthdays, onNutrition, onOpenTask, onOpenPlanner, onCreateGiftTask, onToggleHabit, onReadNotification, onDismissNotification }: {
+  workspace: Workspace; today: string; localOnly: boolean;
+  homeScreen?: boolean; syncStatus?: SyncStatus; onQuickAdd?: (title: string, deadline: string | null, deadlineTime: string | null) => string | null;
   onBirthdays: () => void; onNutrition: () => void;
   onOpenTask: (taskId: string) => void; onOpenPlanner: () => void; onCreateGiftTask: (draft: GiftTaskDraft) => string | null;
   onToggleHabit: (habitId: string, date: string) => string | null;
   onReadNotification: (id: string) => string | null; onDismissNotification: (id: string) => string | null;
 }) {
-  const [reading, setReading] = useState(!!initialId)
   const [error, setError] = useState<string | null>(null)
   const [birthdayFilter, setBirthdayFilter] = useState<string | null>(null)
   // The regular Home shows the week's weather too; the docked home screen has its own copy.
@@ -50,13 +47,13 @@ export function Home({ workspace, today, reports, initialId, localOnly, homeScre
     .map(entry => ({ ...entry, days: daysBetween(today, entry.date) }))
     .sort((a, b) => a.date.localeCompare(b.date) || a.person.name.localeCompare(b.person.name, 'sv'))
   function run(action: () => string | null) { setError(action()) }
-  // Docked tablet: one glanceable screen. Reading a debrief still uses the full reader below.
-  if (homeScreen && !reading && onQuickAdd && onOpenDebriefs) return <HomeScreen workspace={workspace} today={today} syncStatus={syncStatus} signedIn={!localOnly} unreadDebriefs={reports.unread.length}
-    onOpenTask={onOpenTask} onOpenPlanner={onOpenPlanner} onOpenBirthdays={onBirthdays} onOpenNutrition={onNutrition} onOpenDebriefs={onOpenDebriefs}
+  // Docked tablet: one glanceable screen.
+  if (homeScreen && onQuickAdd) return <HomeScreen workspace={workspace} today={today} syncStatus={syncStatus} signedIn={!localOnly}
+    onOpenTask={onOpenTask} onOpenPlanner={onOpenPlanner} onOpenBirthdays={onBirthdays} onOpenNutrition={onNutrition}
     onToggleHabit={onToggleHabit} onQuickAdd={onQuickAdd} onReadNotification={onReadNotification} onDismissNotification={onDismissNotification} />
   return <div className="home-page" data-testid="home-overview">
+    <header className="bento-welcome"><h1>{now.getHours() < 5 ? 'God natt' : now.getHours() < 10 ? 'God morgon' : now.getHours() < 17 ? 'God dag' : 'God kväll'}, <em>lite mer fokus.</em></h1></header>
     {error && <p className="form-message error" role="alert">{error}</p>}
-    {!reading && <>
       <div className="home-date"><time dateTime={today}>{parseLocalDate(today).toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })}</time><span>Vecka {isoWeek(today)}</span></div>
       {notifications.length > 0 && <section className="home-notifications" aria-label="Födelsedagspåminnelser" data-testid="birthday-notifications">
         {notifications.map(note => {
@@ -69,7 +66,7 @@ export function Home({ workspace, today, reports, initialId, localOnly, homeScre
       </section>}
       <WeatherWeek className="home-weather" today={today} place={weather.place} forecast={weather.forecast} status={weather.status} onRetry={weather.retry} onOpen={date => setWeatherDay(date ?? today)} />
       {weatherDay && weather.forecast && <WeatherDaySheet forecast={weather.forecast} date={weatherDay} today={today} placeName={weather.place.name} onSelect={setWeatherDay} onClose={() => setWeatherDay(null)} />}
-      <Briefing workspace={workspace} today={today} weatherNote={weatherNote(weather.forecast, now)} debriefs={reports.debriefs} onOpenTask={onOpenTask} onOpenPlanner={onOpenPlanner} onOpenBirthdays={onBirthdays} onCreateGiftTask={onCreateGiftTask} onSave={reports.importDebrief} />
+      <Briefing workspace={workspace} today={today} weatherNote={weatherNote(weather.forecast, now)} onOpenTask={onOpenTask} onOpenPlanner={onOpenPlanner} onOpenBirthdays={onBirthdays} onCreateGiftTask={onCreateGiftTask} />
       <div className="home-grid">
         <section className="home-panel" aria-labelledby="home-nutrition-title" data-testid="home-nutrition">
           <div className="home-panel-heading"><h2 id="home-nutrition-title"><Utensils size={18} />Dagens kost</h2><button className="icon-button" aria-label="Öppna kost" onClick={onNutrition}><ArrowRight size={18} /></button></div>
@@ -96,10 +93,6 @@ export function Home({ workspace, today, reports, initialId, localOnly, homeScre
             : <div className="home-empty"><p>Inga födelsedagar ännu.</p><button className="button secondary" onClick={onBirthdays}>Lägg till födelsedag<ArrowRight size={15} /></button></div>}
         </section>
       </div>
-    </>}
-    <section className="home-debriefs" aria-label="Dagliga sammanfattningar">
-      {!reading && <h2 className="home-section-title">Daglig sammanfattning</h2>}
-      <Summary debriefs={reports.debriefs} initialId={initialId} onRead={reports.markRead} onDismiss={reports.dismiss} onImport={reports.importDebrief} error={reports.error} onRetry={reports.retry} localOnly={localOnly} onReaderChange={setReading} />
-    </section>
+
   </div>
 }

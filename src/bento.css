@@ -1,0 +1,118 @@
+/* Bento blå — the reference's paper-blue canvas, slate boxes, cream type and compact rail.
+   Entirely opt-in; the existing light, dark and automatic themes retain their own rules. */
+.bento-welcome { display: none; }
+.theme-picker { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.theme-bento-note { margin-top: 12px; font-size: 11px; line-height: 1.6; }
+[data-theme='bento'] {
+ color-scheme: dark;
+ --bg: #acd8e9; --bg-spot: #acd8e9;
+ --surface: #536871; --surface-solid: #536871; --surface-muted: #43565f;
+ --surface-hover: #607882; --surface-column: #78939e;
+ --ink: #fffdf5; --ink-secondary: #e1e8e8; --ink-muted: #d1dddf;
+ --line: rgba(255,255,255,.12); --line-strong: rgba(255,255,255,.28);
+ --accent: #101719; --accent-ink: #fffdf5; --accent-soft: #40545e;
+ --danger: #ffcbbe; --danger-soft: #6c4949;
+ --status-complete-ink: #c6e9c6; --status-complete-soft: #3e6258;
+ --status-incomplete-ink: #ffe4b1; --status-incomplete-soft: #705c40;
+ --urgency-yellow: #f4e874; --urgency-red: #ffc1ac; --urgency-green: #c0e5b8;
+ --shadow-card: none; --shadow-popover: 0 18px 60px rgba(25,46,55,.2);
+ --radius-card: 24px; --radius-bento: 30px;
+}
+[data-theme='bento'] body { background: #acd8e9 url('/bento-paper.png') repeat; background-size: 700px 700px; color: #17272e; }
+[data-theme='bento'] body::before { display: none; }
+[data-theme='bento'] .topbar { background: #7c9eac; border: 0; width: 100%; padding-inline: max(30px, calc((100% - 1264px) / 2)); height: 82px; color: #fffdf5; }
+[data-theme='bento'] .brand { color: #fffdf5; font-weight: 500; letter-spacing: -.8px; }
+[data-theme='bento'] .brand-mark > * { background: #f6db35; opacity: 1; }
+[data-theme='bento'] .topbar .icon-button { color: #fffdf5; }
+[data-theme='bento'] .page-heading { color: #17272e; }
+[data-theme='bento'] .home-date { color: #2d4650; }
+[data-theme='bento'] .bento-welcome { display: block; padding: 12px 0 22px; }
+[data-theme='bento'] .bento-welcome h1 { color: #17272e; font-size: clamp(28px, 3.4vw, 46px); font-weight: 450; line-height: 1.2; letter-spacing: -1.5px; }
+[data-theme='bento'] .bento-welcome em { font-family: Georgia, 'Times New Roman', serif; font-weight: 400; }
+[data-theme='bento'] .main-content:has(.home-page) > .page-heading { display: none; }
+[data-theme='bento'] .home-page { padding-top: 30px; gap: 24px; }
+[data-theme='bento'] .home-grid { gap: 24px; }
+[data-theme='bento'] :is(.home-panel,.briefing,.hs-card,.summary-card,.project-card,.others-module-row,.others-record-row,.overtime-summary,.overtime-row,.nutrition-calendar,.nutrition-habit-row,.note-card,.project-task-group,.project-page .project-detail-layout,.cookbook-library-links > button) { background: #536871; color: var(--ink); border-color: transparent; border-radius: 28px; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+[data-theme='bento'] :is(.home-panel,.briefing) { padding: 26px; }
+[data-theme='bento'] :is(.task-card,.project-card,.note-card) { border-radius: 24px; }
+[data-theme='bento'] :is(.briefing-stat,.briefing-tip,.home-habit,.home-birthday-row,.recipe-content-box,.checklist-row,.workout-row,.cookbook-picker-row) { background: #43565f; color: var(--ink); border-color: transparent; }
+[data-theme='bento'] :is(.wxp,.weather-panel) { background: #536871; color: var(--ink); border-radius: 28px; border-color: transparent; padding: 22px; }
+[data-theme='bento'] .button.primary { background: #101719; color: #fffdf5; border-color: transparent; box-shadow: none; border-radius: 11px; }
+[data-theme='bento'] .button.secondary { background: #40545e; color: #fffdf5; border-color: rgba(255,255,255,.2); border-radius: 11px; }
+[data-theme='bento'] .button.ghost { color: inherit; }
+[data-theme='bento'] :is(.input,.textarea,.select,.filter-select,.search-field) { background: #3c4e57; color: #fffdf5; border-color: rgba(255,255,255,.22); border-radius: 12px; }
+[data-theme='bento'] :is(.input,.textarea)::placeholder { color: #c4d1d5; }
+[data-theme='bento'] .modal-panel { background: #536871; color: var(--ink); border: 0; border-radius: 28px; }
+[data-theme='bento'] .modal-header { border-color: var(--line); }
+[data-theme='bento'] .profile-card { background: #495f69; color: var(--ink); border-color: transparent; }
+[data-theme='bento'] .theme-option { background: #3e535d; color: #e1e8e8; }
+[data-theme='bento'] .theme-option.active { background: #fffdf5; color: #263840; border-color: transparent; }
+[data-theme='bento'] :is(.cookbook-create,.others-empty,.others-help,.others-section-heading,.cookbooks-heading,.cookbook-heading,.others-list-toolbar,.cookbook-back,.home-section-title) { color: #253f49; }
+[data-theme='bento'] :is(.cookbook-heading,.cookbooks-heading) h3 { color: #17272e; }
+[data-theme='bento'] :is(.cookbook-heading,.cookbooks-heading) .eyebrow { color: #304e59; }
+[data-theme='bento'] .cookbook-card-copy strong { color: #17272e; }
+[data-theme='bento'] .cookbook-card-copy small { color: #304e59; }
+[data-theme='bento'] :is(.modal-panel,.home-panel,.briefing,.hs-card,.others-module-row,.others-record-row,.overtime-summary,.nutrition-calendar) .others-help { color: var(--ink-secondary); }
+[data-theme='bento'] .bottom-nav { background: #7c9eac; border: 0; box-shadow: none; border-radius: 22px; padding: 10px; gap: 8px; backdrop-filter: none; -webkit-backdrop-filter: none; }
+[data-theme='bento'] .nav-item { background: #405660; color: #e5eeed; border-radius: 12px; box-shadow: none; }
+[data-theme='bento'] .nav-item.active { background: #fffdf5; color: #263840; }
+[data-theme='bento'] :is(.wxp-blue,.wxp-table td.wxp-blue) { color: #b9defe; }
+[data-theme='bento'] .time-pill-morning { background: #675e3a; color: #fff0a3; }
+[data-theme='bento'] .time-pill-evening { background: #495878; color: #e0e4ff; }
+[data-theme='bento'] .toast { background: #101719; color: #fffdf5; border-color: transparent; }
+@media (min-width: 900px) {
+ [data-theme='bento'] .app-shell:not(.is-homescreen) { padding-bottom: 40px; }
+ [data-theme='bento'] .app-shell:not(.is-homescreen) .main-content { width: calc(100% - 180px); max-width: 1264px; margin-left: max(130px, calc((100% - 1160px) / 2)); margin-right: 40px; }
+ [data-theme='bento'] .app-shell:not(.is-homescreen) .bottom-nav { left: 28px; top: 178px; bottom: auto; transform: none; flex-direction: column; width: 68px; padding: 10px; border-radius: 22px; }
+ [data-theme='bento'] .app-shell:not(.is-homescreen) .nav-item { min-width: 46px; width: 46px; min-height: 46px; padding: 12px; }
+ [data-theme='bento'] .app-shell:not(.is-homescreen) .nav-label { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+ [data-theme='bento'] .app-shell:not(.is-homescreen) .nav-item svg { width: 20px; height: 20px; }
+}
+@media (max-width: 899px) {
+ [data-theme='bento'] .topbar { height: 68px; padding-inline: 22px; }
+ [data-theme='bento'] .bottom-nav { width: min(360px, calc(100% - 32px)); }
+ [data-theme='bento'] .nav-item { min-width: 0; flex: 1; padding-inline: 10px; }
+ [data-theme='bento'] .bento-welcome { padding-bottom: 8px; }
+}
+@media (max-width: 540px) {
+ [data-theme='bento'] .home-page { padding-top: 24px; gap: 18px; }
+ [data-theme='bento'] .bento-welcome h1 { font-size: 32px; }
+ [data-theme='bento'] :is(.home-panel,.briefing) { padding: 22px; }
+ [data-theme='bento'] .modal-panel.modal-phone-fullscreen { border-radius: 0; }
+ .theme-picker { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+[data-theme='bento'] .briefing-agenda > ol > li { background: #43565f; }
+[data-theme='bento'] .briefing-status { color: #253f49; }
+@media (min-width: 1050px) {
+ [data-theme='bento'] .home-page { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: 24px; }
+ [data-theme='bento'] .home-page > :is(.bento-welcome,.home-date,.home-weather,.home-notifications) { grid-column: 1 / -1; }
+ [data-theme='bento'] .home-page > .home-weather { order: 4; }
+ [data-theme='bento'] .home-page .briefing { display: contents; }
+ [data-theme='bento'] .home-page .briefing-header { grid-column: span 2; background: #536871; border-radius: 30px; padding: 30px; min-height: 230px; color: var(--ink); }
+ [data-theme='bento'] .home-page .briefing-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); background: #536871; padding: 22px; border-radius: 30px; color: var(--ink); }
+ [data-theme='bento'] .home-page .briefing-stats .briefing-stat { padding: 8px 10px; }
+ [data-theme='bento'] .home-page .briefing-grid { display: contents; }
+ [data-theme='bento'] .home-page :is(.briefing-block,.briefing-agenda) { background: #536871; padding: 26px; border: 0; border-radius: 30px; color: var(--ink); }
+ [data-theme='bento'] .home-page .briefing-header h2 { font-size: 30px; line-height: 1.25; }
+ [data-theme='bento'] .home-page .briefing-agenda > ol { grid-template-columns: 1fr; }
+ [data-theme='bento'] .home-page .briefing-footnote { grid-column: 1 / -1; color: #304e59; }
+ [data-theme='bento'] .home-page .home-grid { display: contents; }
+ [data-theme='bento'] .home-page .home-panel { order: 5; }
+}
+[data-theme='bento'] .is-homescreen .topbar { height: 56px; width: 100%; padding-inline: 20px; }
+
+/* Second reference: a pastoral canvas visible in the gutters, with quiet slate panels. */
+[data-theme='bento'] body { isolation: isolate; background: #acd8e9; }
+[data-theme='bento'] body::before { display: block; z-index: -1; background: #acd8e9 url('/bento-landscape.png') center bottom / cover no-repeat; }
+[data-theme='bento'] :is(.home-panel,.briefing,.hs-card,.summary-card,.project-card,.others-module-row,.others-record-row,.overtime-summary,.overtime-row,.nutrition-calendar,.nutrition-habit-row,.note-card,.project-task-group,.project-page .project-detail-layout,.cookbook-library-links > button,.wxp,.weather-panel) { background: rgba(76,96,104,.96); }
+[data-theme='bento'] :is(.filter-chip,.tag-chip,.briefing-agenda-item) { border-radius: 999px; }
+[data-theme='bento'] .briefing-tip-actions .button { background: #172123; color: #fffdf5; border-radius: 999px; padding-inline: 15px; }
+[data-theme='bento'] .home-page .briefing-focus-row { min-height: 70px; }
+@media (min-width:1050px) {
+ [data-theme='bento'] .home-page :is(.briefing-header,.briefing-stats,.briefing-block,.briefing-agenda) { background: rgba(76,96,104,.96); }
+ [data-theme='bento'] .home-page .briefing-header { grid-column: span 1; }
+ [data-theme='bento'] .home-page .briefing-stats { grid-column: span 2; grid-template-columns: repeat(5,minmax(0,1fr)); align-content: center; gap: 14px; padding: 30px; }
+ [data-theme='bento'] .home-page .briefing-stats .briefing-stat { min-height: 110px; padding: 18px 14px; border-radius: 18px; }
+ [data-theme='bento'] .home-page .briefing-stats dd { font-size: 34px; }
+ [data-theme='bento'] .home-page .briefing-stats dt { font-size: 12px; }
+}

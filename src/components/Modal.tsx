@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { X } from 'lucide-react'
 
-export function Modal({ title, subtitle, children, onClose, footer, error, wide = false, phoneFullscreen = false, initialFocusRef, dirty = false }: {
+export function Modal({ title, subtitle, children, onClose, footer, error, wide = false, phoneFullscreen = false, initialFocusRef, focusForm = true, dirty = false }: {
   title: string; subtitle?: string; children: ReactNode; onClose: () => void; footer?: ReactNode | ((requestClose: () => void) => ReactNode); error?: string | null;
-  dirty?: boolean; wide?: boolean; phoneFullscreen?: boolean; initialFocusRef?: RefObject<HTMLInputElement | null>;
+  focusForm?: boolean; dirty?: boolean; wide?: boolean; phoneFullscreen?: boolean; initialFocusRef?: RefObject<HTMLInputElement | null>;
 }) {
   const ref = useRef<HTMLDialogElement>(null)
   const [confirming, setConfirming] = useState(false)
@@ -56,7 +56,9 @@ export function Modal({ title, subtitle, children, onClose, footer, error, wide 
     viewport?.addEventListener('scroll', updateViewport)
     window.addEventListener('resize', resized)
     dialog.addEventListener('focusin', resized)
-    const target = initialFocusRef?.current ?? dialog.querySelector<HTMLElement>('form input:not([disabled]), form textarea:not([disabled]), form select:not([disabled])')
+    const target = initialFocusRef?.current ?? dialog.querySelector<HTMLElement>(focusForm
+      ? 'form input:not([disabled]), form textarea:not([disabled]), form select:not([disabled])'
+      : '.modal-header button')
     target?.focus({ preventScroll: true })
     return () => {
       cancelAnimationFrame(frame)

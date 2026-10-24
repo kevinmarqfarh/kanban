@@ -42,12 +42,12 @@ export function TaskEditor({ task, columnId, workspace, onSave, onDelete, onClos
     const failure = onSave(nextTask)
     if (failure) setSaveError(failure)
   }
-  return <Modal dirty={dirty} title={task ? 'Uppgift' : 'Ny uppgift'} error={saveError} onClose={onClose} footer={requestClose => <>
+  return <Modal focusForm={false} dirty={dirty} title={task ? 'Uppgift' : 'Ny uppgift'} error={saveError} onClose={onClose} footer={requestClose => <>
     {task && <button className="icon-button danger" aria-label="Ta bort uppgift" onClick={() => { const failure = onDelete(draft.id); if (failure) setSaveError(failure) }}><Trash2 size={19} /></button>}
     <button className="button secondary" onClick={requestClose}>Avbryt</button><button className="button primary" form="task-form" type="submit"><Check size={17} />{task ? 'Spara ändringar' : 'Skapa uppgift'}</button>
   </>}>
     <form id="task-form" onSubmit={save}>
-      <label className="field">Titel<input className="input title-input" autoFocus required maxLength={160} value={draft.title} onChange={event => setDraft({ ...draft, title: event.target.value })} /></label>
+      <label className="field">Titel<input className="input title-input" required maxLength={160} value={draft.title} onChange={event => setDraft({ ...draft, title: event.target.value })} /></label>
       <label className="field">Beskrivning<textarea className="textarea" rows={3} value={draft.description} onChange={event => setDraft({ ...draft, description: event.target.value })} /></label>
       <label className="field">Status<select className="select" value={draft.columnId} onChange={event => setDraft({ ...draft, columnId: event.target.value })}>{workspace.columns.map(column => <option key={column.id} value={column.id}>{columnDisplayTitle(column)}</option>)}</select></label>
       <fieldset className="tag-field priority-field"><legend>Prioritet</legend><div className="tag-options">

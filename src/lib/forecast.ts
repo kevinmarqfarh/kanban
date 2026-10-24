@@ -1,6 +1,6 @@
 // Builds one Forecast from SMHI (primary) and Open-Meteo (earlier hours of the week, and fallback when SMHI is
 // unavailable or the place is outside SMHI's area). Hours are grouped into local days the same way for both.
-import { addLocalDays, localDateString, weekStart } from './others'
+import { addLocalDays, localDateString, parseLocalDate, weekStart } from './others'
 import { inSmhiArea, parseSmhi, smhiUrl, type SourceSteps } from './smhi'
 import { sunTimes } from './sun'
 import { isWet, weatherKind, type DayKind, type Forecast, type ForecastDay, type WeatherPlace, type WeatherSource, type WeatherStep } from './weather'
@@ -172,6 +172,16 @@ export function stepsOn(forecast: Forecast, date: string, now: Date = new Date()
   const current = currentStep(forecast, now)
   const today = localDateString(now)
   return forecast.steps.filter(step => dateOf(step.time) === date && (date !== today || !current || step.time >= current.time))
+}
+
+/** A true 24-hour window, starting with the current forecast hour or the selected day's midnight.
+ * Keep source intervals intact rather than inventing hourly precipitation for sparse forecasts. */
+export function forecastHours(forecast: Forecast, date: string, now: Date = new Date()): WeatherStep[] {
+  const current = date === localDateString(now) ? currentStep(forecast, now) : null
+  const midnight = parseLocalDate(date)
+  midnight.setHours(0, 0, 0, 0)
+  const from = current ? Date.parse(current.time) : midnight.getTime()
+  return forecast.steps.filter(step => Date.parse(step.time) >= from && Date.parse(step.time) < from + 24 * HOUR)
 }
 
 const clock = (iso: string) => new Date(iso).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
