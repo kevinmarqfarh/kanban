@@ -20,10 +20,10 @@
 }
 [data-theme='bento'] body { background: #acd8e9 url('/bento-paper.png') repeat; background-size: 700px 700px; color: #17272e; }
 [data-theme='bento'] body::before { display: none; }
-[data-theme='bento'] .topbar { background: #7c9eac; border: 0; width: 100%; padding-inline: max(30px, calc((100% - 1264px) / 2)); height: 82px; color: #fffdf5; }
-[data-theme='bento'] .brand { color: #fffdf5; font-weight: 500; letter-spacing: -.8px; }
-[data-theme='bento'] .brand-mark > * { background: #f6db35; opacity: 1; }
-[data-theme='bento'] .topbar .icon-button { color: #fffdf5; }
+[data-theme='bento'] .topbar { background: transparent; border: 0; width: 100%; padding-inline: max(30px, calc((100% - 1264px) / 2)); height: 82px; color: #111111; }
+[data-theme='bento'] .brand { color: #111111; font-weight: 500; letter-spacing: -.8px; }
+[data-theme='bento'] .brand-mark > * { background: #111111; opacity: 1; }
+[data-theme='bento'] .topbar .icon-button { color: #111111; }
 [data-theme='bento'] .page-heading { color: #17272e; }
 [data-theme='bento'] .home-date { color: #2d4650; }
 [data-theme='bento'] .bento-welcome { display: block; padding: 12px 0 22px; }
@@ -54,7 +54,8 @@
 [data-theme='bento'] .cookbook-card-copy small { color: #304e59; }
 [data-theme='bento'] :is(.modal-panel,.home-panel,.briefing,.hs-card,.others-module-row,.others-record-row,.overtime-summary,.nutrition-calendar) .others-help { color: var(--ink-secondary); }
 [data-theme='bento'] .bottom-nav { background: #7c9eac; border: 0; box-shadow: none; border-radius: 22px; padding: 10px; gap: 8px; backdrop-filter: none; -webkit-backdrop-filter: none; }
-[data-theme='bento'] .nav-item { background: #405660; color: #e5eeed; border-radius: 12px; box-shadow: none; }
+[data-theme='bento'] .nav-item { background: transparent; color: #fffdf5; border-radius: 12px; box-shadow: none; }
+[data-theme='bento'] .nav-item:not(.active):hover { background: transparent; color: #17272e; }
 [data-theme='bento'] .nav-item.active { background: #fffdf5; color: #263840; }
 [data-theme='bento'] :is(.wxp-blue,.wxp-table td.wxp-blue) { color: #b9defe; }
 [data-theme='bento'] .time-pill-morning { background: #675e3a; color: #fff0a3; }
