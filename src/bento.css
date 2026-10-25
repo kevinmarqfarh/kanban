@@ -101,9 +101,7 @@
 }
 [data-theme='bento'] .is-homescreen .topbar { height: 56px; width: 100%; padding-inline: 20px; }
 
-/* Second reference: a pastoral canvas visible in the gutters, with quiet slate panels. */
-[data-theme='bento'] body { isolation: isolate; background: #acd8e9; }
-[data-theme='bento'] body::before { display: block; z-index: -1; background: #acd8e9 url('/bento-landscape.png') center bottom / cover no-repeat; }
+/* Refined card proportions and controls; retain the original paper-blue canvas. */
 [data-theme='bento'] :is(.home-panel,.briefing,.hs-card,.summary-card,.project-card,.others-module-row,.others-record-row,.overtime-summary,.overtime-row,.nutrition-calendar,.nutrition-habit-row,.note-card,.project-task-group,.project-page .project-detail-layout,.cookbook-library-links > button,.wxp,.weather-panel) { background: rgba(76,96,104,.96); }
 [data-theme='bento'] :is(.filter-chip,.tag-chip,.briefing-agenda-item) { border-radius: 999px; }
 [data-theme='bento'] .briefing-tip-actions .button { background: #172123; color: #fffdf5; border-radius: 999px; padding-inline: 15px; }
