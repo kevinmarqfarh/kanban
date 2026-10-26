@@ -23,6 +23,7 @@ import './bento-aurora.css'
 import './bento-space-gray.css'
 import './home-layout.css'
 import './recipe-reader.css'
+import './home-surfaces.css'
 
 // A reload starts on Home, so a previous tab's scroll position must not carry over.
 window.history.scrollRestoration = 'manual'
