@@ -100,7 +100,7 @@ export default function App() {
   useEffect(() => {
     if (!desktop || data.loading) return
     const shortcut = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || event.repeat || event.ctrlKey || event.metaKey || event.altKey || document.querySelector('dialog[open]') || document.documentElement.classList.contains('note-focus-open')) return
+      if (event.defaultPrevented || event.repeat || event.ctrlKey || event.metaKey || event.altKey || document.querySelector('dialog[open], .home-layout-editing') || document.documentElement.classList.contains('note-focus-open')) return
       if (event.target instanceof HTMLElement && event.target.closest('input, select, textarea, [contenteditable]:not([contenteditable="false"]), [role="textbox"]')) return
       if (event.key.toLowerCase() === 'n') { event.preventDefault(); setEditor({ type: 'task' }) }
       if (event.key === '/') { event.preventDefault(); if (page !== 'planner') switchPage('planner'); setFocusSearch(true) }
@@ -119,7 +119,7 @@ export default function App() {
   const creationSnapshots = useRef({ tasks: new Map<string, Task>(), columns: new Map<string, Column>(), projects: new Map<string, Project>(), birthdays: new Map<string, Birthday>(), initialTasks: new Map<string, ProjectTask>(), projectTasks: new Map<string, ProjectTask>(), otherEntries: new Map<string, OtherEntry>() })
   useEffect(() => { for (const records of Object.values(creationSnapshots.current)) records.clear() }, [editor, page, othersVisit])
   const [theme, setTheme] = useState<ThemePreference>(() => {
-    try { const saved = localStorage.getItem('forma-theme'); return saved === 'light' || saved === 'dark' || saved === 'bento' || saved === 'bento-aurora' ? saved : 'system' } catch { return 'system' }
+    try { const saved = localStorage.getItem('forma-theme'); return saved === 'light' || saved === 'dark' || saved === 'bento' || saved === 'bento-aurora' || saved === 'bento-space-gray' ? saved : 'system' } catch { return 'system' }
   })
   const [resolvedTheme, setResolvedTheme] = useState('light')
   // On the docked home screen, System means: follow the sun (dark after sunset).
@@ -128,9 +128,9 @@ export default function App() {
     const media = matchMedia('(prefers-color-scheme: dark)')
     const apply = () => {
       const resolved = theme === 'system' ? sunTheme ?? (media.matches ? 'dark' : 'light') : theme
-      document.documentElement.dataset.theme = resolved === 'bento-aurora' ? 'bento' : resolved
-      document.documentElement.dataset.bentoVariant = resolved === 'bento-aurora' ? 'aurora' : ''
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', resolved === 'bento-aurora' ? '#142a34' : resolved === 'bento' ? '#7c9eac' : resolved === 'dark' ? '#191919' : '#f6f6f6')
+      document.documentElement.dataset.theme = resolved === 'bento-aurora' || resolved === 'bento-space-gray' ? 'bento' : resolved
+      document.documentElement.dataset.bentoVariant = resolved === 'bento-aurora' ? 'aurora' : resolved === 'bento-space-gray' ? 'space-gray' : ''
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', resolved === 'bento-space-gray' ? '#303238' : resolved === 'bento-aurora' ? '#142a34' : resolved === 'bento' ? '#7c9eac' : resolved === 'dark' ? '#191919' : '#f6f6f6')
       setResolvedTheme(resolved)
     }
     apply()
@@ -527,7 +527,7 @@ export default function App() {
       </main>
       <nav className="bottom-nav" aria-label="Huvudnavigation"><div className="desktop-nav-header"><button className="brand" onClick={() => switchPage('home')} aria-label="Forma — till Home"><span className="brand-mark"><i /><i /><i /><i /></span>forma<span className="brand-period">.</span></button><span>DIN PERSONLIGA ARBETSYTA</span></div>{([{ id: 'home', label: 'Home', Icon: House }, { id: 'planner', label: 'Planner', Icon: Columns3 }, { id: 'schedule', label: 'Schema', Icon: CalendarDays }, { id: 'projects', label: 'Projects', Icon: Folder }, { id: 'others', label: 'Others', Icon: LayoutList }] as const).map(({ id, label, Icon }) => <button key={id} className={`nav-item ${page === id ? 'active' : ''}`} aria-label={label} aria-current={page === id ? 'page' : undefined} onClick={() => switchPage(id)}><Icon className="nav-icon" size={18} /><span className="nav-label">{label}</span>{id === 'home' && unreadCount > 0 && <span className="nav-unread" aria-hidden="true">{unreadCount > 9 ? '9+' : unreadCount}</span>}</button>)}<div className="desktop-nav-footer"><button type="button" className="desktop-shortcuts" onClick={() => setShowShortcuts(true)}><Keyboard size={17} />Kortkommandon<kbd>?</kbd></button><button className="desktop-sync" type="button" onClick={() => setEditor({ type: 'profile' })} aria-label={`Sparstatus: ${statusText}. Öppna inställningar.`}><span className="desktop-sync-dot" data-status={data.syncStatus} /><span>{statusText}</span></button></div></nav>
     </div>
-    {showShortcuts && <Modal title="Kortkommandon" focusForm={false} onClose={() => setShowShortcuts(false)} footer={<button className="button secondary" onClick={() => setShowShortcuts(false)}>Stäng</button>}><p className="shortcut-scope">Gäller på PC när du inte skriver i ett fält eller har en dialog öppen.</p><dl className="shortcut-list"><div><dt><kbd>N</kbd></dt><dd>Ny uppgift</dd></div><div><dt><kbd>/</kbd></dt><dd>Sök i Planner</dd></div><div><dt><kbd>?</kbd></dt><dd>Visa kortkommandon</dd></div></dl><p className="shortcut-scope">Tab flyttar mellan kontroller. Enter aktiverar. Escape stänger en dialog och frågar först om du har osparade ändringar.</p></Modal>}
+    {showShortcuts && <Modal title="Kortkommandon" focusForm={false} onClose={() => setShowShortcuts(false)} footer={<button className="button secondary" onClick={() => setShowShortcuts(false)}>Stäng</button>}><p className="shortcut-scope">Gäller på PC när du inte skriver i ett fält, anpassar Home eller har en dialog öppen.</p><dl className="shortcut-list"><div><dt><kbd>N</kbd></dt><dd>Ny uppgift</dd></div><div><dt><kbd>/</kbd></dt><dd>Sök i Planner</dd></div><div><dt><kbd>?</kbd></dt><dd>Visa kortkommandon</dd></div></dl><p className="shortcut-scope">Tab flyttar mellan kontroller. Enter aktiverar. Escape stänger en dialog och frågar först om du har osparade ändringar.</p></Modal>}
     {scheduleDraft && <ScheduleEditor initial={scheduleDraft} workspace={workspace} onSave={planTask} onClose={() => setScheduleDraft(null)} />}
     {editor?.type === 'profile' && <Modal title="Inställningar" focusForm={false} onClose={() => setEditor(null)} footer={<button className="button secondary" onClick={() => setEditor(null)}>Stäng</button>}><div className="settings-content"><Profile data={data} theme={theme} onTheme={setTheme} onExport={exportWorkspace} syncText={statusText} homeScreen={homeScreen} /></div></Modal>}
     {editor?.type === 'birthdays' && <Birthdays birthdays={workspace.birthdays ?? []} undo={undo ? { text: undo.text, onUndo: undoRemoval } : null} onClose={() => setEditor(null)} onSave={saveBirthday} onReorder={reorderBirthdays} onDelete={id => removeWithUndo(current => ({ ...current, birthdays: (current.birthdays ?? []).filter(person => person.id !== id), birthdayNotifications: (current.birthdayNotifications ?? []).filter(note => note.birthdayId !== id) }), 'Födelsedagen är borttagen')} />}

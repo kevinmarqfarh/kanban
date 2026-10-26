@@ -46,6 +46,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
 .app-shell.is-desktop .board-many { grid-auto-columns: minmax(270px, calc((100% - 36px) / 3)); }
 .app-shell.is-desktop .column { border-radius: 16px; padding: 10px; }
 .app-shell.is-desktop .task-card { border-radius: 12px; padding: 14px; }
+.app-shell.is-desktop .task-quick-complete { width: 32px; height: 32px; min-width: 32px; min-height: 32px; border-radius: 8px; }
 .app-shell.is-desktop .task-title { font-size: 15px; }
 .app-shell.is-desktop :is(.task-description,.task-meta-item,.label-chip,.priority-chip) { font-size: 12px; }
 /* Projects use the available workspace for discovery, then devote the detail view to tasks. */
@@ -96,20 +97,20 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
 .app-shell.is-desktop .schedule-summary-task strong { white-space: normal; font-size: 14px; }
 .app-shell.is-desktop .schedule-summary .schedule-heading > strong { font-size: 14px; }
 /* Theme adjustments keep dark/light/Bento coherent without altering the tablet or phone design. */
-[data-theme='bento']:not([data-bento-variant='aurora']) .app-shell.is-desktop .bottom-nav { background: #7c9eac; }
-[data-theme='bento']:not([data-bento-variant='aurora']) .app-shell.is-desktop .desktop-nav-header > span, [data-theme='bento']:not([data-bento-variant='aurora']) .app-shell.is-desktop :is(.desktop-shortcuts,.desktop-sync) { color: #17272e; }
-[data-theme='bento']:not([data-bento-variant='aurora']) .app-shell.is-desktop .topbar { padding: 0 28px; }
-[data-theme='bento']:not([data-bento-variant='aurora']) .app-shell.is-desktop .desktop-context, [data-theme='bento']:not([data-bento-variant='aurora']) .app-shell.is-desktop .desktop-context strong { color: #17272e; }
-[data-theme='bento']:not([data-bento-variant='aurora']) .app-shell.is-desktop .home-page > .briefing { background: #4c6068; }
-[data-theme='bento']:not([data-bento-variant='aurora']) .app-shell.is-desktop .briefing-eyebrow, [data-theme='bento']:not([data-bento-variant='aurora']) .app-shell.is-desktop .briefing-footnote { color: var(--ink-secondary); }
-[data-theme='bento']:not([data-bento-variant='aurora']) .app-shell.is-desktop .project-page .project-overview { color: var(--ink); }
+[data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell.is-desktop .bottom-nav { background: #7c9eac; }
+[data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell.is-desktop .desktop-nav-header > span, [data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell.is-desktop :is(.desktop-shortcuts,.desktop-sync) { color: #17272e; }
+[data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell.is-desktop .topbar { padding: 0 28px; }
+[data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell.is-desktop .desktop-context, [data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell.is-desktop .desktop-context strong { color: #17272e; }
+[data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell.is-desktop .home-page > .briefing { background: #4c6068; }
+[data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell.is-desktop .briefing-eyebrow, [data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell.is-desktop .briefing-footnote { color: var(--ink-secondary); }
+[data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell.is-desktop .project-page .project-overview { color: var(--ink); }
 @media (max-width: 1350px) {
   .app-shell.is-desktop .search-field { width: 240px; }
   .app-shell.is-desktop .home-page { grid-template-columns: minmax(0,1.45fr) minmax(300px,1fr); }
 }
 @media (min-width: 900px) {
-  [data-theme='bento']:not([data-bento-variant='aurora']) .app-shell:not(.is-desktop):not(.is-homescreen) .main-content { width: calc(100% - 64px); margin-inline: auto; }
-  [data-theme='bento']:not([data-bento-variant='aurora']) .app-shell:not(.is-desktop):not(.is-homescreen) .bottom-nav { flex-direction: row; width: max-content; }
+  [data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell:not(.is-desktop):not(.is-homescreen) .main-content { width: calc(100% - 64px); margin-inline: auto; }
+  [data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell:not(.is-desktop):not(.is-homescreen) .bottom-nav { flex-direction: row; width: max-content; }
 }
 .app-shell.is-desktop .notes-layout { grid-template-columns: 280px minmax(0, 1fr); gap: 16px; }
 .app-shell.is-desktop :is(.notes-sidebar,.notes-writing-area) { border-radius: 16px; }

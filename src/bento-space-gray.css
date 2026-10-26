@@ -1,0 +1,49 @@
+/* Aurora's soft glass in graphite and silver, over a static paper-grain canvas. */
+[data-theme='bento'][data-bento-variant='space-gray'] {
+ --bg: #303238; --bg-spot: #545861;
+ --surface: rgba(37, 39, 44, .82); --surface-solid: #303238;
+ --surface-muted: rgba(18, 20, 24, .48); --surface-hover: #464950; --surface-column: rgba(43, 45, 51, .8);
+ --ink: #f5f4f1; --ink-secondary: #d6d7db; --ink-muted: #b9bcc4;
+ --accent: #dce0e6; --accent-ink: #25272c; --accent-soft: #444851;
+ --line: rgba(241, 243, 248, .12); --line-strong: rgba(241, 243, 248, .27);
+ --shadow-card: 0 8px 28px rgba(9, 10, 13, .12);
+ --shadow-popover: 0 24px 70px rgba(9, 10, 13, .36);
+}
+[data-bento-variant='space-gray'] body {
+ background-color: var(--bg);
+ background-image: url('./assets/space-gray-paper.svg'), radial-gradient(ellipse at 76% 0%, rgba(174, 182, 198, .24), transparent 62%), radial-gradient(ellipse at 8% 90%, rgba(155, 144, 128, .14), transparent 60%), linear-gradient(145deg, #45484f 0%, #30333a 46%, #1d1f24 100%);
+ background-size: 240px 240px, cover, cover, cover;
+ background-repeat: repeat, no-repeat, no-repeat, no-repeat;
+ background-attachment: fixed;
+ color: var(--ink);
+}
+[data-bento-variant='space-gray'] :is(.topbar,.brand,.topbar .icon-button,.page-heading,.home-date,.bento-welcome h1,.home-section-title,.briefing-status,.briefing-footnote,.others-section-heading,.others-help,.others-empty,.others-list-toolbar,.cookbook-back,.cookbook-create,.cookbooks-heading,.cookbook-heading,.cookbook-card-copy strong,.cookbook-card-copy small,.wp-header,.wp-header p,.wp-eyebrow,.wp-filter-note,.wp-navigation > .icon-button) { color: var(--ink); }
+[data-bento-variant='space-gray'] :is(.cookbook-heading,.cookbooks-heading) :is(h3,.eyebrow) { color: var(--ink-secondary); }
+[data-bento-variant='space-gray'] .topbar { background: rgba(39, 41, 47, .38); border-bottom: 1px solid var(--line); }
+[data-bento-variant='space-gray'] .brand-mark > * { background: var(--accent); }
+[data-bento-variant='space-gray'] :is(.home-panel,.briefing,.hs-card,.summary-card,.project-card,.others-module-row,.others-record-row,.overtime-summary,.overtime-row,.nutrition-calendar,.nutrition-habit-row,.note-card,.project-task-group,.project-page .project-detail-layout,.cookbook-library-links > button,.wxp,.weather-panel,.home-page .briefing-header,.home-page .briefing-stats,.home-page .briefing-block,.home-page .briefing-agenda,.wp-queue-section,.wp-day,.wp-stats) {
+ background: var(--surface); color: var(--ink); border-color: var(--line);
+ backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+ box-shadow: inset 0 1px 0 rgba(255,255,255,.045), var(--shadow-card);
+}
+[data-bento-variant='space-gray'] :is(.briefing-stat,.briefing-tip,.home-habit,.home-birthday-row,.recipe-content-box,.checklist-row,.workout-row,.cookbook-picker-row,.briefing-agenda > ol > li,.wp-task,.profile-card) { background: var(--surface-muted); }
+[data-bento-variant='space-gray'] :is(.modal-panel,.theme-option) { background: var(--surface-solid); }
+[data-bento-variant='space-gray'] .summary-card.feature { background: var(--accent); background-image: linear-gradient(135deg, var(--accent), #bfc4cd); color: var(--accent-ink); }
+[data-bento-variant='space-gray'] .summary-card.feature :is(.stat-label,.stat-note,.stat-value span,.stat-value small) { opacity: 1; }
+[data-bento-variant='space-gray'] .summary-card.feature .stat-icon { background: rgba(37,39,44,.06); border-color: rgba(37,39,44,.18); }
+[data-bento-variant='space-gray'] :is(.button.primary,.briefing-tip-actions .button) { background: var(--accent); color: var(--accent-ink); }
+[data-bento-variant='space-gray'] :is(.button.secondary,.input,.textarea,.select,.filter-select,.search-field) { background: rgba(22,24,29,.72); }
+[data-bento-variant='space-gray'] .bottom-nav,
+[data-bento-variant='space-gray'] .app-shell.is-desktop .bottom-nav { background: rgba(38,40,46,.76); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid var(--line); }
+[data-bento-variant='space-gray'] .nav-item,
+[data-bento-variant='space-gray'] .nav-item:not(.active):hover { color: var(--ink-secondary); }
+[data-bento-variant='space-gray'] .nav-item:not(.active):hover { background: rgba(255,255,255,.07); color: var(--ink); }
+[data-bento-variant='space-gray'] :is(.nav-item.active,.theme-option.active) { background: var(--accent); color: var(--accent-ink); }
+[data-bento-variant='space-gray'] .nav-item:focus-visible { outline-color: var(--accent); }
+[data-bento-variant='space-gray'] .main-content :is(.field,.field-label,.field-help) { color: var(--ink-secondary); }
+[data-bento-variant='space-gray'] .schedule-summary { border-radius: 28px; background: var(--surface); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
+@media (min-width: 1050px) {
+ [data-bento-variant='space-gray'] .home-page > .schedule-summary { grid-column: 1 / -1; }
+}
+/* Keep completed habit tiles recognizable over the neutral glass surfaces. */
+[data-bento-variant='space-gray'] :is(.home-habit.is-complete,.hs-habit.is-complete,.nutrition-habit-row.completed) { background: #35654f; }

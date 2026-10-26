@@ -141,7 +141,7 @@ async function check(name, fn) {
       }
     });
     await check('Light, dark and Bento planning text meet measured surface contrast; all actions remain visible', async () => {
-      for (const theme of ['light','dark','bento','bento-aurora']) {
+      for (const theme of ['light','dark','bento','bento-aurora','bento-space-gray']) {
         const { page, errors } = await open({ theme }); await planning(page);
         const contrast = await page.evaluate(() => {
           const rgba = value => { const m = value.match(/^rgba?\(([^)]+)\)$/); if (!m) throw new Error('Unsupported measured color '+value); const n = m[1].split(',').map(Number); return [n[0],n[1],n[2],n[3] ?? 1]; };

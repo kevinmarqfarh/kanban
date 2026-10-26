@@ -32,7 +32,7 @@
 [data-bento-variant='aurora'] :is(.nav-item.active,.theme-option.active) { background: #faf9f2; color: #23353d; }
 [data-bento-variant='aurora'] .nav-item:focus-visible { outline-color: #e6ca4b; }
 [data-bento-variant='aurora'] .main-content :is(.field,.field-label,.field-help) { color: var(--ink-secondary); }
-@media (min-width: 541px) { .theme-picker { grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); } }
+@media (min-width: 541px) { .theme-picker { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 [data-bento-variant='aurora'] .schedule-summary { border-radius: 28px; background: var(--surface); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
 @media (min-width: 1050px) {
  [data-bento-variant='aurora'] .home-page > .schedule-summary { grid-column: 1 / -1; }
