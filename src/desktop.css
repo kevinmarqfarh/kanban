@@ -1,5 +1,5 @@
 /* A desktop workspace is selected by input capability as well as width. Touch layouts stay separate. */
-.desktop-context, .desktop-nav-header, .desktop-nav-footer { display: none; }
+.desktop-context, .desktop-nav-header { display: none; }
 .app-shell.is-desktop { --desktop-sidebar: 208px; padding-bottom: 28px; }
 .app-shell.is-desktop .topbar { width: calc(100% - var(--desktop-sidebar)); max-width: none; margin: 0 0 0 var(--desktop-sidebar); height: 64px; padding: 0 28px; border-bottom: 1px solid var(--line); }
 .app-shell.is-desktop .topbar-left > .brand { display: none; }
@@ -10,12 +10,7 @@
 .app-shell.is-desktop .desktop-nav-header { display: flex; flex-direction: column; align-items: flex-start; padding: 5px 14px 16px; }
 .app-shell.is-desktop .nav-item { justify-content: flex-start; gap: 11px; width: 100%; min-width: 0; min-height: 43px; padding: 10px 14px; border-radius: 10px; font-size: 14px; }
 .app-shell.is-desktop .nav-label { position: static; width: auto; height: auto; padding: 0; overflow: visible; clip-path: none; white-space: normal; }
-.app-shell.is-desktop .desktop-nav-footer { display: flex; flex-direction: column; gap: 14px; margin-top: auto; padding: 16px 8px 0; border-top: 1px solid var(--line); }
-.desktop-shortcuts, .desktop-sync { display: flex; align-items: center; gap: 8px; text-align: left; min-height: 34px; font-size: 12px; color: var(--ink-secondary); }
-.desktop-shortcuts kbd { margin-left: auto; }
 kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; min-height: 24px; border: 1px solid var(--line-strong); border-radius: 5px; background: var(--surface-solid); color: var(--ink-secondary); font: 12px var(--font); }
-.desktop-sync-dot { width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; background: var(--status-complete-ink); }
-.desktop-sync-dot[data-status='error'], .desktop-sync-dot[data-status='conflict'] { background: var(--danger); }
 .shortcut-list { margin: 20px 0; }
 .shortcut-list > div { display: flex; align-items: center; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
 .shortcut-list dd { margin: 0; }
@@ -97,7 +92,6 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
 .app-shell.is-desktop .schedule-summary .schedule-heading > strong { font-size: 14px; }
 /* Theme adjustments keep dark/light/Bento coherent without altering the tablet or phone design. */
 [data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell.is-desktop .bottom-nav { background: #7c9eac; }
-[data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell.is-desktop :is(.desktop-shortcuts,.desktop-sync) { color: #17272e; }
 [data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell.is-desktop .topbar { padding: 0 28px; }
 [data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell.is-desktop .desktop-context, [data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell.is-desktop .desktop-context strong { color: #17272e; }
 [data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell.is-desktop .home-page > .briefing { background: #4c6068; }
@@ -130,3 +124,5 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
 .app-shell.is-desktop .home-page.home-custom-grid .home-module-sizes label { font-size: 12px; }
 .app-shell.is-desktop .home-page.home-custom-grid .home-module-sizes select { font-size: 12px; }
 .app-shell.is-desktop .schedule-page > .button { display: none; }
+
+.profile-shortcut-content { padding: 10px 0 14px; }

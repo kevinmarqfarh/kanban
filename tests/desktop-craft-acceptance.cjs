@@ -95,11 +95,19 @@ async function check(name, fn) {
       await search.fill(''); await search.blur(); await page.keyboard.press('n');
       await page.getByRole('dialog', { name: 'Ny uppgift', exact: true }).waitFor();
       await page.keyboard.press('Escape'); await dialog(page).waitFor({ state: 'detached' });
-      await page.getByRole('button', { name: /^Kortkommandon/ }).focus(); await page.keyboard.press('Enter');
-      await page.getByRole('dialog', { name: 'Kortkommandon', exact: true }).waitFor();
+      assert.equal(await page.locator('.bottom-nav .desktop-nav-footer').count(), 0);
+      const settings = page.getByRole('button', { name: 'Öppna inställningar', exact: true });
+      await settings.focus(); await page.keyboard.press('Enter'); await page.getByRole('dialog', { name: 'Inställningar', exact: true }).waitFor();
+      assert.equal(await dialog(page).locator('.profile-sync').isVisible(), true);
+      await dialog(page).locator('.profile-shortcuts > summary').focus(); await page.keyboard.press('Enter');
+      assert.equal(await dialog(page).locator('.shortcut-list').isVisible(), true);
+      await page.keyboard.press('n'); assert.equal(await dialog(page).count(), 1, 'Shortcuts are inactive inside settings');
+      await page.keyboard.press('Escape'); await dialog(page).waitFor({ state: 'detached' });
+      assert.equal(await settings.evaluate(el => el === document.activeElement), true);
+      await page.keyboard.press('?'); await page.getByRole('dialog', { name: 'Kortkommandon', exact: true }).waitFor();
       await page.keyboard.press('n'); assert.equal(await dialog(page).count(), 1, 'Shortcuts are inactive inside a dialog');
       await page.keyboard.press('Escape'); await dialog(page).waitFor({ state: 'detached' });
-      assert.equal(await page.getByRole('button', { name: /^Kortkommandon/ }).evaluate(el => el === document.activeElement), true);
+      assert.equal(await settings.evaluate(el => el === document.activeElement), true);
     });
     await check('PC Home surfaces focus before context, projects have useful search, notes retain their list', async () => {
       const { page, errors } = await open();

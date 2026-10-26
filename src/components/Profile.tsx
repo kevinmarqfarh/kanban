@@ -1,14 +1,16 @@
 import { useState, type FormEvent } from 'react'
-import { Sun, Moon, Monitor, Cloud, HardDrive, LogOut, Download, Smartphone, ArrowRight, Check, ChevronDown, Tablet, CloudSun, PanelsTopLeft } from 'lucide-react'
+import { Sun, Moon, Monitor, Cloud, HardDrive, LogOut, Download, Smartphone, ArrowRight, Check, ChevronDown, Tablet, CloudSun, PanelsTopLeft, Keyboard } from 'lucide-react'
 import type { useHomeScreen } from '../hooks/useHomeScreen'
 import { WeatherPlacePicker } from './WeatherPlacePicker'
+import { KeyboardShortcuts } from './KeyboardShortcuts'
 import { useWorkspace } from '../hooks/useWorkspace'
 import { supabaseConfigured } from '../lib/supabase'
 
 export type ThemePreference = 'light' | 'dark' | 'system' | 'bento' | 'bento-aurora' | 'bento-space-gray'
-export function Profile({ data, theme, onTheme, onExport, syncText, homeScreen }: {
+export function Profile({ data, theme, onTheme, onExport, syncText, homeScreen, desktop = false }: {
   data: ReturnType<typeof useWorkspace>; theme: ThemePreference; onTheme: (theme: ThemePreference) => void; onExport: () => void; syncText: string;
   homeScreen?: ReturnType<typeof useHomeScreen>;
+  desktop?: boolean;
 }) {
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin')
   const [email, setEmail] = useState('')
@@ -58,6 +60,7 @@ export function Profile({ data, theme, onTheme, onExport, syncText, homeScreen }
         <li>Vill du låsa iPaden till Forma: Inställningar → Hjälpmedel → Guidad åtkomst, och starta den med tre tryck på hemknappen.</li>
       </ul></details>
     </section>}
+    {desktop && <details className="profile-install profile-shortcuts"><summary><Keyboard size={17} /><span>Kortkommandon</span><ChevronDown size={15} /></summary><div className="profile-shortcut-content"><KeyboardShortcuts /></div></details>}
     <section className="profile-card"><div className="profile-section-heading"><Download size={18} /><h2>Säkerhetskopia</h2></div><p className="profile-description">Ladda ned en kopia av allt ditt innehåll.</p><button className="button secondary" aria-label="Exportera säkerhetskopia" onClick={onExport}><Download size={16} />Ladda ned</button></section>
     <details className="profile-install"><summary><Smartphone size={17} /><span>Lägg till på hemskärmen</span><ChevronDown size={15} /></summary><p>Öppna appen i Safari på din iPhone. Tryck på Dela och välj Lägg till på hemskärmen.</p></details>
   </div>
