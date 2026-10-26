@@ -19,7 +19,15 @@ export interface Comment {
 
 export type TaskPriority = 'high' | 'medium' | 'low'
 
+export interface TaskSchedule {
+  date: string
+  scope?: 'day' | 'week'
+  startTime?: string
+  endTime?: string
+}
+
 export interface Task {
+  schedule?: TaskSchedule | null
   id: string
   title: string
   description: string

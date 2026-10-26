@@ -1,0 +1,132 @@
+/* A desktop workspace is selected by input capability as well as width. Touch layouts stay separate. */
+.desktop-context, .desktop-nav-header, .desktop-nav-footer { display: none; }
+.app-shell.is-desktop { --desktop-sidebar: 208px; padding-bottom: 28px; }
+.app-shell.is-desktop .topbar { width: calc(100% - var(--desktop-sidebar)); max-width: none; margin: 0 0 0 var(--desktop-sidebar); height: 64px; padding: 0 28px; border-bottom: 1px solid var(--line); }
+.app-shell.is-desktop .topbar-left > .brand { display: none; }
+.app-shell.is-desktop .desktop-context { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--ink-secondary); }
+.desktop-context strong { color: var(--ink); font-weight: 500; }
+.app-shell.is-desktop .main-content { width: calc(100% - var(--desktop-sidebar)); max-width: none; margin: 0 0 0 var(--desktop-sidebar); padding: 0 28px; }
+.app-shell.is-desktop .bottom-nav { inset: 0 auto 0 0; transform: none; width: var(--desktop-sidebar); height: 100dvh; padding: 26px 14px 18px; display: flex; flex-direction: column; align-items: stretch; gap: 5px; border: 0; border-right: 1px solid var(--line); border-radius: 0; background: var(--surface); box-shadow: none; backdrop-filter: blur(24px); }
+.app-shell.is-desktop .desktop-nav-header { display: flex; flex-direction: column; align-items: flex-start; gap: 27px; padding: 5px 14px 16px; }
+.desktop-nav-header > span { color: var(--ink-muted); font-size: 9px; line-height: 1.7; letter-spacing: 1.3px; }
+.app-shell.is-desktop .nav-item { justify-content: flex-start; gap: 11px; width: 100%; min-width: 0; min-height: 43px; padding: 10px 14px; border-radius: 10px; font-size: 14px; }
+.app-shell.is-desktop .nav-label { position: static; width: auto; height: auto; padding: 0; overflow: visible; clip-path: none; white-space: normal; }
+.app-shell.is-desktop .desktop-nav-footer { display: flex; flex-direction: column; gap: 14px; margin-top: auto; padding: 16px 8px 0; border-top: 1px solid var(--line); }
+.desktop-shortcuts, .desktop-sync { display: flex; align-items: center; gap: 8px; text-align: left; min-height: 34px; font-size: 12px; color: var(--ink-secondary); }
+.desktop-shortcuts kbd { margin-left: auto; }
+kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; min-height: 24px; border: 1px solid var(--line-strong); border-radius: 5px; background: var(--surface-solid); color: var(--ink-secondary); font: 12px var(--font); }
+.desktop-sync-dot { width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; background: var(--status-complete-ink); }
+.desktop-sync-dot[data-status='error'], .desktop-sync-dot[data-status='conflict'] { background: var(--danger); }
+.shortcut-list { margin: 20px 0; }
+.shortcut-list > div { display: flex; align-items: center; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.shortcut-list dd { margin: 0; }
+.shortcut-scope { color: var(--ink-secondary); font-size: 14px; line-height: 1.7; }
+.app-shell.is-desktop .page-heading { padding: 23px 0 18px; min-height: 86px; }
+.app-shell.is-desktop .page-heading h1 { font-size: 28px; letter-spacing: -.9px; }
+.app-shell.is-desktop .button { font-size: 13px; }
+.app-shell.is-desktop .search-field { min-height: 38px; width: 280px; }
+.app-shell.is-desktop .search-field input { font-size: 13px; }
+.planner-view-switch { display: flex; align-items: center; gap: 3px; padding: 3px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; }
+.planner-view-switch > button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 32px; padding: 6px 13px; border-radius: 7px; font-size: 13px; }
+.planner-view-switch > button[aria-pressed='true'] { background: var(--accent); color: var(--accent-ink); }
+.planner-view-switch > button:hover { box-shadow: inset 0 0 0 1px var(--line-strong); }
+.app-shell.is-desktop .planner-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 0 10px; border-bottom: 1px solid var(--line); }
+.app-shell.is-desktop .planner-controls .workspace-toolbar { display: contents; }
+.app-shell.is-desktop .planner-controls .toolbar-left { order: 0; }
+.app-shell.is-desktop .planner-controls .toolbar-right { order: 2; margin: 0; }
+.app-shell.is-desktop .planner-controls .filter-chips { order: 1; flex: 1; margin: 0; gap: 5px; }
+.app-shell.is-desktop .filter-chip { min-height: 34px; padding: 6px 9px; font-size: 12px; }
+.app-shell.is-desktop .filter-caption { margin: 6px 0 2px; font-size: 12px; }
+.app-shell.is-desktop .filter-caption .button { min-height: 28px; padding: 3px 8px; }
+.app-shell.is-desktop .planner-help { margin: 10px 0; font-size: 12px; }
+.app-shell.is-desktop .summary-grid { margin: 0 0 16px; gap: 12px; }
+.app-shell.is-desktop .summary-card { min-height: 68px; border-radius: 14px; padding: 10px 16px; }
+.app-shell.is-desktop .summary-card .stat-value { font-size: 23px; }
+.app-shell.is-desktop .summary-card .stat-label { font-size: 12px; }
+.app-shell.is-desktop .board-many { grid-auto-columns: minmax(270px, calc((100% - 36px) / 3)); }
+.app-shell.is-desktop .column { border-radius: 16px; padding: 10px; }
+.app-shell.is-desktop .task-card { border-radius: 12px; padding: 14px; }
+.app-shell.is-desktop .task-title { font-size: 15px; }
+.app-shell.is-desktop :is(.task-description,.task-meta-item,.label-chip,.priority-chip) { font-size: 12px; }
+/* Projects use the available workspace for discovery, then devote the detail view to tasks. */
+.app-shell.is-desktop.desktop-projects > .main-content > .workspace-toolbar { justify-content: flex-start; gap: 16px; margin-bottom: 18px; }
+.app-shell.is-desktop.desktop-projects .workspace-toolbar > .field:first-child { width: 340px; }
+.app-shell.is-desktop.desktop-projects .workspace-toolbar > .field:last-child { width: 210px; margin-left: auto; }
+.app-shell.is-desktop .project-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.app-shell.is-desktop .project-card { border-radius: 16px; padding: 20px; }
+.app-shell.is-desktop .project-card h2 { font-size: 20px; }
+.app-shell.is-desktop :is(.project-description,.progress-caption,.project-card-footer) { font-size: 13px; }
+.app-shell.is-desktop .project-detail-layout { grid-template-columns: 230px minmax(0, 1fr); gap: 24px; }
+.app-shell.is-desktop .project-overview { padding-right: 22px; }
+.app-shell.is-desktop .project-page .project-detail-layout { padding: 22px; border-radius: 16px; }
+.app-shell.is-desktop .project-task-body strong { font-size: 15px; }
+.app-shell.is-desktop .project-subtask { font-size: 14px; }
+/* Home: today's actionable briefing is primary; contextual information occupies the second column. */
+.app-shell.is-desktop .home-page { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(340px, 1fr); gap: 18px; align-items: start; padding-top: 0; }
+.app-shell.is-desktop .home-page > .bento-welcome { display: none; }
+.app-shell.is-desktop .home-page > .home-date { grid-column: 1 / -1; grid-row: 1; order: initial; margin: 0; font-size: 13px; }
+.app-shell.is-desktop .home-page > .briefing { display: flex; grid-column: 1; grid-row: 2 / span 4; align-self: start; gap: 18px; border-radius: 18px; padding: 22px; }
+.app-shell.is-desktop .home-page > .schedule-summary { grid-column: 2; grid-row: 2; margin: 0; padding: 12px 16px; border-radius: 16px; }
+.app-shell.is-desktop .home-page > .home-notifications { grid-column: 2; grid-row: 3; display: flex; flex-direction: column; gap: 8px; }
+.app-shell.is-desktop .home-notification { min-height: 68px; padding: 10px 12px; border-radius: 14px; }
+.app-shell.is-desktop .home-notification-icon { display: none; }
+.app-shell.is-desktop .home-notification-copy { min-width: 0; }
+.app-shell.is-desktop .home-notification-copy strong { font-size: 14px; }
+.app-shell.is-desktop .home-notification-copy :is(p,time) { font-size: 12px; }
+.app-shell.is-desktop .home-notification-actions .icon-button { width: 30px; height: 34px; }
+.app-shell.is-desktop .home-page > .home-weather { grid-column: 2; grid-row: 4; order: initial; padding: 14px; border-radius: 16px; }
+.app-shell.is-desktop .home-page > .home-grid { display: grid; grid-column: 1 / -1; grid-row: 6; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.app-shell.is-desktop .home-page .briefing :is(.briefing-header,.briefing-stats,.briefing-block,.briefing-agenda) { grid-column: auto; min-height: 0; border-radius: 0; padding: 0; background: transparent; }
+.app-shell.is-desktop .home-page .briefing-header { display: flex; }
+.app-shell.is-desktop .home-page .briefing-stats { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 6px; }
+.app-shell.is-desktop .home-page .briefing-stats .briefing-stat { min-height: 0; border-radius: 10px; padding: 8px; }
+.app-shell.is-desktop .home-page .briefing-stats dd { font-size: 24px; }
+.app-shell.is-desktop .home-page .briefing-stats dt { font-size: 12px; }
+.app-shell.is-desktop .home-page .briefing-grid { display: flex; flex-direction: column; gap: 20px; }
+.app-shell.is-desktop .home-page .briefing-header h2 { font-size: 27px; }
+.app-shell.is-desktop .home-page .briefing-focus-row { min-height: 66px; padding: 10px 0; border-radius: 0; }
+.app-shell.is-desktop .briefing-reason, .app-shell.is-desktop .briefing-column { font-size: 12px; }
+.app-shell.is-desktop .briefing-agenda > ol { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); }
+.app-shell.is-desktop .home-page .briefing-agenda { padding-top: 14px; border-top: 1px solid var(--line); }
+.app-shell.is-desktop .home-page .briefing-footnote { font-size: 12px; }
+.app-shell.is-desktop .main-content:has(.home-page) > .page-heading { display: flex; }
+.app-shell.is-desktop .home-page .home-panel { padding: 18px; border-radius: 16px; order: initial; }
+.app-shell.is-desktop .schedule-summary-task { align-items: flex-start; gap: 10px; padding: 11px 0; }
+.app-shell.is-desktop .schedule-summary-task span { min-width: 90px; font-size: 12px; }
+.app-shell.is-desktop .schedule-summary-task strong { white-space: normal; font-size: 14px; }
+.app-shell.is-desktop .schedule-summary .schedule-heading > strong { font-size: 14px; }
+/* Theme adjustments keep dark/light/Bento coherent without altering the tablet or phone design. */
+[data-theme='bento']:not([data-bento-variant='aurora']) .app-shell.is-desktop .bottom-nav { background: #7c9eac; }
+[data-theme='bento']:not([data-bento-variant='aurora']) .app-shell.is-desktop .desktop-nav-header > span, [data-theme='bento']:not([data-bento-variant='aurora']) .app-shell.is-desktop :is(.desktop-shortcuts,.desktop-sync) { color: #17272e; }
+[data-theme='bento']:not([data-bento-variant='aurora']) .app-shell.is-desktop .topbar { padding: 0 28px; }
+[data-theme='bento']:not([data-bento-variant='aurora']) .app-shell.is-desktop .desktop-context, [data-theme='bento']:not([data-bento-variant='aurora']) .app-shell.is-desktop .desktop-context strong { color: #17272e; }
+[data-theme='bento']:not([data-bento-variant='aurora']) .app-shell.is-desktop .home-page > .briefing { background: #4c6068; }
+[data-theme='bento']:not([data-bento-variant='aurora']) .app-shell.is-desktop .briefing-eyebrow, [data-theme='bento']:not([data-bento-variant='aurora']) .app-shell.is-desktop .briefing-footnote { color: var(--ink-secondary); }
+[data-theme='bento']:not([data-bento-variant='aurora']) .app-shell.is-desktop .project-page .project-overview { color: var(--ink); }
+@media (max-width: 1350px) {
+  .app-shell.is-desktop .search-field { width: 240px; }
+  .app-shell.is-desktop .home-page { grid-template-columns: minmax(0,1.45fr) minmax(300px,1fr); }
+}
+@media (min-width: 900px) {
+  [data-theme='bento']:not([data-bento-variant='aurora']) .app-shell:not(.is-desktop):not(.is-homescreen) .main-content { width: calc(100% - 64px); margin-inline: auto; }
+  [data-theme='bento']:not([data-bento-variant='aurora']) .app-shell:not(.is-desktop):not(.is-homescreen) .bottom-nav { flex-direction: row; width: max-content; }
+}
+.app-shell.is-desktop .notes-layout { grid-template-columns: 280px minmax(0, 1fr); gap: 16px; }
+.app-shell.is-desktop :is(.notes-sidebar,.notes-writing-area) { border-radius: 16px; }
+.app-shell.is-desktop .notes-writing-area { min-height: calc(100dvh - 270px); }
+.app-shell.is-desktop .note-editor:not(.is-focus) .note-content { min-height: 380px; font-size: 17px; }
+.app-shell.is-desktop .note-editor:not(.is-focus) .note-title-input { font-size: 28px; }
+.app-shell.is-desktop .note-save-state, .app-shell.is-desktop .note-list-item time { font-size: 12px; }
+/* Preserve the editable Home modules; its default arrangement still puts decisions before context. */
+.app-shell.is-desktop .home-page.home-custom-grid { gap: 16px; }
+.app-shell.is-desktop .home-page.home-custom-grid > .home-date { grid-row: auto; order: -2; }
+.app-shell.is-desktop .home-page.home-custom-grid > .home-notifications { grid-row: auto; grid-column: span 4; order: 5; align-self: start; }
+.app-shell.is-desktop .home-page.home-custom-grid > .briefing,
+.app-shell.is-desktop .home-page.home-custom-grid .briefing-grid,
+.app-shell.is-desktop .home-page.home-custom-grid > .home-grid { display: contents; }
+.app-shell.is-desktop .home-page.home-custom-grid .home-module-content > :is(.home-weather,.schedule-summary,.home-panel,.briefing-header,.briefing-stats,.briefing-block,.briefing-agenda) { padding: 18px; border-radius: 16px; }
+.app-shell.is-desktop .home-page.home-custom-grid .home-module .briefing-stats { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.app-shell.is-desktop .home-page.home-custom-grid .home-layout-toolbar { padding-block: 0 4px; }
+.app-shell.is-desktop .home-page.home-custom-grid .home-module-sizes label { font-size: 12px; }
+.app-shell.is-desktop .home-page.home-custom-grid .home-module-sizes select { font-size: 12px; }
+.app-shell.is-desktop .schedule-page > .button { display: none; }

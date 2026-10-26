@@ -9,7 +9,7 @@ async function load(path, deps = {}) {
 const { overtimeMinutes, overtimeBalance, formatOvertime } = await load('../src/lib/overtime.ts')
 const birthdays = await load('../src/lib/birthdays.ts')
 const others = await load('../src/lib/others.ts', { './birthdays': birthdays })
-const { isWorkspace } = await load('../src/lib/workspaceValidation.ts', { './birthdays': birthdays, './others': others })
+const { isWorkspace } = await load('../src/lib/workspaceValidation.ts', { './birthdays': birthdays, './others': others, './schedule': await load('../src/lib/schedule.ts', { './birthdays': birthdays, './others': others }) })
 const { mergeWorkspaceChanges } = await load('../src/lib/workspaceMerge.ts')
 const { createEmptyWorkspace } = await load('../src/lib/seed.ts')
 assert.equal(overtimeMinutes('17:15', '19:00'), 105)

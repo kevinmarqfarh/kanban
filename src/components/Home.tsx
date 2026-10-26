@@ -1,8 +1,10 @@
+import { HomeLayout, HomeModule } from './HomeLayout'
 import { useState } from 'react'
 import { ArrowRight, Bell, Cake, Check, Utensils, X } from 'lucide-react'
 import type { Workspace } from '../lib/types'
 import { birthdayCountdownLabel, birthdayUrgency, birthdayGroupKey, currentAge, groupBirthdays, isValidBirthDate, nextBirthday, unreadBirthdayNotifications } from '../lib/birthdays'
 import { daysBetween, isoWeek, isNutritionComplete, nutritionDayStatus, parseLocalDate, weekDates } from '../lib/others'
+import { ScheduleSummary } from './DaySchedule'
 import { Briefing } from './Briefing'
 import { HomeScreen } from './HomeScreen'
 import { NutritionTimePill } from './NutritionTimePill'
@@ -20,11 +22,11 @@ function dateText(date: string, today: string) {
   return parseLocalDate(date).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', ...(date.slice(0, 4) === today.slice(0, 4) ? {} : { year: 'numeric' }) })
 }
 
-export function Home({ workspace, today, localOnly, homeScreen = false, syncStatus = 'local', onQuickAdd, onBirthdays, onNutrition, onOpenTask, onOpenPlanner, onCreateGiftTask, onToggleHabit, onReadNotification, onDismissNotification }: {
+export function Home({ workspace, today, localOnly, homeScreen = false, syncStatus = 'local', onQuickAdd, onBirthdays, onNutrition, onOpenTask, onOpenPlanner, onOpenSchedule, onCreateGiftTask, onToggleHabit, onReadNotification, onDismissNotification }: {
   workspace: Workspace; today: string; localOnly: boolean;
   homeScreen?: boolean; syncStatus?: SyncStatus; onQuickAdd?: (title: string, deadline: string | null, deadlineTime: string | null) => string | null;
   onBirthdays: () => void; onNutrition: () => void;
-  onOpenTask: (taskId: string) => void; onOpenPlanner: () => void; onCreateGiftTask: (draft: GiftTaskDraft) => string | null;
+  onOpenTask: (taskId: string) => void; onOpenSchedule: () => void; onOpenPlanner: () => void; onCreateGiftTask: (draft: GiftTaskDraft) => string | null;
   onToggleHabit: (habitId: string, date: string) => string | null;
   onReadNotification: (id: string) => string | null; onDismissNotification: (id: string) => string | null;
 }) {
@@ -49,9 +51,9 @@ export function Home({ workspace, today, localOnly, homeScreen = false, syncStat
   function run(action: () => string | null) { setError(action()) }
   // Docked tablet: one glanceable screen.
   if (homeScreen && onQuickAdd) return <HomeScreen workspace={workspace} today={today} syncStatus={syncStatus} signedIn={!localOnly}
-    onOpenTask={onOpenTask} onOpenPlanner={onOpenPlanner} onOpenBirthdays={onBirthdays} onOpenNutrition={onNutrition}
+    onOpenTask={onOpenTask} onOpenPlanner={onOpenPlanner} onOpenSchedule={onOpenSchedule} onOpenBirthdays={onBirthdays} onOpenNutrition={onNutrition}
     onToggleHabit={onToggleHabit} onQuickAdd={onQuickAdd} onReadNotification={onReadNotification} onDismissNotification={onDismissNotification} />
-  return <div className="home-page" data-testid="home-overview">
+  return <HomeLayout>
     <header className="bento-welcome"><h1>{now.getHours() < 5 ? 'God natt' : now.getHours() < 10 ? 'God morgon' : now.getHours() < 17 ? 'God dag' : 'God kväll'}, <em>lite mer fokus.</em></h1></header>
     {error && <p className="form-message error" role="alert">{error}</p>}
       <div className="home-date"><time dateTime={today}>{parseLocalDate(today).toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })}</time><span>Vecka {isoWeek(today)}</span></div>
@@ -64,11 +66,12 @@ export function Home({ workspace, today, localOnly, homeScreen = false, syncStat
           </article>
         })}
       </section>}
-      <WeatherWeek className="home-weather" today={today} place={weather.place} forecast={weather.forecast} status={weather.status} onRetry={weather.retry} onOpen={date => setWeatherDay(date ?? today)} />
+      <HomeModule id="weather" label="Väder"><WeatherWeek className="home-weather" today={today} place={weather.place} forecast={weather.forecast} status={weather.status} onRetry={weather.retry} onOpen={date => setWeatherDay(date ?? today)} /></HomeModule>
       {weatherDay && weather.forecast && <WeatherDaySheet forecast={weather.forecast} date={weatherDay} today={today} placeName={weather.place.name} onSelect={setWeatherDay} onClose={() => setWeatherDay(null)} />}
+      <HomeModule id="schedule" label="Din planering"><ScheduleSummary workspace={workspace} today={today} onOpen={onOpenTask} onPlanner={onOpenSchedule} /></HomeModule>
       <Briefing workspace={workspace} today={today} weatherNote={weatherNote(weather.forecast, now)} onOpenTask={onOpenTask} onOpenPlanner={onOpenPlanner} onOpenBirthdays={onBirthdays} onCreateGiftTask={onCreateGiftTask} />
       <div className="home-grid">
-        <section className="home-panel" aria-labelledby="home-nutrition-title" data-testid="home-nutrition">
+        <HomeModule id="nutrition" label="Dagens kost"><section className="home-panel" aria-labelledby="home-nutrition-title" data-testid="home-nutrition">
           <div className="home-panel-heading"><h2 id="home-nutrition-title"><Utensils size={18} />Dagens kost</h2><button className="icon-button" aria-label="Öppna kost" onClick={onNutrition}><ArrowRight size={18} /></button></div>
           {habits.length > 0 ? <>
             <div className="home-week" aria-label={`Kostöversikt vecka ${isoWeek(today)}`}>{weekDates(today).map((date, index) => {
@@ -81,8 +84,8 @@ export function Home({ workspace, today, localOnly, homeScreen = false, syncStat
               return <label className={`home-habit ${completed ? 'is-complete' : ''}`} key={habit.id} data-home-habit-id={habit.id} data-completed={completed}><input type="checkbox" aria-label={`Klar idag: ${habit.title}`} checked={completed} onChange={() => run(() => onToggleHabit(habit.id, today))} /><span className="home-habit-copy"><span className="habit-name"><strong>{habit.title}</strong><NutritionTimePill time={habit.time} /></span><small>{habit.amount} {habit.unit}</small></span></label>
             })}</div><p className="home-panel-footnote">{finished}/{habits.length} klara idag</p>
           </> : <div className="home-empty"><p>Inga kostvanor ännu.</p><button className="button secondary" onClick={onNutrition}>Lägg till vana<ArrowRight size={15} /></button></div>}
-        </section>
-        <section className="home-panel" aria-labelledby="home-birthdays-title" data-testid="upcoming-birthdays">
+        </section></HomeModule>
+        <HomeModule id="birthdays" label="Födelsedagar"><section className="home-panel" aria-labelledby="home-birthdays-title" data-testid="upcoming-birthdays">
           <div className="home-panel-heading"><h2 id="home-birthdays-title"><Cake size={18} />Kommande födelsedagar</h2><button className="icon-button" aria-label="Öppna födelsedagar" onClick={onBirthdays}><ArrowRight size={18} /></button></div>
           {birthdayTags.length > 0 && <div className="filter-chips home-birthday-filter" role="group" aria-label="Filtrera födelsedagar">
             <button className={`filter-chip${activeFilter ? '' : ' active'}`} type="button" aria-pressed={!activeFilter} onClick={() => setBirthdayFilter(null)}>Alla</button>
@@ -91,8 +94,8 @@ export function Home({ workspace, today, localOnly, homeScreen = false, syncStat
           {upcoming.length > 0 ? <div className="home-birthday-list">{upcoming.slice(0, 5).map(({ person, date, age, days }) => <button className="home-birthday-row" key={person.id} data-birthday-id={person.id} onClick={onBirthdays}><span><strong>{person.name}</strong><small>{currentAge(person.birthDate, parseLocalDate(today))} år · fyller {age}{!activeFilter && person.tag ? ` · ${person.tag}` : ''}</small></span><span className={`home-birthday-when${days === 0 ? ' is-today' : ''}`} data-countdown={days} data-urgency={birthdayUrgency(days) ?? undefined}><strong>{birthdayCountdownLabel(days)}</strong><time dateTime={date}>{dateText(date, today)}</time></span></button>)}{upcoming.length > 5 && <button className="button ghost" onClick={onBirthdays}>Visa alla {upcoming.length}<ArrowRight size={15} /></button>}</div>
             : (workspace.birthdays ?? []).length > 0 ? <div className="home-empty"><p>Inga födelsedagar med den taggen.</p></div>
             : <div className="home-empty"><p>Inga födelsedagar ännu.</p><button className="button secondary" onClick={onBirthdays}>Lägg till födelsedag<ArrowRight size={15} /></button></div>}
-        </section>
+        </section></HomeModule>
       </div>
 
-  </div>
+  </HomeLayout>
 }

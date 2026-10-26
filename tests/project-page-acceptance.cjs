@@ -53,7 +53,7 @@ async function open(browser, viewport = { width: 1512, height: 982 }, touch = fa
       assert.equal(await heading.textContent(), 'Nytt kök');
       assert.equal(await heading.evaluate(node => node === document.activeElement), true, 'Focus moves to the project title.');
       assert.match(await projectPage(page).textContent(), /Planera och beställa allt till köket\./);
-      assert.match(await projectPage(page).locator('.project-overview').textContent(), /2 huvuduppgifter · 1\/2 deluppgifter klara.*Deadline.*1\/2 klara.*50%/s);
+      assert.match(await projectPage(page).locator('.project-overview').textContent(), /2 huvuduppgifter · 1\/2 deluppgifter klara.*Deadline.*1\/2 huvuduppgifter klara.*50%/s);
       for (const name of ['Mät upp rummet', 'Beställ luckor']) await projectPage(page).getByRole('button', { name: `Redigera huvuduppgift ${name}`, exact: true }).waitFor();
       assert.equal(await page.evaluate(() => window.scrollY), 0);
       await page.screenshot({ path: path.join(out, 'desktop.png'), animations: 'disabled' });

@@ -17,10 +17,11 @@ function RecipeEditor({ recipe, recipes, onSave, onClose }: {
   onSave: (edited: Recipe, original?: Recipe) => string | null;
   onClose: () => void;
 }) {
-  const [original] = useState(() => recipe ? structuredClone(recipe) : undefined)
+  const [original] = useState(() => recipe && recipes.some(entry => entry.id === recipe.id) ? structuredClone(recipe) : undefined)
   const [draft, setDraft] = useState<Recipe>(() => recipe ? { ...structuredClone(recipe), ingredients: recipeContent(recipe).ingredients, steps: recipeContent(recipe).method, notes: recipeContent(recipe).notes } : {
     id: newId(), title: '', url: '', ingredients: '', steps: '', notes: '', labels: [], createdAt: new Date().toISOString(),
   })
+  const initialDraft = useRef(JSON.stringify(draft))
   const [error, setError] = useState<string | null>(null)
   const [imageBusy, setImageBusy] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -45,6 +46,7 @@ function RecipeEditor({ recipe, recipes, onSave, onClose }: {
   }
   function save(event: FormEvent) {
     event.preventDefault()
+    if (imageBusy) { setError('Vänta tills bilden är färdig.'); return }
     if (!draft.title.trim()) { setError('Ange en titel.'); return }
     if (!validateRecipeUrl(draft.url)) { setError('Ange en giltig http- eller https-länk.'); return }
     const chosen = predefinedRecipeLabels.filter(label => selected(label))
@@ -56,7 +58,7 @@ function RecipeEditor({ recipe, recipes, onSave, onClose }: {
     if (failure) setError(failure)
     else onClose()
   }
-  return <Modal title={recipe ? 'Redigera recept' : 'Nytt recept'} onClose={onClose} error={error} footer={<><button className="button secondary" type="button" onClick={onClose}>Avbryt</button><button className="button primary" type="submit" disabled={imageBusy} form="recipe-form"><Check size={16} />Spara recept</button></>}>
+  return <Modal dirty={imageBusy || JSON.stringify(draft) !== initialDraft.current} title={recipe ? 'Redigera recept' : 'Nytt recept'} onClose={onClose} error={error} footer={requestClose => <><button className="button secondary" type="button" onClick={requestClose}>Avbryt</button><button className="button primary" type="submit" disabled={imageBusy} form="recipe-form"><Check size={16} />Spara recept</button></>}>
     <form id="recipe-form" onSubmit={save}><label className="field">Titel<input className="input" required autoFocus maxLength={160} value={draft.title} onChange={event => setDraft({ ...draft, title: event.target.value })} /></label>
       <div className="field recipe-image-field"><span className="field-label">Bild <span className="field-help">Valfri · visas på receptkortet</span></span>
         <input ref={fileRef} className="sr-only" type="file" accept="image/*" aria-label="Välj bild till receptet" tabIndex={-1} onChange={event => { void chooseImage(event) }} />

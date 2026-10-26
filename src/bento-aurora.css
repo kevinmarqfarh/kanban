@@ -1,0 +1,39 @@
+/* A separate Bento variation: frosted midnight surfaces over an atmospheric canvas. */
+[data-theme='bento'][data-bento-variant='aurora'] {
+ --bg: #142a34; --bg-spot: #294b55;
+ --surface: rgba(19, 33, 40, .78); --surface-solid: #20343c;
+ --surface-muted: rgba(8, 22, 30, .4); --surface-hover: #354b51; --surface-column: rgba(31, 49, 57, .75);
+ --ink: #faf9f2; --ink-secondary: #e0e7e5; --ink-muted: #bfcece;
+ --accent: #e6ca4b; --accent-ink: #24291f; --accent-soft: #535137;
+ --line: rgba(240, 248, 245, .12); --line-strong: rgba(240, 248, 245, .28);
+ --shadow-popover: 0 24px 70px rgba(0, 12, 22, .3);
+}
+[data-bento-variant='aurora'] body {
+ background: #142a34 url('/bento-aurora.png') center / cover fixed no-repeat;
+ color: var(--ink);
+}
+[data-bento-variant='aurora'] :is(.topbar,.brand,.topbar .icon-button,.page-heading,.home-date,.bento-welcome h1,.home-section-title,.briefing-status,.briefing-footnote,.others-section-heading,.others-help,.others-empty,.others-list-toolbar,.cookbook-back,.cookbook-create,.cookbooks-heading,.cookbook-heading,.cookbook-card-copy strong,.cookbook-card-copy small,.wp-header,.wp-header p,.wp-eyebrow,.wp-filter-note,.wp-navigation > .icon-button) { color: var(--ink); }
+[data-bento-variant='aurora'] .topbar { background: rgba(20, 35, 43, .42); border-bottom: 1px solid rgba(255,255,255,.06); }
+[data-bento-variant='aurora'] .brand-mark > * { background: #e6ca4b; }
+[data-bento-variant='aurora'] :is(.home-panel,.briefing,.hs-card,.summary-card,.project-card,.others-module-row,.others-record-row,.overtime-summary,.overtime-row,.nutrition-calendar,.nutrition-habit-row,.note-card,.project-task-group,.project-page .project-detail-layout,.cookbook-library-links > button,.wxp,.weather-panel,.home-page .briefing-header,.home-page .briefing-stats,.home-page .briefing-block,.home-page .briefing-agenda,.wp-queue-section,.wp-day,.wp-stats) {
+ background: var(--surface); color: var(--ink); border-color: rgba(255,255,255,.09);
+ backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+ box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 12px 34px rgba(4,17,26,.08);
+}
+[data-bento-variant='aurora'] :is(.briefing-stat,.briefing-tip,.home-habit,.home-birthday-row,.recipe-content-box,.checklist-row,.workout-row,.cookbook-picker-row,.briefing-agenda > ol > li,.wp-task,.profile-card) { background: var(--surface-muted); }
+[data-bento-variant='aurora'] :is(.modal-panel,.theme-option) { background: var(--surface-solid); }
+[data-bento-variant='aurora'] .button.primary { background: #e6ca4b; color: #24291f; }
+[data-bento-variant='aurora'] :is(.button.secondary,.input,.textarea,.select,.filter-select,.search-field) { background: rgba(11,26,34,.66); }
+[data-bento-variant='aurora'] .bottom-nav,
+[data-bento-variant='aurora'] .app-shell.is-desktop .bottom-nav { background: rgba(28,43,48,.62); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,.1); }
+[data-bento-variant='aurora'] .nav-item,
+[data-bento-variant='aurora'] .nav-item:not(.active):hover { color: #f6f5ed; }
+[data-bento-variant='aurora'] .nav-item:not(.active):hover { background: rgba(255,255,255,.09); }
+[data-bento-variant='aurora'] :is(.nav-item.active,.theme-option.active) { background: #faf9f2; color: #23353d; }
+[data-bento-variant='aurora'] .nav-item:focus-visible { outline-color: #e6ca4b; }
+[data-bento-variant='aurora'] .main-content :is(.field,.field-label,.field-help) { color: var(--ink-secondary); }
+@media (min-width: 541px) { .theme-picker { grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); } }
+[data-bento-variant='aurora'] .schedule-summary { border-radius: 28px; background: var(--surface); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
+@media (min-width: 1050px) {
+ [data-bento-variant='aurora'] .home-page > .schedule-summary { grid-column: 1 / -1; }
+}

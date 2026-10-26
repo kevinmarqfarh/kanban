@@ -47,6 +47,7 @@ const cache = page => page.evaluate(() => JSON.parse(localStorage.getItem('forma
     await page.getByRole('button', { name: 'Redigera huvuduppgift Planera nästa steg', exact: true }).click();
     await page.getByLabel('Deluppgift 1', { exact: true }).fill('Osparad text');
     await page.getByRole('button', { name: 'Avbryt', exact: true }).click();
+    await page.getByRole('button', { name: 'Kasta ändringar', exact: true }).click();
     assert.deepEqual((await cache(page)).projects.find(project => project.title === 'Ett redigerbart projekt').tasks[0], saved);
     await page.reload();
     await page.getByRole('button', { name: 'Projects', exact: true }).click();
@@ -59,6 +60,7 @@ const cache = page => page.evaluate(() => JSON.parse(localStorage.getItem('forma
     await page.getByRole('alert').getByText('Ange en titel för varje deluppgift.', { exact: true }).waitFor();
     assert.deepEqual((await cache(page)).projects.find(project => project.title === 'Ett redigerbart projekt').tasks[0], saved);
     await page.getByRole('button', { name: 'Avbryt', exact: true }).click();
+    await page.getByRole('button', { name: 'Kasta ändringar', exact: true }).click();
     for (const width of [834, 440, 320]) {
       await page.setViewportSize({ width, height: 900 });
       const bounds = await page.getByTestId('project-page').boundingBox();

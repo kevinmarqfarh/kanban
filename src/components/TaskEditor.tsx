@@ -2,6 +2,7 @@ import { useRef, useState, type FormEvent } from 'react'
 import { Plus, Trash2, Send, Check, MessageSquare } from 'lucide-react'
 import type { Task, Workspace } from '../lib/types'
 import { TASK_PRIORITIES, columnDisplayTitle, newId } from '../lib/helpers'
+import { validSchedule } from '../lib/schedule'
 import { Modal } from './Modal'
 
 export function TaskEditor({ task, columnId, workspace, onSave, onDelete, onClose }: {
@@ -33,6 +34,7 @@ export function TaskEditor({ task, columnId, workspace, onSave, onDelete, onClos
     event.preventDefault()
     if (!draft.title.trim()) { setSaveError('Ange en titel.'); return }
     if (draft.checklist.some(item => !item.title.trim())) { setSaveError('Ange text för varje deluppgift.'); return }
+    if (!validSchedule(draft.schedule)) { setSaveError('Kontrollera planeringens datum och tider.'); return }
     const checklist = checklistTitle.trim() ? [...draft.checklist, { id: newId(), title: checklistTitle.trim(), completed: false }] : draft.checklist
     const comments = comment.trim() ? [...draft.comments, { id: newId(), text: comment.trim(), createdAt: new Date().toISOString() }] : draft.comments
     const nextTask = { ...draft, title: draft.title.trim(), description: draft.description.trim(), checklist, comments, labels: [...new Set(labels.split(',').map(label => label.trim()).filter(Boolean))] }
@@ -55,6 +57,7 @@ export function TaskEditor({ task, columnId, workspace, onSave, onDelete, onClos
         {TASK_PRIORITIES.map(option => <button key={option.value} className={`tag-chip priority-option${draft.priority === option.value ? ' active' : ''}`} data-priority={option.value} type="button" aria-pressed={draft.priority === option.value} onClick={() => setDraft({ ...draft, priority: option.value })}>{option.label}</button>)}
       </div></fieldset>
       <div className="field-row"><label className="field">Deadline<input className="input" type="date" value={draft.deadline ?? ''} onChange={event => setDraft({ ...draft, deadline: event.target.value || null, deadlineTime: event.target.value ? draft.deadlineTime : null })} /></label><label className="field">Tid (valfri)<input className="input" type="time" disabled={!draft.deadline} value={draft.deadlineTime ?? ''} onChange={event => setDraft({ ...draft, deadlineTime: event.target.value || null })} /></label></div>
+      {draft.schedule && <div className="field"><span>Planering · {draft.schedule.scope === 'week' ? 'Veckan från ' : ''}{draft.schedule.date} {draft.schedule.startTime && `${draft.schedule.startTime}–${draft.schedule.endTime}`}</span><span className="field-help">Ändra tiden med + Planera i schemat och välj denna uppgift.</span><button className="button ghost small" type="button" onClick={() => setDraft({ ...draft, schedule: null })}>Ta bort planering</button></div>}
       <label className="field">Etiketter<input className="input" placeholder="Privat, Idé" value={labels} onChange={event => setLabels(event.target.value)} /><span className="field-help">Separera med kommatecken</span></label>
       <div className="section-label"><span>Checklista</span><span>{completed}/{draft.checklist.length}</span></div>
       <div className="checklist">{draft.checklist.map(item => <div className="checklist-row" key={item.id}><label><input type="checkbox" aria-label={`Markera ${item.title} som klar`} checked={item.completed} onChange={() => setDraft({ ...draft, checklist: draft.checklist.map(current => current.id === item.id ? { ...current, completed: !current.completed } : current) })} /><input className="input" aria-label={`Ändra deluppgift ${item.title}`} required maxLength={160} value={item.title} onChange={event => setDraft(current => ({ ...current, checklist: current.checklist.map(entry => entry.id === item.id ? { ...entry, title: event.target.value } : entry) }))} /></label><button className="icon-button" type="button" aria-label={`Ta bort ${item.title}`} onClick={() => setDraft({ ...draft, checklist: draft.checklist.filter(current => current.id !== item.id) })}><Trash2 size={15} /></button></div>)}</div>

@@ -8,7 +8,7 @@ async function load(path, deps = {}) {
 }
 const birthdays = await load('../src/lib/birthdays.ts')
 const others = await load('../src/lib/others.ts', { './birthdays': birthdays })
-const { isWorkspace } = await load('../src/lib/workspaceValidation.ts', { './birthdays': birthdays, './others': others })
+const { isWorkspace } = await load('../src/lib/workspaceValidation.ts', { './birthdays': birthdays, './others': others, './schedule': await load('../src/lib/schedule.ts', { './birthdays': birthdays, './others': others }) })
 const { mergeWorkspaceChanges } = await load('../src/lib/workspaceMerge.ts')
 const { createEmptyWorkspace } = await load('../src/lib/seed.ts')
 const book = { id: 'book1', title: 'Chile', recipeIds: ['recipe1'], createdAt: '2026-10-25T12:00:00Z' }

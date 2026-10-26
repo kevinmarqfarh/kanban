@@ -1,3 +1,4 @@
+import { ScheduleSummary } from './DaySchedule'
 import { useMemo, useRef, useState, type FormEvent } from 'react'
 import { ArrowRight, Bell, Cake, CalendarRange, Check, CloudOff, Cloud, HardDrive, Pill, Plus, Sparkles, X } from 'lucide-react'
 import type { SyncStatus, Workspace } from '../lib/types'
@@ -20,13 +21,13 @@ const pad = (value: number) => String(value).padStart(2, '0')
  * Hemskärm: everything for the day on one screen for a docked tablet.
  * Read at a glance from across the kitchen, act with one tap, never scroll the page.
  */
-export function HomeScreen({ workspace, today, syncStatus, signedIn, onOpenTask, onOpenPlanner, onOpenBirthdays, onOpenNutrition, onToggleHabit, onQuickAdd, onReadNotification, onDismissNotification }: {
+export function HomeScreen({ workspace, today, syncStatus, signedIn, onOpenTask, onOpenPlanner, onOpenSchedule, onOpenBirthdays, onOpenNutrition, onToggleHabit, onQuickAdd, onReadNotification, onDismissNotification }: {
   workspace: Workspace
   today: string
   syncStatus: SyncStatus
   signedIn: boolean
   onOpenTask: (taskId: string) => void
-  onOpenPlanner: () => void
+  onOpenSchedule: () => void; onOpenPlanner: () => void
   onOpenBirthdays: () => void
   onOpenNutrition: () => void
   onToggleHabit: (habitId: string, date: string) => string | null
@@ -79,6 +80,7 @@ export function HomeScreen({ workspace, today, syncStatus, signedIn, onOpenTask,
     <WeatherWeek today={today} place={weather.place} forecast={weather.forecast} status={weather.status} onRetry={weather.retry} onOpen={date => setWeatherDay(date ?? today)} />
     {weatherDay && weather.forecast && <WeatherDaySheet forecast={weather.forecast} date={weatherDay} today={today} placeName={weather.place.name} onSelect={setWeatherDay} onClose={() => setWeatherDay(null)} />}
 
+    <ScheduleSummary workspace={workspace} today={today} onOpen={onOpenTask} onPlanner={onOpenSchedule} />
     <section className="hs-card hs-today" aria-labelledby="hs-headline">
       <div className="hs-now">
         <div className="hs-clock-row">

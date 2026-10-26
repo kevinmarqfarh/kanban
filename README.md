@@ -11,6 +11,14 @@ npm run dev
 
 Öppna http://localhost:5173 på din Mac. På din iPhone, anslut till samma Wi-Fi och öppna nätverksadressen som visas när servern startar. Macen behöver vara på och servern igång. I Safari kan du välja Dela → Lägg till på hemskärmen.
 
+## PC-version
+
+[UI/UX-granskning och vidare ombyggnad, 26 oktober 2026](docs/desktop-audit/report.md): kompakt arbetsyta, läsbar veckoplanering, direkt klarmarkering, förhandsvisade tidskrockar och tydligare PC-flöden.
+
+På dator får Forma fast sidonavigation och en större arbetsyta. Öppna **Planner → Veckoplanering** för att planera hela veckan, fördela oplanerade uppgifter, ändra tidsblock och se bokad tid och överlapp. Sökning filtrerar korten; belastningen räknar fortfarande alla aktiva uppgifter. Deadline ändras inte när du planerar. Valet av vy sparas på enheten.
+
+PC-läget kräver minst 1100 px fönsterbredd och en primär muspekare med hovring. Surfplattor behåller touch- och hemskärmsläget; mobil och mindre fönster behåller det kompakta flödet. Ett öppet planeringsutkast finns kvar när fönstret ändrar storlek. Se [PC-plan, granskning och verifiering](docs/desktop.md).
+
 ## Det som fungerar
 
 - Skapa, redigera och ta bort uppgifter och kolumner. *Ta bort kolumn* finns i kolumnens redigering för alla kolumner utom Finalized; har kolumnen kort väljer du först vart de ska flyttas.

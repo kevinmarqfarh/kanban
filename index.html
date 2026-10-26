@@ -16,7 +16,8 @@
       try {
         const preference = localStorage.getItem('forma-theme') || 'system';
         document.documentElement.dataset.theme = preference === 'system'
-          ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : preference;
+          ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : preference === 'bento-aurora' ? 'bento' : preference;
+        document.documentElement.dataset.bentoVariant = preference === 'bento-aurora' ? 'aurora' : '';
       } catch (_) {}
     </script>
     <script>

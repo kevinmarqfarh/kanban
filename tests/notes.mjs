@@ -14,7 +14,7 @@ async function module(path, dependencies = {}) {
 }
 const birthdays = await module('../src/lib/birthdays.ts')
 const others = await module('../src/lib/others.ts', { './birthdays': birthdays })
-const { isWorkspace } = await module('../src/lib/workspaceValidation.ts', { './birthdays': birthdays, './others': others })
+const { isWorkspace } = await module('../src/lib/workspaceValidation.ts', { './birthdays': birthdays, './others': others, './schedule': await module('../src/lib/schedule.ts', { './birthdays': birthdays, './others': others }) })
 const { mergeRecordChanges, mergeWorkspaceChanges } = await module('../src/lib/workspaceMerge.ts')
 const workspace = { columns: [{ id: 'todo', title: 'Att göra', color: 'gray' }], tasks: [], projects: [] }
 const note = { id: 'note-one', title: 'Min idé', content: '<p>En tanke.</p>', font: 'system', createdAt: '2026-10-06T12:00:00.000Z', updatedAt: '2026-10-06T12:00:00.000Z' }

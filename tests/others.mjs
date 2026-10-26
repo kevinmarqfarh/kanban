@@ -15,7 +15,7 @@ async function module(path, dependencies = {}) {
 }
 const birthdays = await module('../src/lib/birthdays.ts')
 const others = await module('../src/lib/others.ts', { './birthdays': birthdays })
-const { isWorkspace } = await module('../src/lib/workspaceValidation.ts', { './birthdays': birthdays, './others': others })
+const { isWorkspace } = await module('../src/lib/workspaceValidation.ts', { './birthdays': birthdays, './others': others, './schedule': await module('../src/lib/schedule.ts', { './birthdays': birthdays, './others': others }) })
 const { createEmptyWorkspace } = await module('../src/lib/seed.ts')
 const { mergeWorkspaceChanges, mergeRecordChanges } = await module('../src/lib/workspaceMerge.ts')
 const { addLocalDays, daysBetween, isoWeek, isNonnegativeDecimal, isNonnegativeInteger, isNutritionComplete, nutritionCompletionId, parseLocalDate, safeRecipeURL, validateRecipeUrl, weekDates, weekStart, workoutRawText } = others

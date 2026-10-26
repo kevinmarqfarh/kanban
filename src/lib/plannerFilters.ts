@@ -8,6 +8,6 @@ export function filterPlannerTasks(workspace: Workspace, query: string, filter: 
     if (!terms.every(term => text.includes(term))) return false
     if (filter === 'all') return true
     if (isTaskDone(task, workspace)) return false
-    return filter === 'today' ? task.deadline === today : filter === 'overdue' ? overdue(task, workspace) : task.priority === 'high'
+    return filter === 'today' ? (task.deadline === today || (task.schedule?.scope !== 'week' && task.schedule?.date === today)) : filter === 'overdue' ? overdue(task, workspace) : task.priority === 'high'
   })
 }

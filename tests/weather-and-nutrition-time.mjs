@@ -17,7 +17,7 @@ const birthdays = await module('../src/lib/birthdays.ts')
 const others = await module('../src/lib/others.ts', { './birthdays': birthdays })
 const weather = await module('../src/lib/weather.ts', { './others': others })
 const time = await module('../src/lib/nutritionTime.ts')
-const { isWorkspace } = await module('../src/lib/workspaceValidation.ts', { './birthdays': birthdays, './others': others })
+const { isWorkspace } = await module('../src/lib/workspaceValidation.ts', { './birthdays': birthdays, './others': others, './schedule': await module('../src/lib/schedule.ts', { './birthdays': birthdays, './others': others }) })
 const { createEmptyWorkspace } = await module('../src/lib/seed.ts')
 
 /* ---------------- Weather (shared model) ---------------- */

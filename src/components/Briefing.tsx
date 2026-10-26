@@ -1,3 +1,4 @@
+import { HomeModule } from './HomeLayout'
 import { useEffect, useMemo, useState } from 'react'
 import {
   AlarmClock, ArrowRight, Archive, CalendarRange, Check, ChevronDown, CircleAlert, Clock, Copy, Gift, Hourglass,
@@ -72,7 +73,7 @@ export function Briefing({ workspace, today, weatherNote = '', onOpenTask, onOpe
   ]
 
   return <section className="briefing" aria-labelledby="briefing-title" data-testid="daily-briefing" data-tone={briefing.tone}>
-    <header className="briefing-header">
+    <HomeModule id="summary" label="Dagens briefing"><header className="briefing-header">
       <div className="briefing-heading">
         <p className="briefing-eyebrow"><Sunrise size={14} aria-hidden="true" />{briefing.greeting} · Dagens briefing</p>
         <h2 id="briefing-title">{briefing.headline}</h2>
@@ -81,16 +82,16 @@ export function Briefing({ workspace, today, weatherNote = '', onOpenTask, onOpe
       <div className="briefing-tools">
         <button className="icon-button" type="button" aria-label="Kopiera briefingen som text" title="Kopiera som text" onClick={copy}><Copy size={17} /></button>
       </div>
-    </header>
+    </header></HomeModule>
 
     {status && <p className={`briefing-status ${status.tone}`} role={status.tone === 'error' ? 'alert' : 'status'}>{status.tone === 'ok' && <Check size={14} aria-hidden="true" />}{status.text}</p>}
 
-    <dl className="briefing-stats" aria-label="Läget just nu">
+    <HomeModule id="stats" label="Läget just nu"><dl className="briefing-stats" aria-label="Läget just nu">
       {statItems.map(item => <div className={`briefing-stat${item.alert ? ' is-alert' : ''}${item.value === 0 ? ' is-zero' : ''}`} key={item.key} data-stat={item.key}><dt>{item.label}</dt><dd>{item.value}</dd></div>)}
-    </dl>
+    </dl></HomeModule>
 
     <div className={`briefing-grid${briefing.tips.length ? '' : ' is-single'}`}>
-      <section className="briefing-block" aria-labelledby="briefing-focus-title" data-testid="briefing-focus">
+      <HomeModule id="focus" label="Gör först"><section className="briefing-block" aria-labelledby="briefing-focus-title" data-testid="briefing-focus">
         <h3 id="briefing-focus-title"><AlarmClock size={16} aria-hidden="true" />Gör först</h3>
         {briefing.focus.length > 0 ? <ol className="briefing-focus">
           {briefing.focus.map((item, index) => <li key={item.task.id}>
@@ -103,9 +104,9 @@ export function Briefing({ workspace, today, weatherNote = '', onOpenTask, onOpe
             </button>
           </li>)}
         </ol> : <div className="briefing-empty"><p>Inga öppna uppgifter i Planner.</p><button className="button secondary" type="button" onClick={onOpenPlanner}>Öppna Planner<ArrowRight size={15} /></button></div>}
-      </section>
+      </section></HomeModule>
 
-      {briefing.tips.length > 0 && <section className="briefing-block" aria-labelledby="briefing-tips-title" data-testid="briefing-tips">
+      {briefing.tips.length > 0 && <HomeModule id="tips" label="Förslag"><section className="briefing-block" aria-labelledby="briefing-tips-title" data-testid="briefing-tips">
         <h3 id="briefing-tips-title"><Zap size={16} aria-hidden="true" />Förslag</h3>
         <ul className="briefing-tips">
           {tips.map(tip => {
@@ -127,10 +128,10 @@ export function Briefing({ workspace, today, weatherNote = '', onOpenTask, onOpe
           })}
         </ul>
         {briefing.tips.length > preview && <button className="button ghost briefing-more" type="button" aria-expanded={showAllTips} onClick={() => setShowAllTips(value => !value)}>{showAllTips ? 'Visa färre' : phone ? `Visa ${briefing.tips.length - preview} förslag till` : `Visa alla förslag (${briefing.tips.length})`}<ChevronDown size={15} className={showAllTips ? 'is-open' : ''} /></button>}
-      </section>}
+      </section></HomeModule>}
     </div>
 
-    {briefing.agenda.length > 0 && <section className="briefing-agenda" aria-labelledby="briefing-agenda-title" data-testid="briefing-agenda">
+    {briefing.agenda.length > 0 && <HomeModule id="agenda" label="Kommande 7 dagar"><section className="briefing-agenda" aria-labelledby="briefing-agenda-title" data-testid="briefing-agenda">
       <h3 id="briefing-agenda-title"><CalendarRange size={16} aria-hidden="true" />Kommande 7 dagar</h3>
       <ol>{briefing.agenda.map(day => <li key={day.date} className={day.date === today ? 'is-today' : ''} data-date={day.date}>
         <time dateTime={day.date}>{day.label}</time>
@@ -139,7 +140,7 @@ export function Briefing({ workspace, today, weatherNote = '', onOpenTask, onOpe
           {day.tasks.map(task => <li key={task.id}><button type="button" className={`briefing-agenda-item${task.priority === 'high' ? ' is-high' : ''}`} onClick={() => onOpenTask(task.id)}>{task.deadlineTime && <span className="briefing-time">{task.deadlineTime}</span>}{task.title}</button></li>)}
         </ul>
       </li>)}</ol>
-    </section>}
+    </section></HomeModule>}
 
     <p className="briefing-footnote">Räknas fram på enheten från Planner och födelsedagar. Uppdateras när du ändrar något.</p>
   </section>

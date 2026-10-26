@@ -1,0 +1,1909 @@
+{
+  "capturedAt": "2026-10-26T12:35:52.765Z",
+  "base": "http://127.0.0.1:4173",
+  "phase": "after",
+  "fixture": {
+    "tasks": 24,
+    "projects": 5,
+    "notes": 3
+  },
+  "captures": [
+    {
+      "file": "1440x900-light-01-home.png",
+      "mode": {
+        "width": 1440,
+        "height": 900,
+        "theme": "light",
+        "all": true
+      },
+      "page": "01-home",
+      "measure": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "documentWidth": 1440,
+        "documentHeight": 2319,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1232,
+          "height": 2226.8125
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1440x900-light-02-planner-board.png",
+      "mode": {
+        "width": 1440,
+        "height": 900,
+        "theme": "light",
+        "all": true
+      },
+      "page": "02-planner-board",
+      "measure": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "documentWidth": 1440,
+        "documentHeight": 2838,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1232,
+          "height": 2745.75
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [
+          "Ny uppgift"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1440x900-light-03-planner-week.png",
+      "mode": {
+        "width": 1440,
+        "height": 900,
+        "theme": "light",
+        "all": true
+      },
+      "page": "03-planner-week",
+      "measure": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "documentWidth": 1440,
+        "documentHeight": 1387,
+        "weekGrid": {
+          "x": 238,
+          "y": 321,
+          "width": 1172,
+          "height": 1024
+        },
+        "firstTask": {
+          "x": 247,
+          "y": 433,
+          "width": 142.5625,
+          "height": 188
+        },
+        "queue": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1232,
+          "height": 1295
+        },
+        "titleType": {
+          "fontSize": "14px",
+          "color": "rgb(39, 39, 39)",
+          "lineHeight": "21px"
+        },
+        "metadataType": {
+          "fontSize": "12px",
+          "color": "rgb(102, 102, 102)",
+          "lineHeight": "18px"
+        },
+        "primaryButtons": [
+          "Planera uppgift"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1440x900-light-04-schedule-modal.png",
+      "mode": {
+        "width": 1440,
+        "height": 900,
+        "theme": "light",
+        "all": true
+      },
+      "page": "04-schedule-modal",
+      "measure": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "documentWidth": 1440,
+        "documentHeight": 1387,
+        "weekGrid": {
+          "x": 238,
+          "y": 321,
+          "width": 1172,
+          "height": 1024
+        },
+        "firstTask": {
+          "x": 247,
+          "y": 433,
+          "width": 142.5625,
+          "height": 188
+        },
+        "queue": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1232,
+          "height": 1295
+        },
+        "titleType": {
+          "fontSize": "14px",
+          "color": "rgb(39, 39, 39)",
+          "lineHeight": "21px"
+        },
+        "metadataType": {
+          "fontSize": "12px",
+          "color": "rgb(102, 102, 102)",
+          "lineHeight": "18px"
+        },
+        "primaryButtons": [
+          "Planera uppgift",
+          "Spara planering"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1440x900-light-04b-task-editor.png",
+      "mode": {
+        "width": 1440,
+        "height": 900,
+        "theme": "light",
+        "all": true
+      },
+      "page": "04b-task-editor",
+      "measure": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "documentWidth": 1440,
+        "documentHeight": 1387,
+        "weekGrid": {
+          "x": 238,
+          "y": 321,
+          "width": 1172,
+          "height": 1024
+        },
+        "firstTask": {
+          "x": 247,
+          "y": 433,
+          "width": 142.5625,
+          "height": 188
+        },
+        "queue": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1232,
+          "height": 1295
+        },
+        "titleType": {
+          "fontSize": "14px",
+          "color": "rgb(39, 39, 39)",
+          "lineHeight": "21px"
+        },
+        "metadataType": {
+          "fontSize": "12px",
+          "color": "rgb(102, 102, 102)",
+          "lineHeight": "18px"
+        },
+        "primaryButtons": [
+          "Planera uppgift",
+          "Spara ändringar"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1440x900-light-04c-schema.png",
+      "mode": {
+        "width": 1440,
+        "height": 900,
+        "theme": "light",
+        "all": true
+      },
+      "page": "04c-schema",
+      "measure": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "documentWidth": 1440,
+        "documentHeight": 900,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1232,
+          "height": 769
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1440x900-light-05-projects.png",
+      "mode": {
+        "width": 1440,
+        "height": 900,
+        "theme": "light",
+        "all": true
+      },
+      "page": "05-projects",
+      "measure": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "documentWidth": 1440,
+        "documentHeight": 900,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1232,
+          "height": 741.46875
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [
+          "Nytt projekt"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1440x900-light-06-project-detail.png",
+      "mode": {
+        "width": 1440,
+        "height": 900,
+        "theme": "light",
+        "all": true
+      },
+      "page": "06-project-detail",
+      "measure": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "documentWidth": 1440,
+        "documentHeight": 1232,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1232,
+          "height": 1139.6875
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [
+          "Huvuduppgift"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1440x900-light-07-others.png",
+      "mode": {
+        "width": 1440,
+        "height": 900,
+        "theme": "light",
+        "all": true
+      },
+      "page": "07-others",
+      "measure": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "documentWidth": 1440,
+        "documentHeight": 900,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1232,
+          "height": 627.78125
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1440x900-light-08-notes-list.png",
+      "mode": {
+        "width": 1440,
+        "height": 900,
+        "theme": "light",
+        "all": true
+      },
+      "page": "08-notes-list",
+      "measure": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "documentWidth": 1440,
+        "documentHeight": 900,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1232,
+          "height": 779
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [
+          "Ny"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1440x900-light-09-note-editor.png",
+      "mode": {
+        "width": 1440,
+        "height": 900,
+        "theme": "light",
+        "all": true
+      },
+      "page": "09-note-editor",
+      "measure": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "documentWidth": 1440,
+        "documentHeight": 900,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1232,
+          "height": 779
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [
+          "Ny"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1280x800-light-01-home.png",
+      "mode": {
+        "width": 1280,
+        "height": 800,
+        "theme": "light",
+        "all": true
+      },
+      "page": "01-home",
+      "measure": {
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "documentWidth": 1280,
+        "documentHeight": 2359,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1072,
+          "height": 2267
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1280x800-light-02-planner-board.png",
+      "mode": {
+        "width": 1280,
+        "height": 800,
+        "theme": "light",
+        "all": true
+      },
+      "page": "02-planner-board",
+      "measure": {
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "documentWidth": 1280,
+        "documentHeight": 2838,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1072,
+          "height": 2745.75
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [
+          "Ny uppgift"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1280x800-light-03-planner-week.png",
+      "mode": {
+        "width": 1280,
+        "height": 800,
+        "theme": "light",
+        "all": true
+      },
+      "page": "03-planner-week",
+      "measure": {
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "documentWidth": 1280,
+        "documentHeight": 1471,
+        "weekGrid": {
+          "x": 238,
+          "y": 321,
+          "width": 1120,
+          "height": 1107.96875
+        },
+        "firstTask": {
+          "x": 247,
+          "y": 433,
+          "width": 135.140625,
+          "height": 200.59375
+        },
+        "queue": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1072,
+          "height": 1378.96875
+        },
+        "titleType": {
+          "fontSize": "14px",
+          "color": "rgb(39, 39, 39)",
+          "lineHeight": "21px"
+        },
+        "metadataType": {
+          "fontSize": "12px",
+          "color": "rgb(102, 102, 102)",
+          "lineHeight": "18px"
+        },
+        "primaryButtons": [
+          "Planera uppgift"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1280x800-light-04-schedule-modal.png",
+      "mode": {
+        "width": 1280,
+        "height": 800,
+        "theme": "light",
+        "all": true
+      },
+      "page": "04-schedule-modal",
+      "measure": {
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "documentWidth": 1280,
+        "documentHeight": 1471,
+        "weekGrid": {
+          "x": 238,
+          "y": 321,
+          "width": 1120,
+          "height": 1107.96875
+        },
+        "firstTask": {
+          "x": 247,
+          "y": 433,
+          "width": 135.140625,
+          "height": 200.59375
+        },
+        "queue": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1072,
+          "height": 1378.96875
+        },
+        "titleType": {
+          "fontSize": "14px",
+          "color": "rgb(39, 39, 39)",
+          "lineHeight": "21px"
+        },
+        "metadataType": {
+          "fontSize": "12px",
+          "color": "rgb(102, 102, 102)",
+          "lineHeight": "18px"
+        },
+        "primaryButtons": [
+          "Planera uppgift",
+          "Spara planering"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1280x800-light-04b-task-editor.png",
+      "mode": {
+        "width": 1280,
+        "height": 800,
+        "theme": "light",
+        "all": true
+      },
+      "page": "04b-task-editor",
+      "measure": {
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "documentWidth": 1280,
+        "documentHeight": 1471,
+        "weekGrid": {
+          "x": 238,
+          "y": 321,
+          "width": 1120,
+          "height": 1107.96875
+        },
+        "firstTask": {
+          "x": 247,
+          "y": 433,
+          "width": 135.140625,
+          "height": 200.59375
+        },
+        "queue": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1072,
+          "height": 1378.96875
+        },
+        "titleType": {
+          "fontSize": "14px",
+          "color": "rgb(39, 39, 39)",
+          "lineHeight": "21px"
+        },
+        "metadataType": {
+          "fontSize": "12px",
+          "color": "rgb(102, 102, 102)",
+          "lineHeight": "18px"
+        },
+        "primaryButtons": [
+          "Planera uppgift",
+          "Spara ändringar"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1280x800-light-04c-schema.png",
+      "mode": {
+        "width": 1280,
+        "height": 800,
+        "theme": "light",
+        "all": true
+      },
+      "page": "04c-schema",
+      "measure": {
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "documentWidth": 1280,
+        "documentHeight": 800,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1072,
+          "height": 669
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1280x800-light-05-projects.png",
+      "mode": {
+        "width": 1280,
+        "height": 800,
+        "theme": "light",
+        "all": true
+      },
+      "page": "05-projects",
+      "measure": {
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "documentWidth": 1280,
+        "documentHeight": 811,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1072,
+          "height": 719.375
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [
+          "Nytt projekt"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1280x800-light-06-project-detail.png",
+      "mode": {
+        "width": 1280,
+        "height": 800,
+        "theme": "light",
+        "all": true
+      },
+      "page": "06-project-detail",
+      "measure": {
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "documentWidth": 1280,
+        "documentHeight": 1232,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1072,
+          "height": 1139.6875
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [
+          "Huvuduppgift"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1280x800-light-07-others.png",
+      "mode": {
+        "width": 1280,
+        "height": 800,
+        "theme": "light",
+        "all": true
+      },
+      "page": "07-others",
+      "measure": {
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "documentWidth": 1280,
+        "documentHeight": 800,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1072,
+          "height": 627.78125
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1280x800-light-08-notes-list.png",
+      "mode": {
+        "width": 1280,
+        "height": 800,
+        "theme": "light",
+        "all": true
+      },
+      "page": "08-notes-list",
+      "measure": {
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "documentWidth": 1280,
+        "documentHeight": 800,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1072,
+          "height": 692
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [
+          "Ny"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1280x800-light-09-note-editor.png",
+      "mode": {
+        "width": 1280,
+        "height": 800,
+        "theme": "light",
+        "all": true
+      },
+      "page": "09-note-editor",
+      "measure": {
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "documentWidth": 1280,
+        "documentHeight": 850,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1072,
+          "height": 758.390625
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [
+          "Ny"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1920x1080-light-01-home.png",
+      "mode": {
+        "width": 1920,
+        "height": 1080,
+        "theme": "light",
+        "all": true
+      },
+      "page": "01-home",
+      "measure": {
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "documentWidth": 1920,
+        "documentHeight": 2194,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1712,
+          "height": 2102.125
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1920x1080-light-02-planner-board.png",
+      "mode": {
+        "width": 1920,
+        "height": 1080,
+        "theme": "light",
+        "all": true
+      },
+      "page": "02-planner-board",
+      "measure": {
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "documentWidth": 1920,
+        "documentHeight": 2686,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1712,
+          "height": 2593.5
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [
+          "Ny uppgift"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1920x1080-light-03-planner-week.png",
+      "mode": {
+        "width": 1920,
+        "height": 1080,
+        "theme": "light",
+        "all": true
+      },
+      "page": "03-planner-week",
+      "measure": {
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "documentWidth": 1920,
+        "documentHeight": 1324,
+        "weekGrid": {
+          "x": 498,
+          "y": 321,
+          "width": 1392,
+          "height": 961
+        },
+        "firstTask": {
+          "x": 507,
+          "y": 412,
+          "width": 174,
+          "height": 188
+        },
+        "queue": {
+          "x": 236,
+          "y": 319,
+          "width": 244,
+          "height": 833
+        },
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1712,
+          "height": 1232
+        },
+        "titleType": {
+          "fontSize": "14px",
+          "color": "rgb(39, 39, 39)",
+          "lineHeight": "21px"
+        },
+        "metadataType": {
+          "fontSize": "12px",
+          "color": "rgb(102, 102, 102)",
+          "lineHeight": "18px"
+        },
+        "primaryButtons": [
+          "Planera uppgift"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1920x1080-light-04-schedule-modal.png",
+      "mode": {
+        "width": 1920,
+        "height": 1080,
+        "theme": "light",
+        "all": true
+      },
+      "page": "04-schedule-modal",
+      "measure": {
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "documentWidth": 1920,
+        "documentHeight": 1324,
+        "weekGrid": {
+          "x": 498,
+          "y": 321,
+          "width": 1392,
+          "height": 961
+        },
+        "firstTask": {
+          "x": 507,
+          "y": 412,
+          "width": 174,
+          "height": 188
+        },
+        "queue": {
+          "x": 236,
+          "y": 319,
+          "width": 244,
+          "height": 833
+        },
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1712,
+          "height": 1232
+        },
+        "titleType": {
+          "fontSize": "14px",
+          "color": "rgb(39, 39, 39)",
+          "lineHeight": "21px"
+        },
+        "metadataType": {
+          "fontSize": "12px",
+          "color": "rgb(102, 102, 102)",
+          "lineHeight": "18px"
+        },
+        "primaryButtons": [
+          "Planera uppgift",
+          "Spara planering"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1920x1080-light-04b-task-editor.png",
+      "mode": {
+        "width": 1920,
+        "height": 1080,
+        "theme": "light",
+        "all": true
+      },
+      "page": "04b-task-editor",
+      "measure": {
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "documentWidth": 1920,
+        "documentHeight": 1324,
+        "weekGrid": {
+          "x": 498,
+          "y": 321,
+          "width": 1392,
+          "height": 961
+        },
+        "firstTask": {
+          "x": 507,
+          "y": 412,
+          "width": 174,
+          "height": 188
+        },
+        "queue": {
+          "x": 236,
+          "y": 319,
+          "width": 244,
+          "height": 833
+        },
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1712,
+          "height": 1232
+        },
+        "titleType": {
+          "fontSize": "14px",
+          "color": "rgb(39, 39, 39)",
+          "lineHeight": "21px"
+        },
+        "metadataType": {
+          "fontSize": "12px",
+          "color": "rgb(102, 102, 102)",
+          "lineHeight": "18px"
+        },
+        "primaryButtons": [
+          "Planera uppgift",
+          "Spara ändringar"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1920x1080-light-04c-schema.png",
+      "mode": {
+        "width": 1920,
+        "height": 1080,
+        "theme": "light",
+        "all": true
+      },
+      "page": "04c-schema",
+      "measure": {
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "documentWidth": 1920,
+        "documentHeight": 1080,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1712,
+          "height": 949
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1920x1080-light-05-projects.png",
+      "mode": {
+        "width": 1920,
+        "height": 1080,
+        "theme": "light",
+        "all": true
+      },
+      "page": "05-projects",
+      "measure": {
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "documentWidth": 1920,
+        "documentHeight": 1080,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1712,
+          "height": 577.28125
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [
+          "Nytt projekt"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1920x1080-light-06-project-detail.png",
+      "mode": {
+        "width": 1920,
+        "height": 1080,
+        "theme": "light",
+        "all": true
+      },
+      "page": "06-project-detail",
+      "measure": {
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "documentWidth": 1920,
+        "documentHeight": 1232,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1712,
+          "height": 1139.6875
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [
+          "Huvuduppgift"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1920x1080-light-07-others.png",
+      "mode": {
+        "width": 1920,
+        "height": 1080,
+        "theme": "light",
+        "all": true
+      },
+      "page": "07-others",
+      "measure": {
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "documentWidth": 1920,
+        "documentHeight": 1080,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1712,
+          "height": 627.78125
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1920x1080-light-08-notes-list.png",
+      "mode": {
+        "width": 1920,
+        "height": 1080,
+        "theme": "light",
+        "all": true
+      },
+      "page": "08-notes-list",
+      "measure": {
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "documentWidth": 1920,
+        "documentHeight": 1080,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1712,
+          "height": 959
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [
+          "Ny"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1920x1080-light-09-note-editor.png",
+      "mode": {
+        "width": 1920,
+        "height": 1080,
+        "theme": "light",
+        "all": true
+      },
+      "page": "09-note-editor",
+      "measure": {
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "documentWidth": 1920,
+        "documentHeight": 1080,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1712,
+          "height": 959
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [
+          "Ny"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1440x900-dark-01-home.png",
+      "mode": {
+        "width": 1440,
+        "height": 900,
+        "theme": "dark",
+        "all": false
+      },
+      "page": "01-home",
+      "measure": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "documentWidth": 1440,
+        "documentHeight": 2319,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1232,
+          "height": 2226.8125
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1440x900-dark-02-planner-board.png",
+      "mode": {
+        "width": 1440,
+        "height": 900,
+        "theme": "dark",
+        "all": false
+      },
+      "page": "02-planner-board",
+      "measure": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "documentWidth": 1440,
+        "documentHeight": 2838,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1232,
+          "height": 2745.75
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [
+          "Ny uppgift"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1440x900-dark-03-planner-week.png",
+      "mode": {
+        "width": 1440,
+        "height": 900,
+        "theme": "dark",
+        "all": false
+      },
+      "page": "03-planner-week",
+      "measure": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "documentWidth": 1440,
+        "documentHeight": 1387,
+        "weekGrid": {
+          "x": 238,
+          "y": 321,
+          "width": 1172,
+          "height": 1024
+        },
+        "firstTask": {
+          "x": 247,
+          "y": 433,
+          "width": 142.5625,
+          "height": 188
+        },
+        "queue": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1232,
+          "height": 1295
+        },
+        "titleType": {
+          "fontSize": "14px",
+          "color": "rgb(240, 240, 240)",
+          "lineHeight": "21px"
+        },
+        "metadataType": {
+          "fontSize": "12px",
+          "color": "rgb(177, 177, 177)",
+          "lineHeight": "18px"
+        },
+        "primaryButtons": [
+          "Planera uppgift"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1440x900-bento-01-home.png",
+      "mode": {
+        "width": 1440,
+        "height": 900,
+        "theme": "bento",
+        "all": false
+      },
+      "page": "01-home",
+      "measure": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "documentWidth": 1440,
+        "documentHeight": 2319,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1232,
+          "height": 2226.8125
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1440x900-bento-02-planner-board.png",
+      "mode": {
+        "width": 1440,
+        "height": 900,
+        "theme": "bento",
+        "all": false
+      },
+      "page": "02-planner-board",
+      "measure": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "documentWidth": 1440,
+        "documentHeight": 2838,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1232,
+          "height": 2745.75
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [
+          "Ny uppgift"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1440x900-bento-03-planner-week.png",
+      "mode": {
+        "width": 1440,
+        "height": 900,
+        "theme": "bento",
+        "all": false
+      },
+      "page": "03-planner-week",
+      "measure": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "documentWidth": 1440,
+        "documentHeight": 1387,
+        "weekGrid": {
+          "x": 238,
+          "y": 321,
+          "width": 1172,
+          "height": 1024
+        },
+        "firstTask": {
+          "x": 247,
+          "y": 433,
+          "width": 142.5625,
+          "height": 188
+        },
+        "queue": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1232,
+          "height": 1295
+        },
+        "titleType": {
+          "fontSize": "14px",
+          "color": "rgb(255, 253, 245)",
+          "lineHeight": "21px"
+        },
+        "metadataType": {
+          "fontSize": "12px",
+          "color": "rgb(225, 232, 232)",
+          "lineHeight": "18px"
+        },
+        "primaryButtons": [
+          "Planera uppgift"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1440x900-bento-aurora-01-home.png",
+      "mode": {
+        "width": 1440,
+        "height": 900,
+        "theme": "bento-aurora",
+        "all": false
+      },
+      "page": "01-home",
+      "measure": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "documentWidth": 1440,
+        "documentHeight": 2319,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1232,
+          "height": 2226.8125
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1440x900-bento-aurora-02-planner-board.png",
+      "mode": {
+        "width": 1440,
+        "height": 900,
+        "theme": "bento-aurora",
+        "all": false
+      },
+      "page": "02-planner-board",
+      "measure": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "documentWidth": 1440,
+        "documentHeight": 2838,
+        "weekGrid": null,
+        "firstTask": null,
+        "queue": null,
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1232,
+          "height": 2745.75
+        },
+        "titleType": null,
+        "metadataType": null,
+        "primaryButtons": [
+          "Ny uppgift"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    },
+    {
+      "file": "1440x900-bento-aurora-03-planner-week.png",
+      "mode": {
+        "width": 1440,
+        "height": 900,
+        "theme": "bento-aurora",
+        "all": false
+      },
+      "page": "03-planner-week",
+      "measure": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "documentWidth": 1440,
+        "documentHeight": 1387,
+        "weekGrid": {
+          "x": 238,
+          "y": 321,
+          "width": 1172,
+          "height": 1024
+        },
+        "firstTask": {
+          "x": 247,
+          "y": 433,
+          "width": 142.5625,
+          "height": 188
+        },
+        "queue": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "main": {
+          "x": 208,
+          "y": 64,
+          "width": 1232,
+          "height": 1295
+        },
+        "titleType": {
+          "fontSize": "14px",
+          "color": "rgb(250, 249, 242)",
+          "lineHeight": "21px"
+        },
+        "metadataType": {
+          "fontSize": "12px",
+          "color": "rgb(224, 231, 229)",
+          "lineHeight": "18px"
+        },
+        "primaryButtons": [
+          "Planera uppgift"
+        ],
+        "navigation": [
+          "Home",
+          "Planner",
+          "Schema",
+          "Projects",
+          "Others"
+        ]
+      }
+    }
+  ],
+  "errors": []
+}

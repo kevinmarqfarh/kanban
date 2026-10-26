@@ -268,3 +268,5 @@
   .home-weather .wx-temps strong { font-size: 14px; }
   .home-weather .wx-temps small { font-size: 12px; }
 }
+/* The shared calendar summary keeps a full touch target on the docked tablet. */
+.is-homescreen .schedule-summary .schedule-heading .button { min-height: 44px; }

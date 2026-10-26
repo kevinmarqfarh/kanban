@@ -13,6 +13,7 @@ async function run(browser, viewport, label) {
   await page.getByRole('button', { name: 'Projects', exact: true }).click();
   await page.locator('.new-project-card').click();
 
+  await page.locator('.project-icon-disclosure > summary').click();
   const picker = page.getByRole('group', { name: /Projektikon/ });
   await assert.doesNotReject(picker.waitFor());
   for (const group of ['Allmänt', 'Hem och familj', 'Hälsa och mat', 'Resor och fritid', 'Arbete och lärande', 'Kreativt'])

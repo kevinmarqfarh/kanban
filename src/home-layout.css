@@ -1,0 +1,49 @@
+/* Desktop only: the small-screen Home markup keeps its original flow. */
+.app-shell.is-desktop .home-page.home-custom-grid { display: grid; grid-template-columns: repeat(12,minmax(0,1fr)); gap: 24px; align-items: stretch; }
+.home-custom-grid > :is(.bento-welcome,.home-date,.home-notifications,.form-message,.home-layout-toolbar) { grid-column: 1 / -1; order: -1; }
+.home-custom-grid .home-layout-toolbar { order: -3; }
+.home-custom-grid .bento-welcome { order: -2; }
+.app-shell.is-desktop .home-custom-grid :is(.briefing,.briefing-grid,.home-grid) { display: contents; }
+.home-custom-grid .briefing-footnote { grid-column: 1 / -1; order: 100; }
+.home-module { grid-column: span var(--module-columns); min-width: 0; display: flex; flex-direction: column; position: relative; container-type: inline-size; }
+.home-module-content { min-width: 0; flex: 1; }
+.app-shell.is-desktop .home-custom-grid .home-module-content > :is(.home-weather,.schedule-summary,.home-panel,.briefing-header,.briefing-stats,.briefing-block,.briefing-agenda) { width: 100%; height: 100%; min-height: 0; margin: 0; padding: 24px; border: 1px solid var(--line); border-radius: var(--radius-bento); background: var(--surface); color: var(--ink); box-sizing: border-box; }
+.home-module:not([data-height='auto']) .home-module-content { height: var(--module-height); flex: none; overflow: auto; border-radius: var(--radius-bento); scrollbar-width: thin; }
+.app-shell.is-desktop .home-custom-grid .home-module:not([data-height='auto']) .home-module-content > * { height: auto; min-height: 100%; }
+.home-layout-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; padding-block: 10px; color: inherit; }
+.home-layout-toolbar strong { font-size: 14px; font-weight: 500; }
+.home-layout-toolbar p { font-size: 12px; margin-top: 5px; }
+.home-layout-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.home-layout-editing .home-module { outline: 1px dashed var(--ink-muted); outline-offset: 5px; border-radius: var(--radius-bento); }
+.home-module-editor { padding: 12px; background: var(--surface-solid); color: var(--ink); border: 1px solid var(--line-strong); border-radius: 18px; margin-bottom: 10px; }
+.home-module-title { display: flex; align-items: center; gap: 3px; }
+.home-module-title strong { font-size: 12px; flex: 1; }
+.home-module-title .icon-button { width: 30px; height: 32px; flex-shrink: 0; }
+.home-module-grip { cursor: grab; touch-action: none; }
+.home-module-grip:active { cursor: grabbing; }
+.home-module-sizes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.home-module-sizes label { display: flex; flex: 1; flex-direction: column; gap: 5px; font-size: 10px; min-width: 90px; }
+.home-module-sizes select { width: 100%; background: var(--surface-muted); color: var(--ink); border: 1px solid var(--line-strong); padding: 8px; border-radius: 8px; font: inherit; font-size: 11px; }
+.home-module.is-dragging { opacity: .65; z-index: 20; }
+.app-shell.is-desktop .home-custom-grid .home-module .briefing-stats { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 10px; align-content: center; }
+.home-custom-grid .home-module .briefing-stat { padding: 12px; }
+.home-custom-grid .briefing-agenda > ol { grid-template-columns: 1fr; }
+@container (max-width: 480px) {
+ .app-shell.is-desktop .home-custom-grid .home-module .briefing-stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+ .home-module .home-week { gap: 1px; }
+ .home-module .home-week-day { padding-inline: 1px; }
+ .home-module .briefing-tip { padding: 10px; gap: 8px; }
+ .home-module .briefing-heading h2 { font-size: 25px; }
+}
+@container (max-width: 360px) {
+ .home-module .wxp-days { gap: 2px; }
+ .home-module .home-panel-heading h2 { font-size: 13px; }
+ .home-module .home-birthday-row { flex-wrap: wrap; }
+ .home-module .briefing-tip-icon { display: none; }
+}
+@container (max-width: 480px) {
+ .home-module .wx-days { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; }
+ .home-module .wx-day { min-width: 0; }
+ .home-module .wx-day-button { width: 100%; }
+ .home-module .wx-temps { flex-wrap: wrap; justify-content: center; gap: 3px; }
+}

@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowLeft, Bold, RotateCcw, Check, FileText, Italic, List, ListOrdered, Pin, Plus, Search, Trash2 } from 'lucide-react'
+import { ArrowLeft, Bold, RotateCcw, Check, FileText, Italic, List, ListOrdered, Pin, Plus, Search, Trash2, Maximize2, Minimize2 } from 'lucide-react'
 import type { Note, NoteFont, NoteLinkKind, Workspace } from '../lib/types'
 import { newId } from '../lib/helpers'
 import { NOTE_TRASH_DAYS, isTrashed, noteLinkItems, noteLinkLabels, notePlainText, sanitizeNoteHtml, trashDaysLeft, type NoteLinkItem } from '../lib/notes'
 import { mergeRecordChanges } from '../lib/workspaceMerge'
 import { Modal } from './Modal'
 import { SwipeRow } from './SwipeRow'
+import { useDesktopLayout } from '../hooks/useDesktopLayout'
 
 function wordCount(html: string) {
   const text = notePlainText(html).trim()
@@ -33,8 +34,10 @@ function NoteEditor({ note, workspace, onSave, onDelete, onOpenLink, onBack, ini
   const [picker, setPicker] = useState(false)
   const [query, setQuery] = useState('')
   const [saved, setSaved] = useState(!initialError)
-  // Notes always open as a full-window writing surface; closing it returns to the list.
-  const focusMode = true
+  // PC keeps the note list in view. A focused writing surface is an explicit choice; touch keeps it by default.
+  const desktop = useDesktopLayout()
+  const [requestedFocus, setRequestedFocus] = useState(false)
+  const focusMode = !desktop || requestedFocus
   const backRef = useRef(onBack); backRef.current = onBack
   const [typing, setTyping] = useState(false)
   const [words, setWords] = useState(() => wordCount(note.content))
@@ -53,10 +56,11 @@ function NoteEditor({ note, workspace, onSave, onDelete, onOpenLink, onBack, ini
     if (document.fullscreenEnabled && !document.fullscreenElement && root.requestFullscreen) {
       root.requestFullscreen({ navigationUI: 'hide' }).then(() => { enteredFullscreen.current = true }).catch(() => { /* The overlay still gives a clean surface. */ })
     }
-    const leftFullscreen = () => { if (enteredFullscreen.current && !document.fullscreenElement) backRef.current() }
+    const leaveFocus = () => { if (desktop) setRequestedFocus(false); else backRef.current() }
+    const leftFullscreen = () => { if (enteredFullscreen.current && !document.fullscreenElement) leaveFocus() }
     const key = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented || document.querySelector('dialog[open]')) return
-      event.preventDefault(); backRef.current()
+      event.preventDefault(); leaveFocus()
     }
     const moved = (event: PointerEvent) => { if (event.pointerType === 'mouse' && (Math.abs(event.movementX) + Math.abs(event.movementY) > 3)) setTyping(false) }
     document.addEventListener('fullscreenchange', leftFullscreen)
@@ -72,7 +76,7 @@ function NoteEditor({ note, workspace, onSave, onDelete, onOpenLink, onBack, ini
       enteredFullscreen.current = false
       setTyping(false)
     }
-  }, [focusMode])
+  }, [focusMode, desktop])
   useEffect(() => {
     const editor = editorRef.current!
     editor.innerHTML = sanitizeNoteHtml(note.content)
@@ -166,6 +170,7 @@ function NoteEditor({ note, workspace, onSave, onDelete, onOpenLink, onBack, ini
       <button className="button ghost note-focus-exit" onClick={onBack} title="Tillbaka till anteckningar (Esc)"><ArrowLeft size={16} /><span>Anteckningar</span></button>
       <span className="note-save-state" role="status">{saved ? <><Check size={13} />Sparat</> : 'Inte sparat'}</span>
       {focusMode && <span className="note-word-count" aria-live="off">{words === 1 ? '1 ord' : `${words} ord`}</span>}
+      {desktop && <button className="icon-button note-focus-toggle" type="button" aria-label={focusMode ? 'Lämna fokusläge' : 'Öppna fokusläge'} title={focusMode ? 'Lämna fokusläge' : 'Öppna fokusläge'} onClick={() => setRequestedFocus(value => !value)}>{focusMode ? <Minimize2 size={17} /> : <Maximize2 size={17} />}</button>}
       <button className="icon-button" aria-label={note.pinned ? "Lossa anteckning" : "Fäst överst"} title={note.pinned ? "Lossa anteckning" : "Fäst överst"} aria-pressed={!!note.pinned} onClick={() => persist({ pinned: !note.pinned })}><Pin size={17} /></button>
       <button className="icon-button danger note-focus-delete" aria-label="Ta bort anteckning" title="Ta bort anteckning" onClick={() => { const failure = onDelete(note.id); if (failure) setError(failure); else onBack() }}><Trash2 size={17} /></button>
     </div>

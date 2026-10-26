@@ -54,21 +54,13 @@
 [data-theme='bento'] .cookbook-card-copy small { color: #304e59; }
 [data-theme='bento'] :is(.modal-panel,.home-panel,.briefing,.hs-card,.others-module-row,.others-record-row,.overtime-summary,.nutrition-calendar) .others-help { color: var(--ink-secondary); }
 [data-theme='bento'] .bottom-nav { background: #7c9eac; border: 0; box-shadow: none; border-radius: 22px; padding: 10px; gap: 8px; backdrop-filter: none; -webkit-backdrop-filter: none; }
-[data-theme='bento'] .nav-item { background: transparent; color: #fffdf5; border-radius: 12px; box-shadow: none; }
+[data-theme='bento'] .nav-item { background: transparent; color: #17272e; border-radius: 12px; box-shadow: none; }
 [data-theme='bento'] .nav-item:not(.active):hover { background: transparent; color: #17272e; }
 [data-theme='bento'] .nav-item.active { background: #fffdf5; color: #263840; }
 [data-theme='bento'] :is(.wxp-blue,.wxp-table td.wxp-blue) { color: #b9defe; }
 [data-theme='bento'] .time-pill-morning { background: #675e3a; color: #fff0a3; }
 [data-theme='bento'] .time-pill-evening { background: #495878; color: #e0e4ff; }
 [data-theme='bento'] .toast { background: #101719; color: #fffdf5; border-color: transparent; }
-@media (min-width: 900px) {
- [data-theme='bento'] .app-shell:not(.is-homescreen) { padding-bottom: 40px; }
- [data-theme='bento'] .app-shell:not(.is-homescreen) .main-content { width: calc(100% - 180px); max-width: 1264px; margin-left: max(130px, calc((100% - 1160px) / 2)); margin-right: 40px; }
- [data-theme='bento'] .app-shell:not(.is-homescreen) .bottom-nav { left: 28px; top: 178px; bottom: auto; transform: none; flex-direction: column; width: 68px; padding: 10px; border-radius: 22px; }
- [data-theme='bento'] .app-shell:not(.is-homescreen) .nav-item { min-width: 46px; width: 46px; min-height: 46px; padding: 12px; }
- [data-theme='bento'] .app-shell:not(.is-homescreen) .nav-label { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
- [data-theme='bento'] .app-shell:not(.is-homescreen) .nav-item svg { width: 20px; height: 20px; }
-}
 @media (max-width: 899px) {
  [data-theme='bento'] .topbar { height: 68px; padding-inline: 22px; }
  [data-theme='bento'] .bottom-nav { width: min(360px, calc(100% - 32px)); }
@@ -125,3 +117,12 @@
 [data-theme='bento'] :is(.home-habit.is-complete,.hs-habit.is-complete,.nutrition-habit-row.completed) small { color: #d7eddf; }
 [data-theme='bento'] .hs-habit.is-complete .hs-habit-copy strong { color: #fffdf5; }
 [data-theme='bento'] :is(.home-habit.is-complete,.nutrition-habit-row.completed) input[type='checkbox']:checked { background: #75bb96; border-color: #a4d9ba; box-shadow: inset 0 0 0 3px #35654f; }
+
+/* Labels over the pale canvas need dark ink; modal fields remain on slate surfaces. */
+[data-theme='bento'] .main-content :is(.field,.field-label,.field-help) { color: #253f49; }
+[data-theme='bento'] .main-content .modal-panel :is(.field,.field-label) { color: var(--ink-secondary); }
+[data-theme='bento'] .main-content .modal-panel .field-help { color: var(--ink-muted); }
+
+[data-theme='bento'] .main-content .nutrition-calendar :is(.field,.field-label) { color: var(--ink-secondary); }
+[data-theme='bento'] .main-content .nutrition-calendar .field-help { color: var(--ink-muted); }
+[data-theme='bento'] .nav-item:focus-visible { outline-color: #17272e; }

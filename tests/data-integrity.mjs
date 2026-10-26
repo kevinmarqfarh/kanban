@@ -17,7 +17,7 @@ async function readModule(relativePath, dependencies = {}) {
 const { createSeedWorkspace, createEmptyWorkspace } = await readModule('../src/lib/seed.ts')
 const birthdays = await readModule('../src/lib/birthdays.ts')
 const others = await readModule('../src/lib/others.ts', { './birthdays': birthdays })
-const { isWorkspace, separateProjectTasks } = await readModule('../src/lib/workspaceValidation.ts', { './birthdays': birthdays, './others': others })
+const { isWorkspace, separateProjectTasks } = await readModule('../src/lib/workspaceValidation.ts', { './birthdays': birthdays, './others': others, './schedule': await readModule('../src/lib/schedule.ts', { './birthdays': birthdays, './others': others }) })
 
 const seed = createSeedWorkspace()
 assert.ok(isWorkspace(seed), 'The example board must be valid and every task must reference an existing column/project.')
