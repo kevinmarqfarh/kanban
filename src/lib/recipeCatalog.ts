@@ -1407,11 +1407,12 @@ export const recipeCatalog: Recipe[] = [
 const catalogIds = new Set(recipeCatalog.map(recipe => recipe.id))
 export const isCatalogRecipe = (id: string): boolean => catalogIds.has(id)
 
-/** Refresh built-in content and labels while retaining saved favorites/images and personal recipes. */
+/** Refresh untouched catalog recipes; preserve personal edits under the same recipe ID. */
 export function availableRecipes(saved: Recipe[] = []): Recipe[] {
   const savedById = new Map(saved.map(recipe => [recipe.id, recipe]))
   return [...recipeCatalog.map(recipe => {
     const savedRecipe = savedById.get(recipe.id)
+    if (savedRecipe?.catalogEdited) return savedRecipe
     return savedRecipe ? { ...savedRecipe, ...recipe, favorite: savedRecipe.favorite, image: savedRecipe.image ?? recipe.image } : recipe
   }), ...saved.filter(recipe => !catalogIds.has(recipe.id))]
 }

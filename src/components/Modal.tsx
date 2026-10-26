@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { X } from 'lucide-react'
 
-export function Modal({ title, subtitle, children, onClose, footer, error, wide = false, phoneFullscreen = false, initialFocusRef, focusForm = true, dirty = false }: {
+export function Modal({ title, subtitle, children, onClose, footer, error, wide = false, phoneFullscreen = false, initialFocusRef, focusForm = true, dirty = false, className = '' }: {
   title: string; subtitle?: string; children: ReactNode; onClose: () => void; footer?: ReactNode | ((requestClose: () => void) => ReactNode); error?: string | null;
-  focusForm?: boolean; dirty?: boolean; wide?: boolean; phoneFullscreen?: boolean; initialFocusRef?: RefObject<HTMLInputElement | null>;
+  focusForm?: boolean; dirty?: boolean; wide?: boolean; phoneFullscreen?: boolean; initialFocusRef?: RefObject<HTMLInputElement | null>; className?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null)
   const [confirming, setConfirming] = useState(false)
@@ -79,7 +79,7 @@ export function Modal({ title, subtitle, children, onClose, footer, error, wide 
     return event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom
   }
   const pressedOutside = useRef(false)
-  return <dialog ref={ref} className={`modal-panel${wide ? ' modal-wide' : ''}${phoneFullscreen ? ' modal-phone-fullscreen' : ''}`} aria-labelledby="modal-title" onCancel={event => {
+  return <dialog ref={ref} className={`modal-panel${wide ? ' modal-wide' : ''}${phoneFullscreen ? ' modal-phone-fullscreen' : ''} ${className}`} aria-labelledby="modal-title" onCancel={event => {
     event.preventDefault(); closeRef.current()
   }} onPointerDown={event => { pressedOutside.current = outside(event) }} onClick={event => {
     const started = pressedOutside.current

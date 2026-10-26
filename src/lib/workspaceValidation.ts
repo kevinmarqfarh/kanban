@@ -62,6 +62,7 @@ export function isWorkspace(value: unknown): value is Workspace {
     && validateRecipeUrl(entry.url) && typeof entry.steps === 'string' && strings(entry.labels) && timestamp(entry.createdAt)
     && (entry.image === undefined || isRecipeImage(entry.image))
     && (entry.favorite === undefined || typeof entry.favorite === 'boolean')
+    && (entry.catalogEdited === undefined || typeof entry.catalogEdited === 'boolean')
     && (entry.ingredients === undefined || typeof entry.ingredients === 'string')
     && (entry.notes === undefined || typeof entry.notes === 'string'))) return false
   if (!optional('notes', entry => object(entry) && filled(entry.id) && filled(entry.title) && entry.title.length <= 160

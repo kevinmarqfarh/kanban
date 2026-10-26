@@ -139,6 +139,8 @@ export interface Cookbook {
 }
 
 export interface Recipe {
+  // Personal edits to a built-in recipe take precedence over catalog updates.
+  catalogEdited?: boolean
   ingredients?: string
   notes?: string
   favorite?: boolean

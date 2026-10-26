@@ -4,18 +4,20 @@ import type { Cookbook, OvertimeEntry, Note, NoteLinkKind, NutritionHabit, Recip
 import { Workouts } from './WorkoutEditor'
 import { Nutrition } from './Nutrition'
 import { Cookbooks } from './Cookbooks'
+import { RecipeTimersProvider } from './RecipeTimers'
 import { Notes } from './Notes'
 import { useLocalDay } from '../hooks/useLocalDay'
 import { isNutritionComplete } from '../lib/others'
 import { isValidBirthDate, nextBirthday } from '../lib/birthdays'
-import { availableRecipes, isCatalogRecipe } from '../lib/recipeCatalog'
+import { availableRecipes } from '../lib/recipeCatalog'
 
 import { Overtime } from './Overtime'
 import { formatOvertime, overtimeBalance } from '../lib/overtime'
 
 type Section = 'overtime' | 'workouts' | 'nutrition' | 'recipes' | 'notes'
-export function Others({ workspace, initialSection, initialRecord, initialNoteId, onBirthdays, onSaveOvertime, onDeleteOvertime, onSaveWorkout, onDeleteWorkout, onRestoreWorkout, onSaveHabit, onToggleHabit, onDeleteHabit, onOrganizeCookbooks, onSaveCookbook, onDeleteCookbook, onSaveRecipe, onDeleteRecipe, onSaveNote, onDeleteNote, onRestoreNote, onPurgeNote, onEmptyNoteTrash, onOpenNoteLink }: {
+export function Others({ workspace, recipeTimerScope, initialSection, initialRecord, initialNoteId, onBirthdays, onSaveOvertime, onDeleteOvertime, onSaveWorkout, onDeleteWorkout, onRestoreWorkout, onSaveHabit, onToggleHabit, onDeleteHabit, onOrganizeCookbooks, onSaveCookbook, onDeleteCookbook, onSaveRecipe, onDeleteRecipe, onSaveNote, onDeleteNote, onRestoreNote, onPurgeNote, onEmptyNoteTrash, onOpenNoteLink }: {
   workspace: Workspace;
+  recipeTimerScope: string;
   initialSection?: Section | null;
   initialRecord?: { kind: NoteLinkKind; id: string } | null;
   initialNoteId?: string;
@@ -62,7 +64,7 @@ export function Others({ workspace, initialSection, initialRecord, initialNoteId
     {section === 'overtime' && <Overtime entries={workspace.overtime ?? []} onSave={onSaveOvertime} onDelete={onDeleteOvertime} />}
     {section === 'workouts' && <Workouts workouts={workspace.workouts ?? []} initialId={initialRecord?.kind === 'workout' ? initialRecord.id : undefined} onSave={onSaveWorkout} onDelete={onDeleteWorkout} onRestore={onRestoreWorkout} />}
     {section === 'nutrition' && <Nutrition workspace={workspace} initialHabitId={initialRecord?.kind === 'nutrition' ? initialRecord.id : undefined} onSave={onSaveHabit} onDelete={onDeleteHabit} onToggle={onToggleHabit} />}
-    {section === 'recipes' && <Cookbooks organized={!!workspace.cuisineCookbooksOrganized} onOrganize={onOrganizeCookbooks} books={workspace.cookbooks ?? []} onSaveBook={onSaveCookbook} onDeleteBook={onDeleteCookbook} recipes={recipes} initialId={initialRecord?.kind === 'recipe' ? initialRecord.id : undefined} onSave={(edited, original, cookbookId) => onSaveRecipe(edited, isCatalogRecipe(edited.id) && !workspace.recipes?.some(recipe => recipe.id === edited.id) ? undefined : original, cookbookId)} onDelete={onDeleteRecipe} />}
+    {section === 'recipes' && <RecipeTimersProvider key={recipeTimerScope} scope={recipeTimerScope}><Cookbooks organized={!!workspace.cuisineCookbooksOrganized} onOrganize={onOrganizeCookbooks} books={workspace.cookbooks ?? []} onSaveBook={onSaveCookbook} onDeleteBook={onDeleteCookbook} recipes={recipes} initialId={initialRecord?.kind === 'recipe' ? initialRecord.id : undefined} onSave={onSaveRecipe} onDelete={onDeleteRecipe} /></RecipeTimersProvider>}
     {section === 'notes' && <Notes workspace={workspace} initialId={initialNoteId} onSave={onSaveNote} onDelete={onDeleteNote} onRestore={onRestoreNote} onPurge={onPurgeNote} onEmptyTrash={onEmptyNoteTrash} onOpenLink={onOpenNoteLink} />}
   </section>
 }

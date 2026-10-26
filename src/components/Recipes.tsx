@@ -2,12 +2,13 @@ import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { ArrowUpRight, Check, CookingPot, Heart, ImagePlus, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import type { Recipe } from '../lib/types'
 import { newId } from '../lib/helpers'
-import { isRecipeImage, predefinedRecipeLabels, recipeLabelKey, recipeLabelOptions, safeRecipeUrl, validateRecipeUrl } from '../lib/others'
+import { isRecipeImage, predefinedRecipeLabels, recipeLabelKey, recipeLabelOptions, validateRecipeUrl } from '../lib/others'
 import { prepareRecipeImage } from '../lib/recipeImage'
 import { Modal } from './Modal'
 import { TagAdder } from './TagAdder'
 import { isCatalogRecipe } from '../lib/recipeCatalog'
-import { cuisineLabels, isCuisineLabel, recipeContent, recipeSummary, recipeIngredientLines, recipeMethodSteps } from '../lib/recipeContent'
+import { cuisineLabels, isCuisineLabel, recipeContent } from '../lib/recipeContent'
+import { RecipeReader } from './RecipeReader'
 
 const displayLabel = (label: string) => predefinedRecipeLabels.includes(recipeLabelKey(label)) ? `${label[0].toLocaleUpperCase('sv')}${label.slice(1)}` : label
 
@@ -52,7 +53,7 @@ function RecipeEditor({ recipe, recipes, onSave, onClose }: {
     const chosen = predefinedRecipeLabels.filter(label => selected(label))
     const own = draft.labels.filter(label => !predefinedRecipeLabels.includes(recipeLabelKey(label))).map(label => label.trim()).filter(Boolean)
     const labels = [...chosen, ...own.filter((label, index) => own.findIndex(other => recipeLabelKey(other) === recipeLabelKey(label)) === index)]
-    const next = { ...draft, title: draft.title.trim(), url: draft.url.trim(), ingredients: draft.ingredients?.trim() ?? '', steps: draft.steps.trim(), notes: draft.notes?.trim() ?? '', labels }
+    const next = { ...draft, ...(isCatalogRecipe(draft.id) ? { catalogEdited: true } : {}), title: draft.title.trim(), url: draft.url.trim(), ingredients: draft.ingredients?.trim() ?? '', steps: draft.steps.trim(), notes: draft.notes?.trim() ?? '', labels }
     setDraft(next)
     const failure = onSave(next, original)
     if (failure) setError(failure)
@@ -84,18 +85,15 @@ export function Recipes({ recipes, onSave, onDelete, initialId, libraryHelp = tr
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<string | null>(null)
   const [favoritesOnly, setFavoritesOnly] = useState(false)
-  const [checkedIngredients, setCheckedIngredients] = useState<number[]>([])
   const [query, setQuery] = useState('')
   const searchTerms = query.trim().toLocaleLowerCase('sv').split(/\s+/).filter(Boolean)
   const favoriteCount = recipes.filter(recipe => recipe.favorite).length
   const used = recipeLabelOptions(recipes).filter(label => recipes.some(recipe => recipe.labels.some(value => recipeLabelKey(value) === recipeLabelKey(label))) && !recipes.every(recipe => recipe.labels.some(value => recipeLabelKey(value) === recipeLabelKey(label))))
   used.sort((a, b) => { const ai = cuisineLabels.indexOf(a); const bi = cuisineLabels.indexOf(b); return (ai < 0 ? cuisineLabels.length : ai) - (bi < 0 ? cuisineLabels.length : bi) })
-  const content = selected ? recipeContent(selected) : null
   const activeFilter = filter && used.some(label => recipeLabelKey(label) === filter) ? filter : null
   const ordered = [...recipes].filter(recipe => searchTerms.every(term => `${recipe.title} ${recipeContent(recipe).ingredients} ${recipe.labels.join(' ')}`.toLocaleLowerCase('sv').includes(term)) && (!favoritesOnly || recipe.favorite) && (!activeFilter || recipe.labels.some(label => recipeLabelKey(label) === activeFilter))).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-  const link = selected ? safeRecipeUrl(selected.url) : null
   function open(recipe: Recipe) {
-    setCheckedIngredients([]); setSelected(recipe); setError(null)
+    setSelected(recipe); setError(null)
   }
   function toggleFavorite(recipe: Recipe) {
     const current = recipes.find(item => item.id === recipe.id)
@@ -116,17 +114,7 @@ export function Recipes({ recipes, onSave, onDelete, initialId, libraryHelp = tr
     <div className="others-record-list">{ordered.map(recipe => <article className="others-record-row recipe-list-row" key={recipe.id} data-recipe-id={recipe.id}><button className="others-record-open" type="button" aria-label={`Öppna recept ${recipe.title}`} onClick={() => open(recipe)}>{recipe.image && isRecipeImage(recipe.image) ? <img className="recipe-thumb" src={recipe.image} alt="" loading="lazy" decoding="async" /> : <span className="others-record-icon"><CookingPot size={19} strokeWidth={1.5} /></span>}<span className="others-record-copy"><strong>{recipe.title}</strong>{recipe.labels.length > 0 && <span className="recipe-list-labels">{recipe.labels.filter(label => isCuisineLabel(label) || !['middag', 'receptbanken'].includes(recipeLabelKey(label))).map(label => <span className={`label-chip${isCuisineLabel(label) ? ' recipe-cuisine-chip' : ''}`} key={label}>{displayLabel(label)}</span>)}</span>}</span><ArrowUpRight size={16} /></button>{favoriteButton(recipe)}</article>)}</div>
     {recipes.length === 0 && <p className="others-empty">Inga recept ännu.</p>}
     {recipes.length > 0 && ordered.length === 0 && <p className="others-empty">{query.trim() ? 'Inga recept matchar sökningen. Prova en annan råvara eller ändra filtren.' : favoritesOnly ? (activeFilter ? 'Inga favoriter med den etiketten.' : 'Inga favoriter ännu. Tryck på hjärtat vid ett recept för att spara det här.') : 'Inga recept med den etiketten.'}</p>}
-    {selected && editing === undefined && <Modal title={selected.title} onClose={() => setSelected(null)} error={error} footer={<>{favoriteButton(selected)}{!isCatalogRecipe(selected.id) && <button className="icon-button danger" type="button" aria-label="Ta bort recept" onClick={() => { const failure = onDelete(selected.id); if (failure) setError(failure); else setSelected(null) }}><Trash2 size={18} /></button>}<button className="button secondary" type="button" onClick={() => setSelected(null)}>Stäng</button><button className="button primary" type="button" onClick={() => { setEditing(isCatalogRecipe(selected.id) ? { ...selected, id: newId(), favorite: false, labels: selected.labels.filter(label => recipeLabelKey(label) !== 'receptbanken') } : selected); setSelected(null) }}><Pencil size={15} />{isCatalogRecipe(selected.id) ? 'Skapa egen kopia' : 'Redigera'}</button></>}>
-      {selected.image && isRecipeImage(selected.image) && <img className="recipe-hero" src={selected.image} alt={`Bild till ${selected.title}`} />}
-      {selected.labels.length > 0 && <div className="recipe-detail-labels">{selected.labels.map(label => <span className={`label-chip${isCuisineLabel(label) ? ' recipe-cuisine-chip' : ''}`} key={label}>{displayLabel(label)}</span>)}</div>}
-      {content && <div className="recipe-summary" aria-label="Recept i korthet">{recipeSummary(content.notes).map(value => <span key={value}>{value}</span>)}</div>}
-      {content && <div className="recipe-content-sections">
-        <section className="recipe-content-box" aria-labelledby="recipe-ingredients-heading"><h3 id="recipe-ingredients-heading">Ingredienser</h3>{content.ingredients ? <ul className="recipe-ingredient-list">{recipeIngredientLines(content.ingredients).map((line, index) => <li key={index}><label><input type="checkbox" checked={checkedIngredients.includes(index)} onChange={() => setCheckedIngredients(current => current.includes(index) ? current.filter(value => value !== index) : [...current, index])} /><span>{line}</span></label></li>)}</ul> : <p className="others-help">Inga ingredienser tillagda.</p>}</section>
-        <section className="recipe-content-box" aria-labelledby="recipe-method-heading"><h3 id="recipe-method-heading">Gör så här</h3>{content.method ? <ol className="recipe-method-list">{recipeMethodSteps(content.method).map((step, index) => <li key={index}>{step}</li>)}</ol> : <p className="others-help">Inga steg tillagda.</p>}</section>
-        {content.notes && <p className="recipe-notes">{content.notes}</p>}
-      </div>}
-      {link && <a className="recipe-inspiration" href={link} target="_blank" rel="noopener noreferrer"><span>Inspiration</span><span>{new URL(link).hostname.replace(/^www\./, '')}</span><ArrowUpRight size={12} /></a>}
-    </Modal>}
+    {selected && editing === undefined && <RecipeReader key={selected.id} recipe={selected} onClose={() => setSelected(null)} error={error} footer={<>{favoriteButton(selected)}{!isCatalogRecipe(selected.id) && <button className="icon-button danger" type="button" aria-label="Ta bort recept" onClick={() => { const failure = onDelete(selected.id); if (failure) setError(failure); else setSelected(null) }}><Trash2 size={18} /></button>}<button className="button secondary" type="button" onClick={() => setSelected(null)}>Stäng</button><button className="button primary" type="button" onClick={() => { setEditing(selected); setSelected(null) }}><Pencil size={15} />Redigera</button></>} />}
     {editing !== undefined && <RecipeEditor key={editing?.id ?? 'new-recipe'} recipe={editing ?? undefined} recipes={recipes} onSave={onSave} onClose={() => setEditing(undefined)} />}
   </div>
 }

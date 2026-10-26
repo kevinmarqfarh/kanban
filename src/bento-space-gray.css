@@ -18,7 +18,8 @@
  color: var(--ink);
 }
 [data-bento-variant='space-gray'] :is(.topbar,.brand,.topbar .icon-button,.page-heading,.home-date,.bento-welcome h1,.home-section-title,.briefing-status,.briefing-footnote,.others-section-heading,.others-help,.others-empty,.others-list-toolbar,.cookbook-back,.cookbook-create,.cookbooks-heading,.cookbook-heading,.cookbook-card-copy strong,.cookbook-card-copy small,.wp-header,.wp-header p,.wp-eyebrow,.wp-filter-note,.wp-navigation > .icon-button) { color: var(--ink); }
-[data-bento-variant='space-gray'] :is(.cookbook-heading,.cookbooks-heading) :is(h3,.eyebrow) { color: var(--ink-secondary); }
+[data-bento-variant='space-gray'] :is(.cookbook-heading,.cookbooks-heading) h3 { color: var(--ink); }
+[data-bento-variant='space-gray'] :is(.cookbook-heading,.cookbooks-heading) .eyebrow { color: var(--ink-secondary); }
 [data-bento-variant='space-gray'] .topbar { background: rgba(39, 41, 47, .38); border-bottom: 1px solid var(--line); }
 [data-bento-variant='space-gray'] .brand-mark > * { background: var(--accent); }
 [data-bento-variant='space-gray'] :is(.home-panel,.briefing,.hs-card,.summary-card,.project-card,.others-module-row,.others-record-row,.overtime-summary,.overtime-row,.nutrition-calendar,.nutrition-habit-row,.note-card,.project-task-group,.project-page .project-detail-layout,.cookbook-library-links > button,.wxp,.weather-panel,.home-page .briefing-header,.home-page .briefing-stats,.home-page .briefing-block,.home-page .briefing-agenda,.wp-queue-section,.wp-day,.wp-stats) {
