@@ -247,10 +247,17 @@ export default function App() {
         return { ...current, tasks: current.tasks.map(task => task.id === taskId ? { ...task, schedule } : task) }
       }
       if (!schedule || !title.trim()) throw new Error('Skriv en titel och ange en planering.')
-      const column = intakeColumn(current)
-      if (!column) throw new Error('Planner saknar en kolumn för nya uppgifter.')
+      if (!current.columns.length) throw new Error('Planner saknar en kolumn för nya uppgifter.')
+      const doneId = doneColumnId(current)
+      const existingColumn = current.columns.find(column => column.id !== doneId && column.id !== 'finalized' && /^denna veckan?$/i.test(column.title.trim().replace(/\s+/g, ' ')))
+      const column: Column = existingColumn ?? { id: newId(), title: 'Denna veckan', color: 'gray' }
+      const columns = [...current.columns]
+      if (!existingColumn) {
+        const index = columns.findIndex(item => item.id === 'doing' || item.id === doneId || item.id === 'finalized')
+        columns.splice(index < 0 ? columns.length : index, 0, column)
+      }
       const task: Task = { id: newId(), title, schedule, description: '', columnId: column.id, labels: [], checklist: [], deadline: null, comments: [], projectId: null, createdAt: new Date().toISOString() }
-      return { ...current, tasks: [...current.tasks, task] }
+      return { ...current, columns, tasks: [...current.tasks, task] }
     })
   }
   function closeTask() {

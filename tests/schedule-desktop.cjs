@@ -14,10 +14,10 @@ const fixture = { version: 1, revision: null, dirty: false, workspace: {
 } };
 const results = [], contexts = new Set();
 let browser;
-async function open(width = 1440) {
+async function open(width = 1440, workspace = fixture.workspace) {
   const context = await browser.newContext({ viewport: { width, height: 900 }, locale: 'sv-SE', timezoneId: 'Europe/Stockholm', serviceWorkers: 'block' });
   contexts.add(context);
-  await context.addInitScript(({ key, fixture }) => { if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(fixture)); localStorage.setItem('forma-theme', 'light'); }, { key, fixture });
+  await context.addInitScript(({ key, fixture }) => { if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(fixture)); localStorage.setItem('forma-theme', 'light'); }, { key, fixture: { ...fixture, workspace } });
   await routeWeather(context, {}, date+'T08:00:00+01:00');
   const page = await context.newPage(); page.setDefaultTimeout(10000);
   const errors = []; page.on('pageerror', error => errors.push(error.message));
@@ -61,7 +61,13 @@ async function check(name, fn) {
       await modal(page).waitFor({ state: 'detached' });
       const saved = (await cache(page)).tasks.find(t => t.title === 'Plan från klick');
       assert.deepEqual(saved.schedule,{ date, startTime: '08:00', endTime: '08:30' }); assert.equal(saved.deadline,null);
+      const weeklyColumn = (await cache(page)).columns.find(column => column.title === 'Denna veckan');
+      assert.ok(weeklyColumn); assert.equal(saved.columnId,weeklyColumn.id);
+      assert.equal((await cache(page)).columns.length,fixture.workspace.columns.length+1);
+      await page.locator('.bottom-nav').getByRole('button', { name: 'Planner', exact: true }).click();
+      await page.getByRole('region', { name: 'Denna veckan', exact: true }).getByRole('button', { name: 'Öppna Plan från klick', exact: true }).waitFor();
       await page.reload(); await page.locator('.loading-notice').waitFor({ state: 'detached' });
+      assert.equal((await cache(page)).tasks.find(task => task.id === saved.id).columnId,weeklyColumn.id);
       await page.locator('.bottom-nav').getByRole('button', { name: 'Schema', exact: true }).click();
       await page.locator('.schedule-block').filter({ hasText: 'Plan från klick' }).waitFor(); assert.deepEqual(errors,[]);
     });
@@ -71,6 +77,51 @@ async function check(name, fn) {
       await drag(page,11*60,10*60); await times(page,'10:00','11:00');
       await page.screenshot({ path: path.join(out,'drag-duration.png'), animations: 'disabled' });
       await close(page); assert.equal((await cache(page)).tasks.length,1); assert.deepEqual(errors,[]);
+      assert.deepEqual((await cache(page)).columns,fixture.workspace.columns);
+    });
+    await check('New plans reuse the named week column; planning an existing task preserves its column and details', async () => {
+      for (const columnTitle of ['Denna veckan','Denna vecka']) {
+        const weeklyColumn = { id: 'custom-week-column', title: columnTitle, color: 'sand' };
+        const workspace = { ...fixture.workspace, columns: [weeklyColumn,...fixture.workspace.columns] };
+        const { page, errors } = await open(1440,workspace);
+        for (const title of ['Veckans första plan','Veckans andra plan']) {
+          await page.getByRole('button', { name: '+ Planera', exact: true }).click();
+          await modal(page).getByLabel('Titel', { exact: true }).fill(title);
+          await modal(page).getByRole('button', { name: 'Spara', exact: true }).click();
+          await modal(page).waitFor({ state: 'detached' });
+          assert.equal((await cache(page)).tasks.find(task => task.title === title).columnId,weeklyColumn.id);
+        }
+        await page.getByRole('button', { name: '+ Planera', exact: true }).click();
+        await modal(page).getByRole('combobox', { name: /^Befintlig uppgift/ }).selectOption('existing');
+        await modal(page).getByLabel('Ange tid', { exact: true }).check();
+        await modal(page).getByLabel('Från', { exact: true }).fill('10:00');
+        await modal(page).getByLabel('Till', { exact: true }).fill('11:00');
+        await modal(page).getByRole('button', { name: 'Spara', exact: true }).click();
+        await modal(page).waitFor({ state: 'detached' });
+        const saved = await cache(page);
+        assert.deepEqual(saved.columns,workspace.columns);
+        assert.deepEqual(saved.tasks.find(task => task.id === 'existing'),{ ...fixture.workspace.tasks[0],schedule:{ date,startTime:'10:00',endTime:'11:00' } });
+        assert.deepEqual(errors,[]);
+      }
+    });
+    await check('Day and week plans on small screens share the week column while retaining their dates and scope', async () => {
+      const { page, errors } = await open(390);
+      await page.getByRole('button', { name: '+ Planera', exact: true }).click();
+      await modal(page).getByLabel('Titel', { exact: true }).fill('Plan för veckan');
+      await modal(page).getByRole('combobox', { name: /^Planering/ }).selectOption('week');
+      await modal(page).getByRole('button', { name: 'Spara', exact: true }).click();
+      await modal(page).waitFor({ state: 'detached' });
+      await page.getByRole('button', { name: '+ Planera', exact: true }).click();
+      await modal(page).getByLabel('Titel', { exact: true }).fill('Plan för onsdag');
+      await modal(page).getByLabel('Datum', { exact: true }).fill('2026-10-28');
+      await modal(page).getByRole('button', { name: 'Spara', exact: true }).click();
+      await modal(page).waitFor({ state: 'detached' });
+      const saved = await cache(page), weekly = saved.tasks.find(task => task.title === 'Plan för veckan'), day = saved.tasks.find(task => task.title === 'Plan för onsdag');
+      assert.equal(saved.columns.filter(column => column.title === 'Denna veckan').length,1);
+      assert.equal(weekly.columnId,day.columnId);
+      assert.equal(day.columnId,saved.columns.find(column => column.title === 'Denna veckan').id);
+      assert.deepEqual(weekly.schedule,{ date,scope:'week' }); assert.deepEqual(day.schedule,{ date:'2026-10-28' });
+      assert.deepEqual(errors,[]);
     });
     await check('Escape cancels the active mouse gesture and right-click never creates a task', async () => {
       const { page, errors } = await open(); const p = await point(page,8*60);
