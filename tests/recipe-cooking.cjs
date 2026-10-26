@@ -27,11 +27,11 @@ async function check(name,fn){try{await fn();for(const c of contexts)for(const p
    await page.setViewportSize({width:768,height:1024});assert.equal(await ingredients.getByRole('checkbox').first().isChecked(),true);assert.equal(await page.getByRole('button',{name:'Återöppna steg 1',exact:true}).getAttribute('aria-pressed'),'true');await noOverflow(page);
   }
  });
- await check('PC and tablets show one full-width photo section above two columns; mobile uses a compact image and stacked sections',async()=>{
+ await check('PC and tablets show one full-width photo section above two columns; mobile uses a full-width photo above the title and stacked sections',async()=>{
   for(const [width,height,touch]of [[1440,900,false],[1920,1080,false],[1024,768,true],[768,1024,true],[700,900,true],[390,844,true],[320,700,true],[844,390,true],[1000,550,false]]){
    const page=await open({width,height,touch,withImage:true}),hero=reader(page).locator('.recipe-reader-hero'),thumb=reader(page).locator('.recipe-reader-image'),panes=reader(page).locator('.recipe-content-box');
    const mobile=width<700||(touch&&height<600),a=await panes.nth(0).boundingBox(),b=await panes.nth(1).boundingBox();
-   if(mobile){assert.equal(await hero.isVisible(),false);assert.equal(await thumb.isVisible(),true);const image=await thumb.boundingBox();assert.ok(image.width<=64&&image.height<=64);assert.ok(b.y>=a.y+a.height&&Math.abs(a.x-b.x)<2)}
+   if(mobile){assert.equal(await hero.isVisible(),true);assert.equal(await thumb.count(),0);const image=await hero.boundingBox(),title=await reader(page).locator('.recipe-reader-title').boundingBox();assert.ok(image.width>=await reader(page).locator(".modal-content").evaluate(el=>el.clientWidth)-2&&image.height>=175);assert.ok(title.y>=image.y+image.height);assert.ok(b.y>=a.y+a.height&&Math.abs(a.x-b.x)<2)}
    else{assert.equal(await hero.isVisible(),true);assert.equal(await thumb.isVisible(),false);const image=await hero.boundingBox(),content=await reader(page).locator('.modal-content').boundingBox();const available=await reader(page).locator('.modal-content').evaluate(el=>el.clientWidth-parseFloat(getComputedStyle(el).paddingLeft)-parseFloat(getComputedStyle(el).paddingRight));assert.ok(image.width>=available-1&&image.height>=135,JSON.stringify({width,height,image,content,available}));assert.ok(a.y>=image.y+image.height+10);assert.ok(b.x>=a.x+a.width+10&&Math.abs(a.y-b.y)<2)}
    assert.equal(await reader(page).locator('img:visible').count(),1);
    await noOverflow(page);await page.screenshot({path:path.join(out,`image-${width}x${height}.png`),animations:'disabled'});

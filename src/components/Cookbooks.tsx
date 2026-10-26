@@ -81,7 +81,7 @@ export function Cookbooks({ organized, onOrganize, books, recipes, initialId, on
     if (entry.image && isRecipeImage(entry.image)) return <img src={entry.image} alt="" loading="lazy" decoding="async" />
     return <span className="cookbook-cover-placeholder"><BookOpen size={38} strokeWidth={1.2} /><span>{entry.title.slice(0, 1).toLocaleUpperCase('sv')}</span></span>
   }
-  return <div className="others-content cookbooks">
+  return <div className={`others-content cookbooks${active ? ' is-open' : ''}${book ? ' has-book' : ''}`}>
     {organizeError && <p className="others-error" role="alert">{organizeError}</p>}
     {!active ? <>
       <header className="cookbooks-heading"><div><p className="eyebrow">Din receptsamling</p><h3>Mina kokböcker</h3><p className="others-help">Smaker, stunder och egna favoriter. Samla dem i en bok.</p></div><button className="button primary" type="button" onClick={() => setEditing(null)}><Plus size={17} />Ny kokbok</button></header>
@@ -93,9 +93,8 @@ export function Cookbooks({ organized, onOrganize, books, recipes, initialId, on
       {query.trim() && visibleBooks.length === 0 && <p className="others-empty">Ingen kokbok matchar sökningen.</p>}
     </> : <>
       <button className="button ghost cookbook-back" type="button" onClick={() => setScope(null)}><ArrowLeft size={16} />Alla kokböcker</button>
-      <header className="cookbook-heading">{book && <div className="cookbook-mini-cover">{cover(book)}</div>}<div><p className="eyebrow">{book ? 'Min kokbok' : 'Receptbibliotek'}</p><h3>{title}</h3><p className="others-help">{filtered.length} recept{book ? ' i den här kokboken' : ''}</p></div>{book && <button className="icon-button" type="button" aria-label={`Redigera kokbok ${book.title}`} onClick={() => setEditing(book)}><Pencil size={18} /></button>}</header>
-      {book && <button className="button secondary cookbook-add-existing" type="button" onClick={() => setPicking(book)}><Plus size={16} />Välj från befintliga recept</button>}
-      <Recipes key={scope} recipes={filtered} libraryHelp={scope === 'all'} initialId={initialId} onSave={(recipe, original) => onSave(scope === 'favorites' && !original ? { ...recipe, favorite: true } : recipe, original, book?.id)} onDelete={onDelete} />
+      <header className="cookbook-heading">{book && <div className="cookbook-mini-cover">{cover(book)}</div>}<div><p className="eyebrow">{book ? 'Min kokbok' : 'Receptbibliotek'}</p><h3>{title}</h3><p className="others-help">{filtered.length} recept</p></div>{book && <button className="icon-button" type="button" aria-label={`Redigera kokbok ${book.title}`} onClick={() => setEditing(book)}><Pencil size={18} /></button>}</header>
+      <Recipes key={scope} headerAction={book ? <button className="button secondary cookbook-add-existing" type="button" aria-label="Välj från befintliga recept" onClick={() => setPicking(book)}><Plus size={16} /><span>Välj recept</span></button> : undefined} recipes={filtered} libraryHelp={scope === 'all'} initialId={initialId} onSave={(recipe, original) => onSave(scope === 'favorites' && !original ? { ...recipe, favorite: true } : recipe, original, book?.id)} onDelete={onDelete} />
     </>}
     {editing !== undefined && <BookEditor key={editing?.id ?? 'new-book'} book={editing ?? undefined} onSave={onSaveBook} onDelete={onDeleteBook} onClose={() => setEditing(undefined)} />}
     {picking && <RecipePicker key={picking.id} book={picking} recipes={recipes} onSave={onSaveBook} onClose={() => setPicking(null)} />}

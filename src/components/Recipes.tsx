@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react'
 import { ArrowUpRight, Check, CookingPot, Heart, ImagePlus, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import type { Recipe } from '../lib/types'
 import { newId } from '../lib/helpers'
@@ -71,11 +71,12 @@ function RecipeEditor({ recipe, recipes, onSave, onClose }: {
   </Modal>
 }
 
-export function Recipes({ recipes, onSave, onDelete, initialId, libraryHelp = true }: {
+export function Recipes({ recipes, onSave, onDelete, initialId, libraryHelp = true, headerAction }: {
   recipes: Recipe[];
   libraryHelp?: boolean;
   initialId?: string;
   onSave: (edited: Recipe, original?: Recipe) => string | null;
+  headerAction?: ReactNode;
   onDelete: (id: string) => string | null;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(initialId ?? null)
@@ -104,8 +105,8 @@ export function Recipes({ recipes, onSave, onDelete, initialId, libraryHelp = tr
   function favoriteButton(recipe: Recipe) {
     return <button className={`icon-button recipe-favorite${recipe.favorite ? ' is-favorite' : ''}`} type="button" aria-pressed={!!recipe.favorite} aria-label={`${recipe.favorite ? 'Ta bort' : 'Lägg till'} ${recipe.title} ${recipe.favorite ? 'från' : 'bland'} favoriter`} title={recipe.favorite ? 'Ta bort favorit' : 'Lägg till favorit'} onClick={() => toggleFavorite(recipe)}><Heart size={18} fill={recipe.favorite ? 'currentColor' : 'none'} /></button>
   }
-  return <div className="others-content"><div className="others-list-toolbar"><span>{activeFilter || favoritesOnly || query.trim() ? `${ordered.length} av ${recipes.length} recept` : `${recipes.length} recept`}</span><button className="button primary" type="button" onClick={() => setEditing(null)}><Plus size={16} />Nytt recept</button></div>
-    {(libraryHelp || recipes.length > 6) && <label className="field">Sök recept<input className="input" type="search" placeholder="Namn eller råvara, t.ex. kyckling" value={query} onChange={event => setQuery(event.target.value)} /></label>}
+  return <div className="others-content recipe-browser"><div className="others-list-toolbar">{headerAction}<span>{activeFilter || favoritesOnly || query.trim() ? `${ordered.length} av ${recipes.length} recept` : `${recipes.length} recept`}</span><button className="button primary" type="button" onClick={() => setEditing(null)}><Plus size={16} />Nytt recept</button></div>
+    {(libraryHelp || recipes.length > 6) && <label className="field recipe-search">Sök recept<input className="input" type="search" placeholder="Namn eller råvara, t.ex. kyckling" value={query} onChange={event => setQuery(event.target.value)} /></label>}
     {libraryHelp && <p className="others-help">100 recept i Receptbanken för middag och matlådor, cirka 4 vuxenportioner. Tryck på hjärtat för att spara favoriter. Kostnaderna är uppskattningar; recepten är inte provlagade eller exakt näringsberäknade.</p>}
     {(libraryHelp || recipes.length > 6) && <div className="filter-chips" role="group" aria-label="Visa recept"><button className={`filter-chip${favoritesOnly ? '' : ' active'}`} type="button" aria-pressed={!favoritesOnly} onClick={() => setFavoritesOnly(false)}>Alla recept<span className="filter-count">{recipes.length}</span></button><button className={`filter-chip${favoritesOnly ? ' active' : ''}`} type="button" aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly(true)}><Heart size={15} fill={favoritesOnly ? 'currentColor' : 'none'} />Favoriter<span className="filter-count">{favoriteCount}</span></button></div>}
     {error && !selected && <p className="others-error" role="alert">{error}</p>}

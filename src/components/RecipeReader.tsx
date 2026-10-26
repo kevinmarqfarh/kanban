@@ -44,8 +44,7 @@ export function RecipeReader({ recipe, footer, error, onClose }: { recipe: Recip
   return <Modal className={`recipe-reader${hasImage ? ' recipe-reader-has-image' : ''}`} phoneFullscreen focusForm={false} title={recipe.title} subtitle="Matlagning" onClose={onClose} footer={<><RecipeTimerDock /><div className="recipe-reader-actions">{footer}</div></>} error={error}>
     {hasImage && <figure className="recipe-reader-hero"><img src={recipe.image} alt={`Bild till ${recipe.title}`} /></figure>}
     <div className="recipe-reader-info">
-      {hasImage && <img className="recipe-reader-image" src={recipe.image} alt={`Bild till ${recipe.title}`} />}
-      <div className="recipe-reader-meta"><div className="recipe-summary" aria-label="Recept i korthet">{recipeSummary(content.notes).map(value => <span key={value}>{value}</span>)}</div>
+      <div className="recipe-reader-meta"><h2 className="recipe-reader-title">{recipe.title}</h2><div className="recipe-summary" aria-label="Recept i korthet">{recipeSummary(content.notes).map(value => <span key={value}>{value}</span>)}</div>
         <div className="recipe-detail-labels">{recipe.labels.filter(isCuisineLabel).map(label => <span className="label-chip recipe-cuisine-chip" key={label}>{label}</span>)}{awake && <span className="recipe-screen-awake"><MonitorCheck size={15} aria-hidden="true" />Skärm vaken</span>}</div>
       </div>
       <div className="recipe-reading-tools" role="group" aria-label="Textstorlek"><button className="icon-button" type="button" aria-label="Minska textstorlek" disabled={fontSize <= 16} onClick={() => setFontSize(size => Math.max(16, size - 2))}><Minus size={18} /></button><span aria-hidden="true">Aa</span><button className="icon-button" type="button" aria-label="Öka textstorlek" disabled={fontSize >= 28} onClick={() => setFontSize(size => Math.min(28, size + 2))}><Plus size={18} /></button></div>

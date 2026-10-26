@@ -251,3 +251,32 @@
  .cookbook-heading { gap: 14px; }
  .cookbook-mini-cover { width: 64px; height: 80px; }
 }
+
+/* A calmer cookbook on phones: one back path, one compact identity, one action row. */
+@media (max-width:600px) {
+ .others-section[data-others-section='recipes']{gap:10px}
+ .cookbooks.is-open{gap:12px}
+ .cookbooks.is-open .cookbook-back{margin-left:-10px;padding:6px 10px;min-height:44px;font-size:12px}
+ .cookbooks.is-open .cookbook-heading{gap:12px;padding:0 0 4px;min-height:64px}
+ .cookbooks.is-open .cookbook-mini-cover{width:48px;height:60px;border-radius:4px 9px 9px 4px}
+ .cookbooks.is-open .cookbook-heading .eyebrow{display:none}
+ .cookbooks.is-open .cookbook-heading h3{font-size:24px;line-height:1.2;letter-spacing:-.5px}
+ .cookbooks.is-open .cookbook-heading .others-help{margin-top:4px;font-size:12px}
+ .cookbooks.is-open .cookbook-heading>.icon-button{color:inherit;border:1px solid currentColor;border-radius:12px;opacity:.8}
+ .cookbooks.has-book .recipe-browser>.others-list-toolbar{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+ .cookbooks.has-book .recipe-browser>.others-list-toolbar>span{display:none}
+ .cookbooks.has-book .others-list-toolbar>.button{width:100%;padding:8px;min-height:44px;font-size:12px;white-space:normal;border-radius:12px}
+ .cookbooks.is-open .recipe-browser{gap:12px}
+ .cookbooks.is-open .recipe-search{position:relative;font-size:0;gap:0;margin:0}
+ .cookbooks.is-open .recipe-search>.input{font-size:16px;min-height:46px;padding:10px 12px;border-radius:12px}
+ .cookbooks.is-open .recipe-browser>.filter-chips{margin:0;gap:8px;flex-wrap:nowrap}
+ .cookbooks.is-open .filter-chips>.filter-chip{flex:1;justify-content:center;min-height:42px;padding:8px 10px;font-size:12px}
+ .cookbooks.is-open .recipe-filter-help{display:none}
+ .cookbooks.is-open .recipe-browser>.field:not(.recipe-search){font-size:11px;gap:5px}
+ .cookbooks.is-open .recipe-list-row{padding:10px 12px;border-radius:16px}
+ @supports selector(:has(*)) {
+  .main-content:has(.cookbooks.is-open)>.page-heading{display:none}
+  .others-section[data-others-section='recipes']:has(.cookbooks.is-open)>.others-section-heading{display:none}
+  .main-content:has(.cookbooks.is-open){padding-top:12px}
+ }
+}
