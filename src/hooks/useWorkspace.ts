@@ -1,3 +1,4 @@
+import { decodeImageCache, encodeImageCache, MissingImageAsset, prepareImageAssets, refreshImageAssets } from '../lib/imageStorage'
 import { cloudErrorMessage, isRetryableNetworkError } from '../lib/cloud'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SetStateAction } from 'react'
@@ -31,18 +32,21 @@ const prefix = 'forma:workspace:v1:'
 const cacheKey = (ownerId: string | null) => `${prefix}${ownerId ?? 'guest'}`
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object'
 const blockedRecovery = new Set<string>()
+const imageRecoveryErrors = new Map<string, string>()
 
 function readCache(ownerId: string | null): CachedWorkspace | null {
   let raw: string | null = null
   try {
     raw = localStorage.getItem(cacheKey(ownerId))
     if (!raw) { blockedRecovery.delete(cacheKey(ownerId)); return null }
-    const value: unknown = JSON.parse(raw)
+    const value: unknown = decodeImageCache(raw)
     if (!object(value) || value.version !== 1 || !isWorkspace(value.workspace)) throw new Error('Invalid workspace cache')
     if (typeof value.dirty !== 'boolean' || (value.revision !== null && (!Number.isInteger(value.revision) || Number(value.revision) < 1))) throw new Error('Invalid revision')
     blockedRecovery.delete(cacheKey(ownerId))
+    imageRecoveryErrors.delete(cacheKey(ownerId))
     return { version: 1, workspace: migrateWorkspace(value.workspace), revision: value.revision as number | null, dirty: value.dirty === true }
-  } catch {
+  } catch (error) {
+    if (error instanceof MissingImageAsset) { blockedRecovery.add(cacheKey(ownerId)); imageRecoveryErrors.set(cacheKey(ownerId), error.message); return null }
     // Preserve unsupported/corrupt data before an initial workspace replaces the active cache.
     if (raw) {
       try { localStorage.setItem(`${cacheKey(ownerId)}:recovery:${Date.now()}`, raw); blockedRecovery.delete(cacheKey(ownerId)) }
@@ -55,11 +59,11 @@ function readCache(ownerId: string | null): CachedWorkspace | null {
 function writeCache(context: Context): string | null {
   if (blockedRecovery.has(cacheKey(context.ownerId))) {
     readCache(context.ownerId)
-    if (blockedRecovery.has(cacheKey(context.ownerId))) return 'Din tidigare tavla kunde inte säkerhetskopieras. Originalet har bevarats. Frigör lagringsutrymme och försök igen.'
+    if (blockedRecovery.has(cacheKey(context.ownerId))) return imageRecoveryErrors.get(cacheKey(context.ownerId)) ?? 'Din tidigare tavla kunde inte säkerhetskopieras. Originalet har bevarats. Frigör lagringsutrymme och försök igen.'
   }
   try {
     const { ownerId, ...cache } = context
-    localStorage.setItem(cacheKey(ownerId), JSON.stringify(cache))
+    localStorage.setItem(cacheKey(ownerId), encodeImageCache(cache))
     return null
   } catch {
     return 'Dina ändringar finns kvar här, men kunde inte sparas på enheten. Frigör lagringsutrymme och försök igen innan du laddar om.'
@@ -80,6 +84,12 @@ function initialContext(ownerId: string | null): Context {
 
 function errorMessage(error: unknown): string {
   return cloudErrorMessage(error, navigator.onLine)
+}
+
+const uncachedPending = 'Ändringarna väntar på molnsparning. Lokal offlinekopia saknas; håll appen öppen tills synken är klar.'
+const uncachedOffline = 'Ändringarna finns bara i den här öppna appen. Anslut till internet och invänta bekräftad molnsparning innan du stänger.'
+function cloudFailure(error: unknown, cacheMissing: boolean): string {
+  return cacheMissing ? `${errorMessage(error)} ${uncachedOffline}` : errorMessage(error)
 }
 
 const conflictMessage = 'Tavlan har ändrats på en annan enhet. Välj vilken version du vill behålla.'
@@ -138,12 +148,27 @@ export function useWorkspace() {
     storageFailure.current = failure
     if (!failure) { cacheBase.current = next; unsavedOwners.current.delete(next.ownerId) }
     else unsavedOwners.current.set(next.ownerId, { context: next, base: cacheBase.current, failure })
-    if (failure) {
+    // The database owns signed-in durability. Cache failures are tracked separately,
+    // so a confirmed server write can succeed even when this device cannot cache it.
+    if (failure && !next.ownerId) {
       setSyncError(failure)
       setSyncStatus('error')
     }
     return failure
   }, [])
+
+  useEffect(() => {
+    // Covers new cloud images, imported workspaces and pre-existing inline records.
+    void prepareImageAssets(context.workspace).then(changed => {
+      if (!changed || contextRef.current.ownerId !== context.ownerId) return
+      const current = latestContext()
+      if (cacheConflict.current || remoteConflict.current) return
+      const hadFailure = storageFailure.current
+      const failure = applyContext(current)
+      if (!failure && hadFailure && !current.ownerId) { setSyncError(null); setSyncStatus('local') }
+      // An improved cache is not evidence that the server accepted pending changes.
+    }).catch(() => { /* Inline cache fallback preserves data and reports actual write failures. */ })
+  }, [context.workspace, context.ownerId, applyContext, latestContext])
 
   const setWorkspace = useCallback((value: SetStateAction<Workspace>): string | null => {
     if (!authReady || loading || activeOwner.current !== ownerId || contextRef.current.ownerId !== ownerId) return 'Vänta tills din tavla har laddats.'
@@ -155,19 +180,30 @@ export function useWorkspace() {
       setSyncError(message); setSyncStatus('error')
       return message
     }
-    if (next === current.workspace && !storageFailure.current) return null
+    if (next === current.workspace && (current.ownerId || !storageFailure.current)) return null
     const failure = applyContext({ ...current, workspace: next, dirty: current.ownerId !== null })
     if (!failure && !current.ownerId) {
       setSyncError(null)
       setSyncStatus('local')
     }
-    return failure
+    if (current.ownerId && !remoteConflict.current) {
+      setSyncStatus(navigator.onLine ? 'syncing' : 'offline')
+      setSyncError(navigator.onLine ? (failure ? uncachedPending : null) : cloudFailure(new Error('offline'), !!failure))
+    }
+    // Accept the optimistic edit for an account; only the server acknowledgement marks it synced.
+    // Guest mode still requires successful local persistence.
+    return current.ownerId ? null : failure
   }, [applyContext, latestContext, ownerId, authReady, loading])
 
   useEffect(() => {
     const changed = (event: StorageEvent) => {
       if (event.key !== cacheKey(contextRef.current.ownerId) || !event.newValue) return
-      latestContext()
+      // Metadata-only edits stay synchronous; fetch assets only for a genuinely new image.
+      try { decodeImageCache(event.newValue); latestContext() }
+      catch (error) {
+        if (error instanceof MissingImageAsset) void refreshImageAssets().catch(() => {}).then(() => latestContext())
+        else latestContext()
+      }
     }
     window.addEventListener('storage', changed)
     return () => window.removeEventListener('storage', changed)
@@ -214,7 +250,7 @@ export function useWorkspace() {
     }
     const cacheFailure = applyContext(current)
     setLoading(!!ownerId)
-    if (!cacheFailure) setSyncError(null)
+    if (!cacheFailure || ownerId) setSyncError(null)
     if (!ownerId || !supabase) {
       hydrated.current = true
       setLoading(false)
@@ -224,10 +260,8 @@ export function useWorkspace() {
     if (!navigator.onLine) {
       retryNetwork.current = true
       setLoading(false)
-      if (!cacheFailure) {
-        setSyncStatus('offline')
-        setSyncError(errorMessage(new Error('offline')))
-      }
+      setSyncStatus('offline')
+      setSyncError(cloudFailure(new Error('offline'), !!storageFailure.current && current.dirty))
       return
     }
     retryNetwork.current = false
@@ -244,15 +278,16 @@ export function useWorkspace() {
         if (cacheConflict.current) return
         if (data) {
           if (!isWorkspace(data.data) || !Number.isInteger(data.revision) || data.revision < 1) throw new Error('Molntavlan har ett format som inte stöds. Din lokala kopia finns kvar.')
-          if (local.dirty && local.revision !== data.revision) {
+          if (local.dirty && local.revision !== data.revision && JSON.stringify(local.workspace) !== JSON.stringify(migrateWorkspace(data.data))) {
             remoteConflict.current = data as RemoteWorkspace
             setSyncStatus('conflict')
             setSyncError(conflictMessage)
-          } else if (local.dirty) {
+          } else if (local.dirty && local.revision === data.revision) {
             setSyncStatus('syncing')
           } else {
-            const failure = applyContext({ ...local, workspace: data.data, revision: data.revision, dirty: false })
-            if (!failure) setSyncStatus('synced')
+            applyContext({ ...local, workspace: data.data, revision: data.revision, dirty: false })
+            setSyncError(null)
+            setSyncStatus('synced')
           }
         } else if (local.revision !== null) {
           throw new Error('Molntavlan kunde inte hittas. Din lokala kopia finns kvar. Försök igen innan du gör fler ändringar.')
@@ -265,8 +300,8 @@ export function useWorkspace() {
       } catch (error) {
         if (!alive || run !== generation.current) return
         retryNetwork.current = isRetryableNetworkError(error, navigator.onLine)
-        setSyncError(storageFailure.current ?? errorMessage(error))
-        setSyncStatus(storageFailure.current || !retryNetwork.current ? 'error' : 'offline')
+        setSyncError(cloudFailure(error, !!storageFailure.current && contextRef.current.dirty))
+        setSyncStatus(!retryNetwork.current ? 'error' : 'offline')
       } finally {
         if (alive && run === generation.current) setLoading(false)
       }
@@ -300,7 +335,7 @@ export function useWorkspace() {
       if (snapshot.ownerId !== ownerId || remoteConflict.current || syncing.current) return
       if (!navigator.onLine) {
         setSyncStatus('offline')
-        setSyncError(errorMessage(new Error('offline')))
+        setSyncError(cloudFailure(new Error('offline'), !!storageFailure.current && snapshot.dirty))
         return
       }
       syncing.current = true
@@ -327,18 +362,16 @@ export function useWorkspace() {
           if (!Number.isInteger(result.data?.revision) || result.data!.revision < 1) throw new Error('Molntavlans version kunde inte bekräftas. Din lokala kopia finns kvar.')
           const current = latestContext()
           if (cacheConflict.current) return
-          const failure = applyContext({ ...current, revision: result.data!.revision, dirty: current.workspace !== snapshot.workspace })
-          if (!failure) {
-            setSyncError(null)
-            setSyncStatus(current.workspace === snapshot.workspace ? 'synced' : 'syncing')
-          }
+          applyContext({ ...current, revision: result.data!.revision, dirty: current.workspace !== snapshot.workspace })
+          setSyncError(null)
+          setSyncStatus(current.workspace === snapshot.workspace ? 'synced' : 'syncing')
         } catch (error) {
           if (run !== generation.current) return
           // Retry temporary connection failures after re-reading the server revision.
           retryNetwork.current = isRetryableNetworkError(error, navigator.onLine)
           hydrated.current = false
-          setSyncError(storageFailure.current ?? errorMessage(error))
-          setSyncStatus(storageFailure.current || !retryNetwork.current ? 'error' : 'offline')
+          setSyncError(cloudFailure(error, !!storageFailure.current && contextRef.current.dirty))
+          setSyncStatus(!retryNetwork.current ? 'error' : 'offline')
         } finally {
           if (run === generation.current) {
             syncing.current = false
@@ -349,6 +382,17 @@ export function useWorkspace() {
     }, 450)
     return () => window.clearTimeout(timer)
   }, [context, ownerId, syncTick, applyContext, latestContext])
+
+  useEffect(() => {
+    const preventLoss = (event: BeforeUnloadEvent) => {
+      const current = contextRef.current
+      if (!current.ownerId || !current.dirty || !storageFailure.current) return
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', preventLoss)
+    return () => window.removeEventListener('beforeunload', preventLoss)
+  }, [])
 
   const retrySync = useCallback(() => setRefresh(value => value + 1), [])
 
@@ -375,7 +419,7 @@ export function useWorkspace() {
     if (!remote || contextRef.current.ownerId !== ownerId) return
     if (choice === 'remote') {
       // Keep a recoverable copy before the user chooses the cloud version.
-      try { localStorage.setItem(`${cacheKey(ownerId)}:backup`, JSON.stringify(contextRef.current)) }
+      try { localStorage.setItem(`${cacheKey(ownerId)}:backup`, encodeImageCache(contextRef.current)) }
       catch { setSyncError('Din lokala version kunde inte säkerhetskopieras. Frigör lagringsutrymme innan du byter version.'); return }
     }
     const current = latestContext()
@@ -432,7 +476,7 @@ export function useWorkspace() {
     const current = latestContext()
     if (cacheConflict.current) return { error: storageFailure.current }
     const cacheError = applyContext(current)
-    if (cacheError) return { error: cacheError }
+    if (cacheError && (!current.ownerId || current.dirty)) return { error: current.ownerId ? 'Vänta tills ändringarna har sparats i molnet innan du loggar ut.' : cacheError }
     try {
       // Local scope signs out this device; account/guest caches are deliberately retained.
       const { error } = await supabase.auth.signOut({ scope: 'local' })
@@ -440,5 +484,5 @@ export function useWorkspace() {
     } catch (error) { return { error: errorMessage(error) } }
   }, [applyContext, latestContext])
 
-  return { workspace: context.workspace, setWorkspace, user, loading: loading || !authReady || context.ownerId !== ownerId, syncStatus, syncError, signIn, signUp, signOut, retrySync, resolveConflict, importLocalWorkspace }
+  return { workspace: context.workspace, setWorkspace, user, loading: loading || !authReady || context.ownerId !== ownerId, syncStatus, syncError, hasUncachedChanges: !!(context.ownerId && context.dirty && storageFailure.current), signIn, signUp, signOut, retrySync, resolveConflict, importLocalWorkspace }
 }

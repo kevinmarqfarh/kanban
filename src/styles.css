@@ -665,3 +665,5 @@ input[type='checkbox']:checked { border-color: var(--accent); background: var(--
 .project-task-heading { display: flex; align-items: center; gap: 0; }
 .project-task-heading .project-main-completion { margin: 0; padding: 12px 0 12px 20px; min-height: 44px; }
 .project-task-heading .project-task-row { flex: 1; min-width: 0; }
+
+.cloud-save-status{display:inline-flex;align-items:center;gap:5px;max-width:110px;font-size:10px;line-height:1.3;color:var(--ink-secondary)}.cloud-save-status svg{flex-shrink:0}.cloud-save-status[data-sync-status='synced']{color:var(--status-complete-ink)}

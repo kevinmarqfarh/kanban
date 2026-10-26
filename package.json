@@ -31,7 +31,9 @@
     "test:schedule-desktop": "node tests/schedule-desktop.cjs && BROWSER_ENGINE=webkit node tests/schedule-desktop.cjs",
     "test:home-layout": "node tests/home-layout-gestures.cjs && BROWSER_ENGINE=webkit node tests/home-layout-gestures.cjs",
     "test:recipe-editing": "node tests/recipe-editing.cjs && BROWSER_ENGINE=webkit node tests/recipe-editing.cjs",
-    "test:recipe-cooking": "node tests/recipe-cooking.cjs && BROWSER_ENGINE=webkit node tests/recipe-cooking.cjs"
+    "test:recipe-cooking": "node tests/recipe-cooking.cjs && BROWSER_ENGINE=webkit node tests/recipe-cooking.cjs",
+    "test:image-storage": "node tests/image-storage.cjs && BROWSER_ENGINE=webkit node tests/image-storage.cjs",
+    "test:cloud-primary": "node tests/cloud-primary.cjs && BROWSER_ENGINE=webkit node tests/cloud-primary.cjs"
   },
   "dependencies": {
     "@dnd-kit/core": "6.3.1",

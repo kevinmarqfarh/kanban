@@ -42,7 +42,8 @@ export async function prepareRecipeImage(file: File): Promise<string> {
       context.fillRect(0, 0, canvas.width, canvas.height)
       context.drawImage(decoded.source, 0, 0, canvas.width, canvas.height)
       const url = canvas.toDataURL('image/jpeg', quality)
-      if (url.startsWith('data:image/jpeg') && url.length <= RECIPE_IMAGE_MAX_LENGTH) return url
+      canvas.width = canvas.height = 1 // Release Safari's canvas backing store between attempts.
+      if (url.startsWith('data:image/jpeg') && (url.length <= 240_000 || (size === 640 && url.length <= RECIPE_IMAGE_MAX_LENGTH))) return url
     }
   } finally { decoded.close() }
   throw new Error('Bilden är för stor att spara. Välj en mindre bild.')

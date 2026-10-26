@@ -154,7 +154,7 @@ export default function App() {
   const project = page === 'projects' && openProjectId ? workspace.projects.find(project => project.id === openProjectId) : undefined
   const birthdayUnread = unreadBirthdayNotifications(workspace)
   const unreadCount = birthdayUnread.length
-  const statusText = { local: 'Sparas på enheten', synced: 'Allt är synkat', syncing: 'Synkar…', offline: 'Offline · sparat lokalt', error: 'Sparandet behöver hjälp', conflict: 'Välj version' }[data.syncStatus]
+  const statusText = { local: 'Sparas på enheten', synced: 'Allt är synkat', syncing: 'Synkar…', offline: data.hasUncachedChanges ? 'Offline · väntar på molnsparning' : 'Offline · sparat lokalt', error: 'Sparandet behöver hjälp', conflict: 'Välj version' }[data.syncStatus]
   // Docked tablet: drift back to Home after a few untouched minutes, but never close an open form.
   const pageRef = useRef(page); pageRef.current = page
   const editorRef = useRef(editor); editorRef.current = editor
@@ -277,7 +277,7 @@ export default function App() {
       if (failure) { setToast(''); return failure }
       setActionError(null)
       after?.()
-      if (message) setToast(message)
+      if (message) setToast(data.user && message === 'Sparat' ? 'Uppdaterat' : message)
       return null
     } catch (failure) {
       setToast('')
@@ -510,7 +510,7 @@ export default function App() {
   }
   return <>
     <div className={`app-shell${desktop ? ' is-desktop' : ''}${desktop && page === 'planner' ? ' desktop-planner' : ''}${weekView && page === 'planner' ? ' desktop-week' : ''}${desktop && page === 'projects' ? ' desktop-projects' : ''}${homeScreen.active ? ' is-homescreen' : ''}${homeScreen.active && page === 'home' ? ' is-homescreen-home' : ''}`} aria-busy={data.loading}>
-      <header className="topbar"><div className="topbar-left"><span className="desktop-context">Min arbetsyta<ChevronRight size={13} /><strong>{PAGE_LABELS[page]}</strong></span><button className="brand" onClick={() => switchPage('home')} aria-label="Forma — till Home"><span className="brand-mark"><i /><i /><i /><i /></span>forma<span className="brand-period">.</span></button></div><div className="topbar-right"><span className="sr-only" role="status" data-sync-status={data.syncStatus}>{statusText}</span><button className="icon-button debrief-bell" aria-label="Öppna notiser" aria-describedby="notification-unread-count" disabled={data.loading} onClick={openNotifications}><Bell size={18} />{unreadCount > 0 && <span className="debrief-bell-dot" aria-hidden="true" />}</button><span id="notification-unread-count" className="sr-only" role="status">{unreadCount ? `${unreadCount} nya notiser` : 'Inga nya notiser'}</span><button className="icon-button settings-button" aria-label="Öppna inställningar" onClick={() => setEditor({ type: 'profile' })}><Settings size={19} /></button></div></header>
+      <header className="topbar"><div className="topbar-left"><span className="desktop-context">Min arbetsyta<ChevronRight size={13} /><strong>{PAGE_LABELS[page]}</strong></span><button className="brand" onClick={() => switchPage('home')} aria-label="Forma — till Home"><span className="brand-mark"><i /><i /><i /><i /></span>forma<span className="brand-period">.</span></button></div><div className="topbar-right"><span className={data.user ? "cloud-save-status" : "sr-only"} role="status" aria-label={statusText} data-sync-status={data.syncStatus}>{data.user ? <><Cloud size={14} aria-hidden="true" /><span>{data.syncStatus === 'synced' ? 'Sparat i molnet' : data.syncStatus === 'syncing' ? 'Sparar…' : data.syncStatus === 'offline' ? 'Väntar på nät' : 'Kontrollera synk'}</span></> : statusText}</span><button className="icon-button debrief-bell" aria-label="Öppna notiser" aria-describedby="notification-unread-count" disabled={data.loading} onClick={openNotifications}><Bell size={18} />{unreadCount > 0 && <span className="debrief-bell-dot" aria-hidden="true" />}</button><span id="notification-unread-count" className="sr-only" role="status">{unreadCount ? `${unreadCount} nya notiser` : 'Inga nya notiser'}</span><button className="icon-button settings-button" aria-label="Öppna inställningar" onClick={() => setEditor({ type: 'profile' })}><Settings size={19} /></button></div></header>
       {data.loading && <div className="loading-notice" role="status">Laddar Forma…</div>}
       <main className="main-content" inert={data.loading}>
         {noteReturn && <button className="button ghost note-return-link" onClick={returnToNote}>Till anteckningen</button>}

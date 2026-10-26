@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
+import { initializeImageStorage } from './lib/imageStorage'
 import { CrashBoundary } from './components/CrashScreen'
 import { installGlobalCrashHandlers } from './lib/crashReport'
 import './fonts.css'
@@ -38,8 +39,11 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
 // Record errors outside rendering too (timers, events, promises).
 installGlobalCrashHandlers()
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode><CrashBoundary><App /></CrashBoundary></React.StrictMode>,
-)
-// The boot watchdog in index.html stands down once the app has started.
+// Read photo references before the workspace hook reads its synchronous metadata cache.
+// Keep the boot watchdog quiet during a real local migration; never clear user data.
 window.__formaBooted = true
+void initializeImageStorage().finally(() => {
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode><CrashBoundary><App /></CrashBoundary></React.StrictMode>,
+  )
+})

@@ -29,7 +29,7 @@ const validation = await module('../src/lib/workspaceValidation.ts', { './birthd
 const merge = await module('../src/lib/workspaceMerge.ts')
 const cloudHelpers = await module('../src/lib/cloud.ts')
 const backend = { supabase: null, supabaseConfigurationError: 'Molnet är inte anslutet.' }
-const { useWorkspace } = await module('../src/hooks/useWorkspace.ts', { react, '../lib/seed': seed, '../lib/supabase': backend, '../lib/workspaceValidation': validation, '../lib/birthdays': birthdays, '../lib/workspaceMerge': merge, '../lib/cloud': cloudHelpers })
+const { useWorkspace } = await module('../src/hooks/useWorkspace.ts', { react, '../lib/seed': seed, '../lib/supabase': backend, '../lib/workspaceValidation': validation, '../lib/birthdays': birthdays, '../lib/workspaceMerge': merge, '../lib/cloud': cloudHelpers, '../lib/imageStorage': await module('../src/lib/imageStorage.ts') })
 const { useDebriefs } = await module('../src/hooks/useDebriefs.ts', { react, '../lib/supabase': backend, '../lib/debriefs': debriefs, '../lib/workspaceMerge': merge, '../lib/workspaceValidation': validation })
 
 const sameDeps = (a, b) => a && b && a.length === b.length && a.every((value, index) => Object.is(value, b[index]))
@@ -363,6 +363,64 @@ offlineReload.online = true; event(offlineReload, 'online'); await settle(offlin
 assert.equal(offlineReload.result.syncStatus, 'conflict')
 assert.ok(remoteWorkspace.data.tasks.some(task => task.id === 'remote-conflict'))
 assert.ok(!remoteWorkspace.data.tasks.some(task => task.id === 'local-conflict'), 'Reconnection must never overwrite a newer server revision.')
+
+// Signed-in accounts remain usable when *all* local workspace writes are blocked.
+const noCacheHub = new Hub()
+const noCache = new Runner(noCacheHub, useWorkspace)
+noCache.failWrite = key => key.startsWith('forma:workspace:')
+noCache.render(); await settle(noCache)
+assert.equal(noCache.result.syncStatus, 'synced', 'Server hydration does not depend on caching the response.')
+assert.equal(noCache.result.syncError, null)
+const inlineImage = 'data:image/png;base64,iVBORw0KGgo='
+assert.equal(noCache.run(data => data.setWorkspace(current => ({ ...current, tasks: [...current.tasks, task('cloud-without-cache')], recipes: [{ id: 'cloud-photo', title: 'Molnrecept', image: inlineImage, url: '', labels: [], ingredients: 'Ris', steps: 'Koka.', createdAt: new Date().toISOString() }] }))), null)
+assert.equal(noCache.result.syncStatus, 'syncing', 'A queued edit must not claim the database has already saved it.')
+assert.equal(noCache.result.hasUncachedChanges, true)
+let unloadBlocked = false
+const tryUnload = runner => runner.run(() => { for (const handler of runner.events.get('beforeunload') ?? []) handler({ preventDefault() { unloadBlocked = true }, returnValue: undefined }) })
+tryUnload(noCache); assert.equal(unloadBlocked, true, 'Warn before discarding an edit that has neither a local copy nor a server acknowledgement.')
+await flushWrites(noCache)
+assert.ok(remoteWorkspace.data.tasks.some(task => task.id === 'cloud-without-cache'))
+assert.equal(remoteWorkspace.data.recipes[0].image, inlineImage, 'The database receives the full image, never a device-local image reference.')
+assert.equal(noCache.result.syncStatus, 'synced')
+assert.equal(noCache.result.syncError, null, 'Local quota failure cannot mask a successful database save.')
+assert.equal(noCache.result.hasUncachedChanges, false)
+unloadBlocked = false; tryUnload(noCache); assert.equal(unloadBlocked, false)
+assert.equal(noCacheHub.values.has(cloudKey), false, 'These confirmations were obtained without any local workspace cache.')
+const noCacheReload = new Runner(noCacheHub, useWorkspace)
+noCacheReload.failWrite = noCache.failWrite
+noCacheReload.render(); await settle(noCacheReload)
+assert.ok(noCacheReload.result.workspace.tasks.some(task => task.id === 'cloud-without-cache'), 'A fresh session restores data directly from the database when caching is unavailable.')
+noCacheReload.online = false; event(noCacheReload, 'offline')
+const oldRemote = JSON.stringify(remoteWorkspace)
+assert.equal(noCacheReload.run(data => data.setWorkspace(current => ({ ...current, tasks: [...current.tasks, task('memory-only-until-online')] }))), null)
+assert.equal(noCacheReload.result.syncStatus, 'offline')
+assert.equal(noCacheReload.result.hasUncachedChanges, true)
+assert.match(noCacheReload.result.syncError, /bara i den här öppna appen/)
+assert.equal(JSON.stringify(remoteWorkspace), oldRemote)
+assert.match((await noCacheReload.run(data => data.signOut())).error, /sparats i molnet/)
+noCacheReload.online = true; event(noCacheReload, 'online'); await settle(noCacheReload); await flushWrites(noCacheReload)
+assert.equal(noCacheReload.result.syncStatus, 'synced')
+assert.equal(noCacheReload.result.syncError, null)
+assert.ok(remoteWorkspace.data.tasks.some(task => task.id === 'memory-only-until-online'))
+failNetwork = true
+noCacheReload.run(data => data.setWorkspace(current => ({ ...current, tasks: [...current.tasks, task('server-failure-is-not-success')] })))
+await flushWrites(noCacheReload)
+assert.notEqual(noCacheReload.result.syncStatus, 'synced')
+assert.equal(noCacheReload.result.hasUncachedChanges, true)
+assert.ok(!remoteWorkspace.data.tasks.some(task => task.id === 'server-failure-is-not-success'))
+failNetwork = false
+noCacheReload.run(() => { for (const callback of noCacheReload.intervals.values()) callback() })
+await settle(noCacheReload); await flushWrites(noCacheReload)
+assert.equal(noCacheReload.result.syncStatus, 'synced')
+assert.ok(remoteWorkspace.data.tasks.some(task => task.id === 'server-failure-is-not-success'))
+// A lost local acknowledgement must not turn an already-saved snapshot into a conflict.
+const acknowledgedHub = new Hub()
+acknowledgedHub.values.set(cloudKey, JSON.stringify({ version: 1, workspace: remoteWorkspace.data, revision: remoteWorkspace.revision - 1, dirty: true }))
+const acknowledged = new Runner(acknowledgedHub, useWorkspace); acknowledged.failWrite = noCache.failWrite
+acknowledged.render(); await settle(acknowledged)
+assert.equal(acknowledged.result.syncStatus, 'synced')
+assert.equal(acknowledged.result.hasUncachedChanges, false)
+console.log('Cloud-primary persistence passed: blocked cache, confirmed database writes, full image payloads, fresh restore, honest pending/offline states, unload/logout protection, retry and lost cache acknowledgements.')
 
 const queuedFeedHub = new Hub()
 const queuedFeed = new Runner(queuedFeedHub, useDebriefs, [owner, true]); queuedFeed.online = false

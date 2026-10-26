@@ -3,6 +3,7 @@ import { ArrowUpRight, Check, CookingPot, Heart, ImagePlus, Pencil, Plus, Refres
 import type { Recipe } from '../lib/types'
 import { newId } from '../lib/helpers'
 import { isRecipeImage, predefinedRecipeLabels, recipeLabelKey, recipeLabelOptions, validateRecipeUrl } from '../lib/others'
+import { prepareImageAssets } from '../lib/imageStorage'
 import { prepareRecipeImage } from '../lib/recipeImage'
 import { Modal } from './Modal'
 import { TagAdder } from './TagAdder'
@@ -45,7 +46,7 @@ function RecipeEditor({ recipe, recipes, onSave, onClose }: {
     const existing = options.find(label => recipeLabelKey(label) === recipeLabelKey(value)) ?? value.slice(0, 40)
     if (!selected(existing)) setDraft({ ...draft, labels: [...draft.labels, existing] })
   }
-  function save(event: FormEvent) {
+  async function save(event: FormEvent) {
     event.preventDefault()
     if (imageBusy) { setError('Vänta tills bilden är färdig.'); return }
     if (!draft.title.trim()) { setError('Ange en titel.'); return }
@@ -55,6 +56,9 @@ function RecipeEditor({ recipe, recipes, onSave, onClose }: {
     const labels = [...chosen, ...own.filter((label, index) => own.findIndex(other => recipeLabelKey(other) === recipeLabelKey(label)) === index)]
     const next = { ...draft, ...(isCatalogRecipe(draft.id) ? { catalogEdited: true } : {}), title: draft.title.trim(), url: draft.url.trim(), ingredients: draft.ingredients?.trim() ?? '', steps: draft.steps.trim(), notes: draft.notes?.trim() ?? '', labels }
     setDraft(next)
+    setImageBusy(true)
+    try { await prepareImageAssets(next) } catch { /* Fall back to inline saving when IDB is unavailable. */ }
+    setImageBusy(false)
     const failure = onSave(next, original)
     if (failure) setError(failure)
     else onClose()

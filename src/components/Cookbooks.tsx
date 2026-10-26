@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, BookOpen, Check, Heart, ImagePlus, Library, Penc
 import type { Cookbook, Recipe } from '../lib/types'
 import { newId } from '../lib/helpers'
 import { isRecipeImage } from '../lib/others'
+import { prepareImageAssets } from '../lib/imageStorage'
 import { prepareRecipeImage } from '../lib/recipeImage'
 import { Modal } from './Modal'
 import { Recipes } from './Recipes'
@@ -23,10 +24,13 @@ function BookEditor({ book, onSave, onDelete, onClose }: { book?: Cookbook; onSa
     catch (failure) { setError(failure instanceof Error ? failure.message : 'Bilden kunde inte läsas.') }
     finally { setBusy(false) }
   }
-  function save(event: FormEvent) {
+  async function save(event: FormEvent) {
     event.preventDefault()
     if (busy) return
     if (!draft.title.trim()) { setError('Ge kokboken ett namn.'); return }
+    setBusy(true)
+    try { await prepareImageAssets(draft) } catch { /* Inline cache fallback remains available. */ }
+    setBusy(false)
     const failure = onSave({ ...draft, title: draft.title.trim() }, original)
     if (failure) setError(failure); else onClose()
   }

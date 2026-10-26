@@ -71,7 +71,7 @@ export function HomeScreen({ workspace, today, syncStatus, signedIn, onOpenTask,
   const sync = !signedIn ? { Icon: HardDrive, text: 'Sparas på enheten' }
     : syncStatus === 'synced' ? { Icon: Cloud, text: `Synkad ${pad(now.getHours())}:${pad(now.getMinutes())}` }
     : syncStatus === 'syncing' ? { Icon: Cloud, text: 'Synkar…' }
-    : syncStatus === 'offline' ? { Icon: CloudOff, text: 'Offline · sparas lokalt' }
+    : syncStatus === 'offline' ? { Icon: CloudOff, text: 'Offline · väntar på synk' }
     : { Icon: CloudOff, text: 'Synken behöver hjälp' }
 
   return <div className="homescreen" data-testid="home-screen" data-tone={briefing.tone}>
