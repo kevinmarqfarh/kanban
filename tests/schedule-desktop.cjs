@@ -30,7 +30,7 @@ async function open(width = 1440, workspace = fixture.workspace) {
 const modal = page => page.getByRole('dialog', { name: 'Planera uppgift', exact: true });
 const cache = page => page.evaluate(key => JSON.parse(localStorage.getItem(key)).workspace, key);
 async function point(page, minute) {
-  return page.locator('.schedule-grid').evaluate((el, minute) => { const r = el.getBoundingClientRect(); return { x: r.left+r.width*.6, y: r.top+minute/60*44 }; }, minute);
+  return page.locator('.schedule-grid').evaluate((el, minute) => { const r = el.getBoundingClientRect(); return { x: r.left+r.width*.6, y: r.top+(minute-Number(el.dataset.startMinute))/(Number(el.dataset.endMinute)-Number(el.dataset.startMinute))*r.height }; }, minute);
 }
 async function times(page, start, end) {
   await modal(page).waitFor();
@@ -139,8 +139,12 @@ async function check(name, fn) {
       await page.getByRole('dialog').getByRole('button', { name: 'Avbryt', exact: true }).click();
       const hour = page.getByRole('button', { name: 'Planera 08:00', exact: true }); await hour.focus(); await page.keyboard.press('Enter');
       await times(page,'08:00','09:00'); await close(page);
-      await page.locator('.schedule-scroll').evaluate(el => el.scrollTop=el.scrollHeight-el.clientHeight);
-      const p=await point(page,23*60+45); await page.mouse.click(p.x,p.y); await times(page,'23:30','24:00');
+      await page.getByRole('button',{name:'+ Planera',exact:true}).click();
+      await modal(page).getByLabel('Ange tid',{exact:true}).check();
+      await modal(page).getByLabel('Från',{exact:true}).fill('23:30');
+      await modal(page).getByLabel('Till',{exact:true}).evaluate(el=>{el.type='text'});
+      await modal(page).getByLabel('Till',{exact:true}).fill('24:00');
+      await times(page,'23:30','24:00');
       await close(page); assert.equal((await cache(page)).tasks.length,1); assert.deepEqual(errors,[]);
     });
   } finally { await browser.close(); fs.writeFileSync(path.join(out,'results.json'),JSON.stringify(results,null,2)); }

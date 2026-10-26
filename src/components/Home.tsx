@@ -30,10 +30,24 @@ export function Home({ workspace, today, localOnly, homeScreen = false, syncStat
   onToggleHabit: (habitId: string, date: string) => string | null;
   onReadNotification: (id: string) => string | null; onDismissNotification: (id: string) => string | null;
 }) {
+  const [tabletCustomHome, setTabletCustomHome] = useState(() => {
+    try { return localStorage.getItem('forma-tablet-custom-home-v1') === 'on' } catch { return false }
+  })
+  const [tabletEditing, setTabletEditing] = useState(false)
+  const docked = homeScreen && !tabletCustomHome && !tabletEditing
+  function saveTabletLayout() {
+    if (!homeScreen) return
+    setTabletCustomHome(true); setTabletEditing(false)
+    try { localStorage.setItem('forma-tablet-custom-home-v1', 'on') } catch { /* The chosen view remains active for this visit. */ }
+  }
+  function restoreTabletView() {
+    setTabletCustomHome(false); setTabletEditing(false)
+    try { localStorage.removeItem('forma-tablet-custom-home-v1') } catch { /* Applies for this visit. */ }
+  }
   const [error, setError] = useState<string | null>(null)
   const [birthdayFilter, setBirthdayFilter] = useState<string | null>(null)
   // The regular Home shows the week's weather too; the docked home screen has its own copy.
-  const weather = useWeather(today, !homeScreen)
+  const weather = useWeather(today, !docked)
   // Tapping a day (or the town) in the week strip opens that day's hours in a sheet over Home.
   const [weatherDay, setWeatherDay] = useState<string | null>(null)
   const notifications = unreadBirthdayNotifications(workspace)
@@ -50,10 +64,10 @@ export function Home({ workspace, today, localOnly, homeScreen = false, syncStat
     .sort((a, b) => a.date.localeCompare(b.date) || a.person.name.localeCompare(b.person.name, 'sv'))
   function run(action: () => string | null) { setError(action()) }
   // Docked tablet: one glanceable screen.
-  if (homeScreen && onQuickAdd) return <HomeScreen workspace={workspace} today={today} syncStatus={syncStatus} signedIn={!localOnly}
+  if (docked && onQuickAdd) return <HomeScreen onEditHome={() => setTabletEditing(true)} workspace={workspace} today={today} syncStatus={syncStatus} signedIn={!localOnly}
     onOpenTask={onOpenTask} onOpenPlanner={onOpenPlanner} onOpenSchedule={onOpenSchedule} onOpenBirthdays={onBirthdays} onOpenNutrition={onNutrition}
     onToggleHabit={onToggleHabit} onQuickAdd={onQuickAdd} onReadNotification={onReadNotification} onDismissNotification={onDismissNotification} />
-  return <HomeLayout>
+  return <HomeLayout initialEditing={tabletEditing} onSaveLayout={saveTabletLayout} onCancelLayout={() => setTabletEditing(false)} onStandardView={homeScreen && tabletCustomHome ? restoreTabletView : undefined}>
     <header className="bento-welcome"><h1>{now.getHours() < 5 ? 'God natt' : now.getHours() < 10 ? 'God morgon' : now.getHours() < 17 ? 'God dag' : 'God kväll'}, <em>lite mer fokus.</em></h1></header>
     {error && <p className="form-message error" role="alert">{error}</p>}
       <div className="home-date"><time dateTime={today}>{parseLocalDate(today).toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })}</time><span>Vecka {isoWeek(today)}</span></div>

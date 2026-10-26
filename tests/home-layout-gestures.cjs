@@ -72,10 +72,10 @@ async function check(name,fn){try{await fn();results.push({name,passed:true});co
    await page.getByRole('button',{name:'Återställ',exact:true}).click();await save(page);assert.equal((await saved(page)).sizes.summary.width,8);
   }
  });
- await check('The editor preserves older size preferences and remains unavailable on touch devices',async()=>{
+ await check('The editor preserves older size preferences, supports touch tablets and stays hidden on phones',async()=>{
   const legacy={order:['weather','summary','schedule','focus','stats','tips','agenda','nutrition','birthdays'],sizes:{weather:{width:4,height:240},summary:{width:8,height:360}}};
   const {page}=await open({layout:legacy});assert.deepEqual(await size(page,'weather'),legacy.sizes.weather);await edit(page);assert.deepEqual(await size(page,'summary'),legacy.sizes.summary);await save(page);assert.deepEqual((await saved(page)).sizes.weather,legacy.sizes.weather);
-  for(const [width,height] of [[390,844],[1366,1024]]){const {page,errors}=await open({width,height,touch:true});assert.equal(await page.getByRole('button',{name:'Edit Home',exact:true}).count(),0);assert.equal(await page.locator('.home-module-resize').count(),0);assert.deepEqual(errors,[])}
+  for(const [width,height] of [[390,844],[1366,1024]]){const {page,errors}=await open({width,height,touch:true});await page.getByRole('button',{name:'Edit Home',exact:true}).waitFor({state:width>=700?'visible':'detached'});assert.equal(await page.getByRole('button',{name:'Edit Home',exact:true}).count(),width>=700?1:0);assert.equal(await page.locator('.home-module-resize').count(),0);if(width>=700){await edit(page);assert.ok(await page.locator('.home-module-resize').count()>0);assert.equal(await page.locator('.app-shell.is-desktop').count(),0)}assert.deepEqual(errors,[])}
  });
 }finally{await browser.close();fs.writeFileSync(path.join(out,'results.json'),JSON.stringify(results,null,2))}
 console.log(`${results.filter(x=>x.passed).length}/${results.length} Home layout gesture scenarios passed (${engine}).`);process.exitCode=results.every(x=>x.passed)?0:1;

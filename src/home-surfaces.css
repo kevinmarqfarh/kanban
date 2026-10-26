@@ -18,7 +18,7 @@
 .app-shell .home-page .home-habit:not(.is-complete):last-child{border-bottom:0}
 .app-shell .home-page .home-birthday-row+.home-birthday-row{border-top:1px solid var(--line)}
 /* On mobile the briefing itself is the module; its sections must not add another surface. */
-.app-shell:not(.is-desktop) .home-page .briefing :is(.briefing-header,.briefing-stats,.briefing-block,.briefing-agenda){
+.app-shell:not(.is-desktop) .home-page:not(.home-custom-grid) .briefing :is(.briefing-header,.briefing-stats,.briefing-block,.briefing-agenda){
  background:transparent;border:0;border-radius:0;box-shadow:none;padding:0;backdrop-filter:none;-webkit-backdrop-filter:none;
 }
-.app-shell:not(.is-desktop) .home-page .briefing .briefing-agenda{border-top:1px solid var(--line);padding-top:20px}
+.app-shell:not(.is-desktop) .home-page:not(.home-custom-grid) .briefing .briefing-agenda{border-top:1px solid var(--line);padding-top:20px}

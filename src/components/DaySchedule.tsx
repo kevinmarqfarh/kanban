@@ -19,17 +19,20 @@ export function DaySchedule({ workspace, today, onSave, onOpen }: ScheduleProps)
   const [title, setTitle] = useState('')
   const [taskId, setTaskId] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [showUntimed, setShowUntimed] = useState(false)
   const [selection, setSelection] = useState<[number, number] | null>(null)
   const grid = useRef<HTMLDivElement>(null)
-  const scroller = useRef<HTMLDivElement>(null)
   const titleInput = useRef<HTMLInputElement>(null)
   const gesture = useRef<{ id: number; x: number; y: number; start: number; end: number; mouse: boolean; active: boolean; timer: ReturnType<typeof setTimeout> | null } | null>(null)
   const active = workspace.tasks.filter(task => !isTaskDone(task, workspace))
   const tasks = active.filter(task => task.schedule?.date === date && task.schedule.scope !== 'week')
   const timed = tasks.filter(task => task.schedule?.startTime).sort((a,b) => a.schedule!.startTime!.localeCompare(b.schedule!.startTime!))
   const layout = scheduleLayout(timed)
+  const firstMinute = Math.min(8 * 60, ...timed.map(task => Math.floor(minutes(task.schedule!.startTime!) / 60) * 60))
+  const lastMinute = Math.max(20 * 60, ...timed.map(task => Math.ceil(minutes(task.schedule!.endTime!) / 60) * 60))
+  const dayMinutes = lastMinute - firstMinute
+  const position = (minute: number) => (minute - firstMinute) / dayMinutes * 100
   const untimed = active.filter(task => task.schedule && (task.schedule.scope === 'week' ? task.schedule.date === weekStart(date) : task.schedule.date === date && !task.schedule.startTime))
-  useEffect(() => { if (open && scroller.current) scroller.current.scrollTop = 8 * 44 }, [open, date])
   useEffect(() => { setDate(today) }, [today])
   useEffect(() => {
     const element = grid.current
@@ -51,8 +54,15 @@ export function DaySchedule({ workspace, today, onSave, onOpen }: ScheduleProps)
     setSelection(null)
     if (current && grid.current?.hasPointerCapture(current.id)) grid.current.releasePointerCapture(current.id)
   }
-  function minuteAt(y: number) { return Math.max(0, Math.min(1440, (y - grid.current!.getBoundingClientRect().top) / 44 * 60)) }
-  function point(y: number) { return Math.min(1410, Math.floor(minuteAt(y) / 30) * 30) }
+  function minuteAt(y: number) {
+    const bounds = grid.current!.getBoundingClientRect()
+    return Math.max(firstMinute, Math.min(lastMinute, firstMinute + (y - bounds.top) / bounds.height * dayMinutes))
+  }
+  function point(y: number) {
+    const minute = minuteAt(y), boundary = Math.round(minute / 30) * 30
+    const snapped = Math.abs(minute - boundary) < 2 ? boundary : Math.floor(minute / 30) * 30
+    return Math.max(firstMinute, Math.min(lastMinute - 30, snapped))
+  }
   function mouseRange(start: number, y: number): [number, number] {
     const end = Math.round(minuteAt(y) / 30) * 30
     // The press anchors a half-hour slot; a drag ends at the nearest time boundary, in either direction.
@@ -106,14 +116,15 @@ export function DaySchedule({ workspace, today, onSave, onOpen }: ScheduleProps)
     <div className="schedule-heading"><time dateTime={date}>{parseLocalDate(date).toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })}</time><div><button className="button ghost small" onClick={() => create({ date })}>+ Planera</button></div></div>
     {open && <><div className="schedule-dates"><button className="icon-button" aria-label="Föregående vecka" onClick={() => setDate(addLocalDays(date, -7))}>‹</button>{Array.from({ length: 7 }, (_, i) => addLocalDays(weekStart(date), i)).map(day => <button key={day} className={day === date ? 'selected' : ''} aria-pressed={day === date} onClick={() => setDate(day)}><span>{parseLocalDate(day).toLocaleDateString('sv-SE', { weekday: 'short' })}</span><strong>{Number(day.slice(8))}</strong></button>)}<button className="icon-button" aria-label="Nästa vecka" onClick={() => setDate(addLocalDays(date, 7))}>›</button></div>
     <div className="schedule-tools"><button className="button ghost small" onClick={() => setDate(today)}>Idag</button><span><span className="schedule-mouse-hint">Klicka eller dra i ledig tid · 30 minuters steg</span><span className="schedule-touch-hint">Håll och dra för att välja tid</span></span><button className="button ghost small" onClick={exportCalendar} disabled={!active.some(t => t.schedule?.startTime)}>Exportera kalender</button></div>
-    <div className="schedule-scroll" ref={scroller} onScroll={() => { if (gesture.current && !gesture.current.active) cancel() }}>
-      <div className={`schedule-grid${selection ? ' selecting' : ''}`} ref={grid} tabIndex={-1} onPointerLeave={() => { if (!gesture.current?.active) cancel() }} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={cancel} onKeyDown={event => { if (event.key === 'Escape' && gesture.current) { event.preventDefault(); cancel() } }} onLostPointerCapture={cancel} onContextMenu={event => event.preventDefault()}>
-        {Array.from({ length: 24 }, (_, hour) => <div className="schedule-hour" key={hour}><button aria-label={`Planera ${clock(hour * 60)}`} onClick={() => create({ date, startTime: clock(hour * 60), endTime: clock((hour + 1) * 60) })}>{clock(hour * 60)}</button></div>)}
-        <div className="schedule-blocks">{timed.map(task => <button className="schedule-block" key={task.id} style={{ left: `${layout.get(task.id)!.left}%`, width: `calc(${layout.get(task.id)!.width}% - 3px)`, top: minutes(task.schedule!.startTime!) / 60 * 44, minHeight: Math.max(24, (minutes(task.schedule!.endTime!) - minutes(task.schedule!.startTime!)) / 60 * 44 - 2) }} onClick={() => onOpen(task.id)}><span>{task.schedule!.startTime}–{task.schedule!.endTime}</span><strong>{task.title}</strong></button>)}</div>
-        {selection && <div className="schedule-selection" style={{ top: selection[0] / 60 * 44, height: (selection[1] - selection[0]) / 60 * 44 }}>{clock(selection[0])}–{clock(selection[1])}</div>}
+    <div className="schedule-scroll schedule-canvas">
+      <div className={`schedule-grid${selection ? ' selecting' : ''}`} ref={grid} data-start-minute={firstMinute} data-end-minute={lastMinute} tabIndex={-1} onPointerLeave={() => { if (!gesture.current?.active) cancel() }} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={cancel} onKeyDown={event => { if (event.key === 'Escape' && gesture.current) { event.preventDefault(); cancel() } }} onLostPointerCapture={cancel} onContextMenu={event => event.preventDefault()}>
+        {Array.from({ length: dayMinutes / 60 }, (_, index) => firstMinute / 60 + index).map(hour => <div className="schedule-hour" key={hour}><button aria-label={`Planera ${clock(hour * 60)}`} onClick={() => create({ date, startTime: clock(hour * 60), endTime: clock((hour + 1) * 60) })}>{clock(hour * 60)}</button></div>)}
+        <div className="schedule-blocks">{timed.map(task => <button className="schedule-block" key={task.id} title={`${task.title} · ${task.schedule!.startTime}–${task.schedule!.endTime}`} aria-label={`${task.title} ${task.schedule!.startTime}–${task.schedule!.endTime}`} style={{ left: `${layout.get(task.id)!.left}%`, width: `calc(${layout.get(task.id)!.width}% - 3px)`, top: `${position(minutes(task.schedule!.startTime!))}%`, height: `${(minutes(task.schedule!.endTime!) - minutes(task.schedule!.startTime!)) / dayMinutes * 100}%` }} onClick={() => onOpen(task.id)}><span>{task.schedule!.startTime}–{task.schedule!.endTime}</span><strong>{task.title}</strong></button>)}</div>
+        {selection && <div className="schedule-selection" style={{ top: `${position(selection[0])}%`, height: `${(selection[1] - selection[0]) / dayMinutes * 100}%` }}>{clock(selection[0])}–{clock(selection[1])}</div>}
       </div>
     </div>
-    {untimed.length > 0 && <div className="schedule-untimed"><span>Utan tid</span>{untimed.map(task => <button key={task.id} onClick={() => onOpen(task.id)}>{task.schedule?.scope === 'week' ? 'Veckan · ' : ''}{task.title}</button>)}</div>}</>}
+    {untimed.length > 0 && <div className="schedule-untimed"><span>Utan tid</span><button type="button" onClick={() => setShowUntimed(true)}>Visa {untimed.length} {untimed.length === 1 ? 'uppgift' : 'uppgifter'} →</button></div>}</>}
+    {showUntimed && <Modal title="Uppgifter utan tid" onClose={() => setShowUntimed(false)}><div className="schedule-untimed-list">{untimed.map(task => <button className="schedule-summary-task" key={task.id} onClick={() => { setShowUntimed(false); onOpen(task.id) }}><span>{task.schedule?.scope === 'week' ? 'Veckan' : 'Vald dag'}</span><strong>{task.title}</strong></button>)}</div></Modal>}
     {draft && <Modal title="Planera uppgift" initialFocusRef={titleInput} error={error} onClose={() => setDraft(null)} footer={<><button className="button secondary" onClick={() => setDraft(null)}>Avbryt</button><button className="button primary" form="schedule-form" type="submit">Spara</button></>}><form id="schedule-form" onSubmit={event => { event.preventDefault(); if (!validSchedule(draft)) { setError('Ange en giltig dag och sluttid efter starttid.'); return } const name = taskId ? active.find(t => t.id === taskId)?.title : title.trim(); if (!name) { setError('Skriv en titel eller välj en uppgift.'); return } const failure = onSave(name, draft, taskId || undefined); setError(failure); if (!failure) setDraft(null) }}>
       <label className="field">Befintlig uppgift<select className="select" value={taskId} onChange={event => setTaskId(event.target.value)}><option value="">Skapa ny uppgift</option>{active.map(task => <option key={task.id} value={task.id}>{task.title}</option>)}</select></label>
       {!taskId && <label className="field">Titel<input ref={titleInput} className="input" autoFocus required maxLength={160} value={title} onChange={event => setTitle(event.target.value)} /></label>}

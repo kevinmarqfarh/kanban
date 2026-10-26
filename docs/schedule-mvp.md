@@ -1,6 +1,6 @@
 # Dagschema MVP
 
-Schema är en egen huvudsida med kalenderikon i navigationen och delar tasks med Planner. Sidan har veckans datumknappar och en scrollande dygnslinje med 30-minuters intervall. Håll 350 ms och dra i tom tid; snabb rörelse scrollar som vanligt. Timknappar och + Planera är alternativ. Inget skapas innan Spara.
+Schema är en egen huvudsida med kalenderikon i navigationen och delar tasks med Planner. Sidan har veckans datumknappar och en skärmanpassad tidslinje utan sid- eller tidslinjescroll. Normalt visas 08–20; intervallet utökas automatiskt för tidigare eller senare tidsatta uppgifter. Tider och dragmarkering räknas från tidslinjens faktiska höjd i 30-minuters steg. Håll 350 ms och dra på touch; musdrag startar direkt. Uppgifter utan tid öppnas i en separat lista via räknaren. Timknappar och + Planera är alternativ. Inget skapas innan Spara.
 
 Nya och befintliga tasks kan planeras för en dag med eller utan tid, eller för en vecka utan bestämd dag. Ett valfritt `Task.schedule` lagras genom samma workspace-persistens som tavlan. Datumet för veckoplanering är veckans måndag. Deadline ändras inte. Home-länken Planera dagen öppnar Schema. Uppgifter öppnas i en editor ovanpå Schema, så sidan ligger kvar efter redigering. Home visar dagens planering först och högst tre uppgifter. Klara och avslutade uppgifter visas inte i schemat. Ta bort planering i taskeditorn behåller uppgiften.
 
@@ -18,3 +18,5 @@ I ledig tid kan du klicka för ett nytt 30-minutersblock eller trycka ner muskna
 Escape avbryter en pågående markering, och högerklick skapar inget. Befintliga uppgifter öppnas som tidigare, och timknapparna fungerar med tangentbordet. Dagens sista halvtimme kan sluta vid 24:00. Musgesterna gäller också smala datorfönster. På faktisk touch behålls håll-och-dra och vanlig svepscrollning.
 
 Med server på port 4173: `npm run test:schedule-desktop`. Webbläsartesterna kontrollerar snabbt klick, omedelbar dragning åt båda håll, sparning/omladdning, Escape, befintliga uppgifter, tangentbord och midnatt i Chromium och WebKit. `APP_URL=http://127.0.0.1:4173 node tests/schedule-touch.cjs` verifierar fortsatt touchval och scrollning.
+
+One-pager verifieras med APP_URL=http://127.0.0.1:4189 npm run test:schedule-onepage. Testet omfattar mobil stående/liggande, surfplatta, dator, midnatt, många uppgifter utan tid och korrekta tider vid drag.
