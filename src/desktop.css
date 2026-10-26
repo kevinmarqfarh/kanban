@@ -7,8 +7,7 @@
 .desktop-context strong { color: var(--ink); font-weight: 500; }
 .app-shell.is-desktop .main-content { width: calc(100% - var(--desktop-sidebar)); max-width: none; margin: 0 0 0 var(--desktop-sidebar); padding: 0 28px; }
 .app-shell.is-desktop .bottom-nav { inset: 0 auto 0 0; transform: none; width: var(--desktop-sidebar); height: 100dvh; padding: 26px 14px 18px; display: flex; flex-direction: column; align-items: stretch; gap: 5px; border: 0; border-right: 1px solid var(--line); border-radius: 0; background: var(--surface); box-shadow: none; backdrop-filter: blur(24px); }
-.app-shell.is-desktop .desktop-nav-header { display: flex; flex-direction: column; align-items: flex-start; gap: 27px; padding: 5px 14px 16px; }
-.desktop-nav-header > span { color: var(--ink-muted); font-size: 9px; line-height: 1.7; letter-spacing: 1.3px; }
+.app-shell.is-desktop .desktop-nav-header { display: flex; flex-direction: column; align-items: flex-start; padding: 5px 14px 16px; }
 .app-shell.is-desktop .nav-item { justify-content: flex-start; gap: 11px; width: 100%; min-width: 0; min-height: 43px; padding: 10px 14px; border-radius: 10px; font-size: 14px; }
 .app-shell.is-desktop .nav-label { position: static; width: auto; height: auto; padding: 0; overflow: visible; clip-path: none; white-space: normal; }
 .app-shell.is-desktop .desktop-nav-footer { display: flex; flex-direction: column; gap: 14px; margin-top: auto; padding: 16px 8px 0; border-top: 1px solid var(--line); }
@@ -98,7 +97,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
 .app-shell.is-desktop .schedule-summary .schedule-heading > strong { font-size: 14px; }
 /* Theme adjustments keep dark/light/Bento coherent without altering the tablet or phone design. */
 [data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell.is-desktop .bottom-nav { background: #7c9eac; }
-[data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell.is-desktop .desktop-nav-header > span, [data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell.is-desktop :is(.desktop-shortcuts,.desktop-sync) { color: #17272e; }
+[data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell.is-desktop :is(.desktop-shortcuts,.desktop-sync) { color: #17272e; }
 [data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell.is-desktop .topbar { padding: 0 28px; }
 [data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell.is-desktop .desktop-context, [data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell.is-desktop .desktop-context strong { color: #17272e; }
 [data-theme='bento']:not([data-bento-variant='aurora'], [data-bento-variant='space-gray']) .app-shell.is-desktop .home-page > .briefing { background: #4c6068; }
