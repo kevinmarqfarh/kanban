@@ -44,36 +44,25 @@ function NoteEditor({ note, workspace, onSave, onDelete, onOpenLink, onBack, ini
   const [marks, setMarks] = useState({ bold: false, italic: false })
   const [bubble, setBubble] = useState<{ x: number; top: number; bottom: number } | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
-  const enteredFullscreen = useRef(false)
   const saveRef = useRef(onSave); saveRef.current = onSave
-  // Focus mode: a clean full-window writing surface. Where the browser allows it (Mac, iPad),
-  // the page also goes truly fullscreen; on iPhone the overlay alone covers the app.
+  // Focus mode fills the browser viewport while keeping browser controls visible.
   useEffect(() => {
     if (!focusMode) return
     const root = document.documentElement
     root.classList.add('note-focus-open')
-    enteredFullscreen.current = false
-    if (document.fullscreenEnabled && !document.fullscreenElement && root.requestFullscreen) {
-      root.requestFullscreen({ navigationUI: 'hide' }).then(() => { enteredFullscreen.current = true }).catch(() => { /* The overlay still gives a clean surface. */ })
-    }
     const leaveFocus = () => { if (desktop) setRequestedFocus(false); else backRef.current() }
-    const leftFullscreen = () => { if (enteredFullscreen.current && !document.fullscreenElement) leaveFocus() }
     const key = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented || document.querySelector('dialog[open]')) return
       event.preventDefault(); leaveFocus()
     }
     const moved = (event: PointerEvent) => { if (event.pointerType === 'mouse' && (Math.abs(event.movementX) + Math.abs(event.movementY) > 3)) setTyping(false) }
-    document.addEventListener('fullscreenchange', leftFullscreen)
     window.addEventListener('keydown', key)
     window.addEventListener('pointermove', moved)
     requestAnimationFrame(() => { restoreRange(); rootRef.current?.scrollTo({ top: 0 }) })
     return () => {
       root.classList.remove('note-focus-open')
-      document.removeEventListener('fullscreenchange', leftFullscreen)
       window.removeEventListener('keydown', key)
       window.removeEventListener('pointermove', moved)
-      if (enteredFullscreen.current && document.fullscreenElement) void document.exitFullscreen().catch(() => undefined)
-      enteredFullscreen.current = false
       setTyping(false)
     }
   }, [focusMode, desktop])

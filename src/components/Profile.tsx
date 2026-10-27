@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 import { Sun, Moon, Monitor, Cloud, HardDrive, LogOut, Download, Smartphone, ArrowRight, Check, ChevronDown, Tablet, CloudSun, PanelsTopLeft, Keyboard } from 'lucide-react'
 import type { useHomeScreen } from '../hooks/useHomeScreen'
 import { WeatherPlacePicker } from './WeatherPlacePicker'
@@ -7,10 +7,10 @@ import { useWorkspace } from '../hooks/useWorkspace'
 import { supabaseConfigured } from '../lib/supabase'
 
 export type ThemePreference = 'light' | 'dark' | 'system' | 'bento' | 'bento-aurora' | 'bento-space-gray'
-export function Profile({ data, theme, onTheme, onExport, syncText, homeScreen, desktop = false }: {
+export function Profile({ data, theme, onTheme, onExport, syncText, homeScreen, desktop = false, menuSettings }: {
   data: ReturnType<typeof useWorkspace>; theme: ThemePreference; onTheme: (theme: ThemePreference) => void; onExport: () => void; syncText: string;
   homeScreen?: ReturnType<typeof useHomeScreen>;
-  desktop?: boolean;
+  desktop?: boolean; menuSettings?: ReactNode;
 }) {
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin')
   const [email, setEmail] = useState('')
@@ -46,6 +46,7 @@ export function Profile({ data, theme, onTheme, onExport, syncText, homeScreen, 
       {message && <div className={`form-message ${message.error ? 'error' : ''}`} role={message.error ? 'alert' : 'status'}>{!message.error && <Check size={17} />}<p>{message.text}</p></div>}
     </section>
 
+    {menuSettings}
     <section className="profile-card"><div className="profile-section-heading"><Sun size={18} /><h2>Tema</h2></div><div className="theme-picker" aria-label="Välj tema">{([{ id: 'light', label: 'Ljust', Icon: Sun }, { id: 'dark', label: 'Mörkt', Icon: Moon }, { id: 'system', label: 'System', Icon: Monitor }, { id: 'bento', label: 'Bento blå', Icon: PanelsTopLeft }, { id: 'bento-aurora', label: 'Bento Aurora', Icon: PanelsTopLeft }, { id: 'bento-space-gray', label: 'Bento Space Gray', Icon: PanelsTopLeft }] as const).map(({ id, label, Icon }) => <button key={id} className={`theme-option ${theme === id ? 'active' : ''}`} aria-pressed={theme === id} onClick={() => onTheme(id)}><Icon size={19} strokeWidth={1.5} /><span>{label}</span></button>)}</div><p className="profile-description theme-bento-note">Bento blå · ljusblå papperstoner. Bento Aurora · mörkt glas, blått dis och varm glöd. Bento Space Gray · grafitgrå gradient, silver och matt papperstextur.</p>{homeScreen?.active && theme === 'system' && <p className="profile-description theme-sun-note">På hemskärmen följer System solen: mörkt från solnedgång till soluppgång.</p>}</section>
     <section className="profile-card profile-weather" aria-labelledby="weather-settings-title"><div className="profile-section-heading"><CloudSun size={18} /><h2 id="weather-settings-title">Väder</h2></div>
       <p className="profile-description">Veckans väder visas överst på Home. Valet av ort gäller bara den här enheten.</p>
