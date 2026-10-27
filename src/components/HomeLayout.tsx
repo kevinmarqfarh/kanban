@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, closestCenter, pointerWithin, useSensor, useSensors, type CollisionDetection, type KeyboardCoordinateGetter } from '@dnd-kit/core'
 import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from '@dnd-kit/sortable'
@@ -32,21 +32,11 @@ function read(): Layout {
 const Context = createContext<{ enabled: boolean; editing: boolean; layout: Layout; helpId: string; resize: (id: HomeModuleId, size: Size) => void; move: (id: HomeModuleId, step: number) => void } | null>(null)
 const collision: CollisionDetection = args => { const hits = pointerWithin(args); return hits.length ? hits : args.pointerCoordinates ? [] : closestCenter(args) }
 
-export function HomeLayout({ children, initialEditing = false, onSaveLayout, onCancelLayout, onStandardView }: {
-  children: ReactNode; initialEditing?: boolean; onSaveLayout?: () => void; onCancelLayout?: () => void; onStandardView?: () => void;
-}) {
-  const desktop = useDesktopLayout()
-  const [wide, setWide] = useState(() => window.matchMedia('(min-width: 700px) and (min-height: 600px)').matches)
-  useEffect(() => {
-    const media = window.matchMedia('(min-width: 700px) and (min-height: 600px)')
-    const update = () => setWide(media.matches)
-    if (media.addEventListener) media.addEventListener('change', update); else media.addListener(update)
-    return () => { if (media.removeEventListener) media.removeEventListener('change', update); else media.removeListener(update) }
-  }, [])
-  const enabled = desktop || wide
+export function HomeLayout({ children }: { children: ReactNode }) {
+  const enabled = useDesktopLayout()
   const [saved, setSaved] = useState(read)
   const [draft, setDraft] = useState(saved)
-  const [editing, setEditing] = useState(initialEditing)
+  const [editing, setEditing] = useState(false)
   const [error, setError] = useState('')
   const [dragging, setDragging] = useState<{ id: string; label: string } | null>(null)
   const helpId = useId()
@@ -76,7 +66,7 @@ export function HomeLayout({ children, initialEditing = false, onSaveLayout, onC
     setDraft(current => { const from = current.order.indexOf(id); const to = Math.max(0, Math.min(current.order.length - 1, from + step)); return { ...current, order: arrayMove(current.order, from, to) } })
   }
   function save() {
-    try { localStorage.setItem(KEY, JSON.stringify(draft)); setSaved(draft); setEditing(false); setError(''); onSaveLayout?.() }
+    try { localStorage.setItem(KEY, JSON.stringify(draft)); setSaved(draft); setEditing(false); setError('') }
     catch { setError('Kunde inte spara layouten på enheten. Försök igen.') }
   }
   return <Context.Provider value={{ enabled, editing: active, layout, helpId, move, resize: (id, size) => setDraft(current => current.sizes[id].width === size.width && current.sizes[id].height === size.height ? current : { ...current, sizes: { ...current.sizes, [id]: size } }) }}>
@@ -100,9 +90,9 @@ export function HomeLayout({ children, initialEditing = false, onSaveLayout, onC
             <div><strong>{active ? 'Anpassa Home' : 'Din översikt'}</strong>{active && <p id={helpId}>Dra i modulens rubrik för att flytta. Dra i kanten eller hörnet för att ändra storlek. Piltangenter fungerar också när handtaget har fokus.</p>}</div>
             <div className="home-layout-actions">{active ? <>
               <button className="button ghost" onClick={() => setDraft(defaults())}><RotateCcw size={15} />Återställ</button>
-              <button className="button secondary" onClick={() => { setEditing(false); setError(''); onCancelLayout?.() }}><X size={15} />Avbryt</button>
+              <button className="button secondary" onClick={() => { setEditing(false); setError('') }}><X size={15} />Avbryt</button>
               <button className="button primary" onClick={save}><Check size={15} />Spara layout</button>
-            </> : <>{onStandardView && <button className="button ghost" onClick={onStandardView}>Standardvy</button>}<button className="button secondary" onClick={() => { setDraft(saved); setEditing(true) }}><Pencil size={15} />Edit Home</button></>}</div>
+            </> : <button className="button secondary" onClick={() => { setDraft(saved); setEditing(true) }}><Pencil size={15} />Edit Home</button>}</div>
             {error && <p role="alert">{error}</p>}
           </div>}
           {children}

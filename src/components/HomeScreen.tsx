@@ -1,7 +1,5 @@
-import { createPortal } from 'react-dom'
-import { ScheduleSummary } from './DaySchedule'
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { ArrowRight, Bell, Cake, CalendarRange, Check, CloudOff, Cloud, HardDrive, Pill, Plus, Sparkles, Pencil, X } from 'lucide-react'
+import { useMemo, useRef, useState, type FormEvent } from 'react'
+import { ArrowRight, Bell, Cake, CalendarRange, Check, CloudOff, Cloud, HardDrive, Pill, Plus, Sparkles, X } from 'lucide-react'
 import type { SyncStatus, Workspace } from '../lib/types'
 import { buildDailyBriefing } from '../lib/briefing'
 import { unreadBirthdayNotifications } from '../lib/birthdays'
@@ -22,8 +20,7 @@ const pad = (value: number) => String(value).padStart(2, '0')
  * Hemskärm: everything for the day on one screen for a docked tablet.
  * Read at a glance from across the kitchen, act with one tap, never scroll the page.
  */
-export function HomeScreen({ workspace, today, syncStatus, signedIn, onOpenTask, onOpenPlanner, onOpenSchedule, onOpenBirthdays, onOpenNutrition, onToggleHabit, onQuickAdd, onReadNotification, onDismissNotification, onEditHome }: {
-  onEditHome: () => void
+export function HomeScreen({ workspace, today, syncStatus, signedIn, onOpenTask, onOpenPlanner, onOpenSchedule, onOpenBirthdays, onOpenNutrition, onToggleHabit, onQuickAdd, onReadNotification, onDismissNotification }: {
   workspace: Workspace
   today: string
   syncStatus: SyncStatus
@@ -37,8 +34,6 @@ export function HomeScreen({ workspace, today, syncStatus, signedIn, onOpenTask,
   onReadNotification: (id: string) => string | null
   onDismissNotification: (id: string) => string | null
 }) {
-  const [toolbar, setToolbar] = useState<HTMLElement | null>(null)
-  useEffect(() => { setToolbar(document.querySelector<HTMLElement>('.topbar-right')) }, [])
   const now = useNow()
   const briefing = useMemo(() => buildDailyBriefing(workspace, today, now), [workspace, today, now])
   const [error, setError] = useState<string | null>(null)
@@ -79,13 +74,11 @@ export function HomeScreen({ workspace, today, syncStatus, signedIn, onOpenTask,
     : { Icon: CloudOff, text: 'Synken behöver hjälp' }
 
   return <div className="homescreen" data-testid="home-screen" data-tone={briefing.tone}>
-    {toolbar && createPortal(<button className="button secondary hs-edit-home" type="button" onClick={onEditHome}><Pencil size={15} />Edit Home</button>, toolbar)}
     {error && <p className="form-message error homescreen-error" role="alert">{error}<button className="icon-button" type="button" aria-label="Stäng meddelande" onClick={() => setError(null)}><X size={16} /></button></p>}
 
     <WeatherWeek today={today} place={weather.place} forecast={weather.forecast} status={weather.status} onRetry={weather.retry} onOpen={date => setWeatherDay(date ?? today)} />
     {weatherDay && weather.forecast && <WeatherDaySheet forecast={weather.forecast} date={weatherDay} today={today} placeName={weather.place.name} onSelect={setWeatherDay} onClose={() => setWeatherDay(null)} />}
 
-    <ScheduleSummary workspace={workspace} today={today} onOpen={onOpenTask} onPlanner={onOpenSchedule} />
     <section className="hs-card hs-today" aria-labelledby="hs-headline">
       <div className="hs-now">
         <div className="hs-clock-row">
