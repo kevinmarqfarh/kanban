@@ -124,9 +124,9 @@ button, input, textarea, select { transition: background-color 160ms ease, borde
 .summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 22px; }
 .summary-card { display: flex; align-items: center; gap: 14px; min-height: 85px; padding: 16px 20px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
 .summary-card.feature { background: linear-gradient(125deg, var(--accent), color-mix(in srgb, var(--accent), var(--bg) 8%)); border-color: var(--accent); color: var(--accent-ink); }
-.summary-card.feature .stat-value { color: var(--accent-ink); }
-.summary-card.feature .stat-label, .summary-card.feature .stat-note, .summary-card.feature .stat-value span, .summary-card.feature .stat-value small { color: var(--accent-ink); opacity: 0.7; }
-.summary-card.feature .stat-icon { background: rgba(255, 255, 255, 0.08); color: var(--accent-ink); border-color: rgba(255, 255, 255, 0.12); }
+.summary-card.feature .stat-value { color: inherit; }
+.summary-card.feature .stat-label, .summary-card.feature .stat-note, .summary-card.feature .stat-value span, .summary-card.feature .stat-value small { color: inherit; opacity: 1; }
+.summary-card.feature .stat-icon { background: rgba(255, 255, 255, 0.08); color: inherit; border-color: rgba(255, 255, 255, 0.12); }
 .stat-icon { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; flex-shrink: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink-secondary); }
 .stat-icon svg { width: 18px; height: 18px; stroke-width: 1.5; }
 .stat-label { color: var(--ink-secondary); font-size: 11px; line-height: 1.5; }
