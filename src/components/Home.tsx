@@ -14,7 +14,7 @@ import { useNow } from '../hooks/useNow'
 import { orderHabitsByTime } from '../lib/nutritionTime'
 import { weatherNote } from '../lib/forecast'
 import type { SyncStatus } from '../lib/types'
-import type { GiftTaskDraft } from '../lib/briefing'
+import { greetingFor, type GiftTaskDraft } from '../lib/briefing'
 
 const weekdays = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön']
 function dateText(date: string, today: string) {
@@ -53,7 +53,7 @@ export function Home({ workspace, today, localOnly, homeScreen = false, syncStat
     onOpenTask={onOpenTask} onOpenPlanner={onOpenPlanner} onOpenSchedule={onOpenSchedule} onOpenBirthdays={onBirthdays} onOpenNutrition={onNutrition}
     onToggleHabit={onToggleHabit} onQuickAdd={onQuickAdd} onReadNotification={onReadNotification} onDismissNotification={onDismissNotification} />
   return <HomeLayout>
-    <header className="bento-welcome"><h1>{now.getHours() < 5 ? 'God natt' : now.getHours() < 10 ? 'God morgon' : now.getHours() < 17 ? 'God dag' : 'God kväll'}, <em>lite mer fokus.</em></h1></header>
+    <header className="bento-welcome"><h1>{greetingFor(now)}</h1></header>
     {error && <p className="form-message error" role="alert">{error}</p>}
       <div className="home-date"><time dateTime={today}>{parseLocalDate(today).toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })}</time><span>Vecka {isoWeek(today)}</span></div>
       {notifications.length > 0 && <section className="home-notifications" aria-label="Födelsedagspåminnelser" data-testid="birthday-notifications">

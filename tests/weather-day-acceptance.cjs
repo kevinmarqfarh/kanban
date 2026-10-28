@@ -68,7 +68,7 @@ const noSidewaysScroll = page => page.evaluate(() => document.documentElement.sc
       const rows = sheet.locator('.wxp-table tbody tr');
       assert.equal(await rows.count(), 24, 'Hour by hour.');
       const row = time => rows.filter({ has: page.locator('th', { hasText: time }) }).locator('td').allTextContents();
-      assert.deepEqual((await row('11:00')).slice(1, 4), ['77 %', '1,2 mm', '14°']);
+      assert.deepEqual((await row('11:00')).slice(1, 4), ['77 %', '1,2 mm10:00–11:00', '14°']);
       assert.ok(await sheet.locator('.wxp-hour-chart .wxp-chart-bar').count() > 15, 'Precipitation amount as bars.');
       assert.equal(await sheet.locator('.wxp-hour-chart .wxp-chart-line').count(), 1, 'Temperature as a line.');
       assert.equal(await sheet.locator('.wxp-hour-chart').count(), 2);

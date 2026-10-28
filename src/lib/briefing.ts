@@ -176,11 +176,11 @@ function focusReasons(task: Task, state: DeadlineState, inProgress: boolean): st
   return reasons
 }
 
-function greetingFor(now: Date): string {
+export function greetingFor(now: Date): string {
   const hour = now.getHours()
   if (hour < 5) return 'God natt'
   if (hour < 10) return 'God morgon'
-  if (hour < 17) return 'Hej'
+  if (hour < 17) return 'God dag'
   return 'God kväll'
 }
 

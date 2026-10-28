@@ -44,7 +44,9 @@ export function DaySchedule({ workspace, today, onSave, onOpen }: ScheduleProps)
   useEffect(() => {
     const blurred = () => cancel()
     window.addEventListener('blur', blurred)
-    return () => { window.removeEventListener('blur', blurred); if (gesture.current?.timer) clearTimeout(gesture.current.timer) }
+    window.addEventListener('focus', blurred)
+    document.addEventListener('visibilitychange', blurred)
+    return () => { window.removeEventListener('blur', blurred); window.removeEventListener('focus', blurred); document.removeEventListener('visibilitychange', blurred); if (gesture.current?.timer) clearTimeout(gesture.current.timer) }
   }, [])
   function create(schedule: TaskSchedule) { setDraft(schedule); setTitle(''); setTaskId(''); setError(null) }
   function cancel() {
@@ -107,12 +109,24 @@ export function DaySchedule({ workspace, today, onSave, onOpen }: ScheduleProps)
     }
     cancel()
   }
-  function exportCalendar() {
-    const url = URL.createObjectURL(new Blob([calendarFile(active)], { type: 'text/calendar;charset=utf-8' }))
-    const link = document.createElement('a'); link.href = url; link.download = 'forma-schema.ics'; link.click()
-    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  async function exportCalendar() {
+    cancel()
+    const file = new File([calendarFile(active)], 'forma-schema.ics', { type: 'text/calendar;charset=utf-8' })
+    // Share a file on iOS rather than navigating the installed app to a blob document.
+    if (navigator.canShare?.({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: 'Forma-schema' }) }
+      catch (reason) { if (!(reason instanceof DOMException && reason.name === 'AbortError')) setError('Kalendern kunde inte delas. Försök igen.') }
+      finally { cancel() }
+      return
+    }
+    const url = URL.createObjectURL(file)
+    const link = document.createElement('a')
+    link.href = url; link.download = file.name; link.target = '_blank'; link.rel = 'noopener'
+    document.body.append(link); link.click(); link.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 60_000)
   }
   return <section className="day-schedule" aria-label="Dagschema">
+    {error && !draft && <p className="form-message error" role="alert">{error}</p>}
     <div className="schedule-heading"><time dateTime={date}>{parseLocalDate(date).toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })}</time><div><button className="button ghost small" onClick={() => create({ date })}>+ Planera</button></div></div>
     {open && <><div className="schedule-dates"><button className="icon-button" aria-label="Föregående vecka" onClick={() => setDate(addLocalDays(date, -7))}>‹</button>{Array.from({ length: 7 }, (_, i) => addLocalDays(weekStart(date), i)).map(day => <button key={day} className={day === date ? 'selected' : ''} aria-pressed={day === date} onClick={() => setDate(day)}><span>{parseLocalDate(day).toLocaleDateString('sv-SE', { weekday: 'short' })}</span><strong>{Number(day.slice(8))}</strong></button>)}<button className="icon-button" aria-label="Nästa vecka" onClick={() => setDate(addLocalDays(date, 7))}>›</button></div>
     <div className="schedule-tools"><button className="button ghost small" onClick={() => setDate(today)}>Idag</button><span><span className="schedule-mouse-hint">Klicka eller dra i ledig tid · 30 minuters steg</span><span className="schedule-touch-hint">Håll och dra för att välja tid</span></span><button className="button ghost small" onClick={exportCalendar} disabled={!active.some(t => t.schedule?.startTime)}>Exportera kalender</button></div>

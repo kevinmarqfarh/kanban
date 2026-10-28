@@ -48,12 +48,12 @@ export function WeatherDaySheet({ forecast, date, today, placeName, onSelect, on
         <DayChart steps={steps} />
         {longest > 1 && <p className="wxp-sheet-note">Så här långt fram ger SMHI prognos var {longest}:e timme.</p>}
         <details className="wxp-details"><summary>Detaljer per timme · risk och vind</summary><table className="wxp-table">
-          <thead><tr><th scope="col">Tid</th><th scope="col"><span className="sr-only">Väder</span></th><th scope="col">Risk</th><th scope="col">Mängd</th><th scope="col">Temp</th><th scope="col">Vind</th></tr></thead>
+          <thead><tr><th scope="col">Tid</th><th scope="col"><span className="sr-only">Väder</span></th><th scope="col">Risk</th><th scope="col">Mängd / intervall</th><th scope="col">Temp</th><th scope="col">Vind</th></tr></thead>
           <tbody>{steps.map(step => <tr key={step.time} data-time={step.time}>
             <th scope="row">{formatClock(step.time)}{steps.some(other => other.time !== step.time && formatClock(other.time) === formatClock(step.time)) && <small className="wxp-time-zone">{new Date(step.time).getTimezoneOffset() === -120 ? 'Sommartid' : 'Normaltid'}</small>}{localDateString(new Date(step.time)) !== localDateString(new Date(steps[0].time)) && <small className="wxp-time-zone">{new Date(step.time).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' })}</small>}</th>
             <td><WeatherIcon kind={stepKind(step)} size={26} title={step.label} /></td>
             <td className="wxp-blue">{step.rain === null ? '–' : `${step.rain} %`}</td>
-            <td>{step.mm === null ? '–' : `${number(step.mm)} mm`}</td>
+            <td>{step.mm === null ? '–' : `${number(step.mm)} mm`}<small className="wxp-time-zone">{localDateString(new Date(step.start)) !== localDateString(new Date(step.time)) && `${new Date(step.start).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' })} `}{formatClock(step.start)}–{formatClock(step.time)}</small></td>
             <td className="wxp-table-temp">{degrees(step.temp)}</td>
             <td>{step.wind === null ? '–' : `${number(step.wind, 0)}${step.gust !== null ? ` (${number(step.gust, 0)})` : ''} m/s`}</td>
           </tr>)}</tbody>
@@ -66,14 +66,15 @@ export function WeatherDaySheet({ forecast, date, today, placeName, onSelect, on
 
 /** Temperature and precipitation share a scrollable time axis. Amounts cover the source interval. */
 function DayChart({ steps }: { steps: WeatherStep[] }) {
-  const from = Date.parse(steps[0].time)
+  const from = Date.parse(steps[0].start)
   const to = Date.parse(steps[steps.length - 1].time)
   const width = Math.max(320, ((to - from) / 3_600_000 + 1) * 64), left = 32, right = 32
   const x = (ms: number) => left + (ms - from) / Math.max(1, to - from) * (width - left - right)
   const hourly = steps.every(step => Date.parse(step.time) - Date.parse(step.start) <= 3_600_000)
   const hourText = (step: WeatherStep, index: number) => {
     const repeated = steps.some((other, i) => i !== index && hourLabel(other.time) === hourLabel(step.time))
-    return repeated ? `${hourLabel(step.time)} ${new Date(step.time).getTimezoneOffset() === -120 ? 'sommartid' : 'normaltid'}` : hourLabel(step.time)
+    const dayLabel = localDateString(new Date(step.time)) !== localDateString(new Date(steps[0].time)) ? ` ${new Date(step.time).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' })}` : ''
+    return (repeated ? `${hourLabel(step.time)} ${new Date(step.time).getTimezoneOffset() === -120 ? 'sommartid' : 'normaltid'}` : hourLabel(step.time)) + dayLabel
   }
   const temps = steps.map(step => step.temp)
   const lo = Math.min(...temps) - 2, hi = Math.max(...temps) + 2
@@ -82,12 +83,17 @@ function DayChart({ steps }: { steps: WeatherStep[] }) {
   const amounts = steps.flatMap(step => step.mm === null ? [] : [step.mm])
   const maximum = Math.max(1, ...amounts)
   const wet = steps.find(step => (step.mm ?? 0) > 0)
+  const total = amounts.reduce((sum, value) => sum + value, 0)
+  const chances = steps.flatMap(step => step.rain === null ? [] : [step.rain])
+  const peakRisk = chances.length ? Math.max(...chances) : null
   const summary = wet
     ? `Nederbörd väntas cirka kl. ${formatClock(wet.start)}–${formatClock(wet.time)}.`
     : amounts.length === steps.length ? 'Ingen nederbörd väntas under perioden.' : 'Uppgifter om nederbörd saknas för delar av perioden.'
   return <section className="wxp-timeline" aria-label="Prognos timme för timme">
-    <div className="wxp-timeline-heading"><strong>{hourly ? 'Timme för timme' : 'Prognosintervall'}</strong><span>24 timmar · {hourly ? '1 h intervall' : 'källans intervall'}</span></div>
-    <p className="wxp-timeline-summary">{summary}</p><p className="wxp-swipe-hint">Svep eller rulla för fler timmar →</p>
+    <div className="wxp-timeline-heading"><strong>{hourly ? 'Timme för timme' : 'Prognosintervall'}</strong><span>{hourly ? '1 h intervall' : 'Källans intervall'}</span></div>
+    <p className="wxp-timeline-summary">{summary}</p>
+    <p className="wxp-period-meta"><span>{amounts.length ? `${amounts.length < steps.length ? 'Minst ' : ''}${number(total)} mm under visade intervall` : 'Mängduppgifter saknas'}</span>{peakRisk !== null && <span className="wxp-blue">Högst {peakRisk} % risk</span>}</p>
+    <p className="wxp-rain-explanation">Procent visar sannolikheten för nederbörd. Millimeter visar beräknad mängd för tidsintervallet.</p><p className="wxp-swipe-hint">Svep eller rulla för fler timmar →</p>
     <div className="wxp-timeline-scroll" tabIndex={0} role="region" aria-label="Temperatur och nederbörd, rulla i sidled">
       <div style={{ width, maxWidth: 'none' }}>
         <div className="wxp-hour-symbols" style={{ width }}>{steps.map((step, index) => <div key={step.time} style={{ left: x(Date.parse(step.time)) }}>
@@ -100,15 +106,17 @@ function DayChart({ steps }: { steps: WeatherStep[] }) {
           {steps.map(step => <g key={step.time}><circle className="wxp-chart-dot" cx={x(Date.parse(step.time))} cy={y(step.temp)} r="3" /><text className="wxp-chart-label" x={x(Date.parse(step.time))} y={y(step.temp) - 12} textAnchor="middle">{degrees(step.temp)}</text></g>)}
         </svg>
         <div className="wxp-rain-heading">Nederbörd <span>{hourly ? 'mm per timme' : 'mm per prognosintervall'}</span></div>
-        <svg className="wxp-hour-chart" viewBox={`0 0 ${width} 98`} role="img" aria-label={`Nederbörd i millimeter. ${summary}`}>
+        <svg className="wxp-hour-chart" viewBox={`0 0 ${width} 120`} role="img" aria-label={`Nederbörd i millimeter. ${summary}`}>
           <line className="wxp-chart-base" x1={left} x2={width - right} y1="78" y2="78" />
           {steps.map(step => {
             const end = x(Date.parse(step.time))
+            const start = x(Math.max(from, Date.parse(step.start)))
+            const barWidth = Math.max(2, end - start - 8)
             const height = (step.mm ?? 0) / maximum * 48
             return <g key={step.time}><title>{formatClock(step.start)}–{formatClock(step.time)}: {step.mm === null ? 'uppgift saknas' : `${number(step.mm)} mm`}</title>
-              {height > 0 && <rect className="wxp-chart-bar" x={end - 20} width={40} y={78 - height} height={height} rx="3" />}
+              {height > 0 && <rect className="wxp-chart-bar" x={start + 4} width={barWidth} y={78 - height} height={height} rx="3" />}
               <text className="wxp-chart-label" x={end} y={height > 0 ? 70 - height : 70} textAnchor="middle">{step.mm === null ? '–' : number(step.mm)}</text>
-              <text className="wxp-chart-tick" x={end} y="96" textAnchor="middle">{hourLabel(step.time)}</text>
+              <text className="wxp-chart-tick" x={end} y="96" textAnchor="middle">{hourLabel(step.time)}</text><text className="wxp-chart-label" x={end} y="114" textAnchor="middle">{step.rain === null ? '–' : `${step.rain} %`}</text>
             </g>
           })}
         </svg>
