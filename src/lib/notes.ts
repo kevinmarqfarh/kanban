@@ -33,10 +33,15 @@ export function sanitizeNoteHtml(html: string): string {
       const kind = node.dataset.noteKind as NoteLinkKind
       const id = node.dataset.noteTarget
       if (noteLinkKinds.includes(kind) && id && id.length <= 200 && id.trim()) {
-        target = document.createElement('a')
-        target.dataset.noteKind = kind; target.dataset.noteTarget = id
-        target.setAttribute('href', `#forma/${kind}/${encodeURIComponent(id)}`)
-        target.setAttribute('contenteditable', 'false')
+        let encodedId: string | undefined
+        // Stored HTML can contain lone UTF-16 surrogates. Keep their link text without crashing previews or the editor.
+        try { encodedId = encodeURIComponent(id) } catch { /* Invalid targets are rendered as ordinary text. */ }
+        if (encodedId) {
+          target = document.createElement('a')
+          target.dataset.noteKind = kind; target.dataset.noteTarget = id
+          target.setAttribute('href', `#forma/${kind}/${encodedId}`)
+          target.setAttribute('contenteditable', 'false')
+        }
       }
     }
     if (target) parent.appendChild(target)

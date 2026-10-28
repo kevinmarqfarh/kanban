@@ -24,36 +24,36 @@ const dropAnimation: DropAnimation = {
 }
 
 function CardContent({ task, workspace }: { task: Task; workspace: Workspace }) {
-  const checklistDone = task.checklist.filter(item => item.completed).length
   return <>
     {(task.priority || task.labels.length > 0) && <div className="task-labels">{task.priority && <span className="priority-chip" data-priority={task.priority} aria-label={`Prioritet ${priorityLabel(task.priority)}`}>{priorityLabel(task.priority)}</span>}{task.labels.slice(0, 3).map(label => <span className="label-chip" key={label}>{label}</span>)}</div>}
     <h3 className="task-title">{task.title}</h3>
     {task.description && <p className="task-description">{task.description}</p>}
-    {(task.deadline || task.checklist.length > 0 || task.comments.length > 0) && <div className="task-meta">
+    {(task.deadline || task.comments.length > 0) && <div className="task-meta">
       {task.deadline && <span className={`task-meta-item date-chip ${overdue(task, workspace) ? 'deadline-overdue' : ''}`}><CalendarDays size={13} />{dateLabel(task.deadline, task.deadlineTime)}</span>}
-      {task.checklist.length > 0 && <span className="task-meta-item"><ListChecks size={14} />{checklistDone}/{task.checklist.length}</span>}
       {task.comments.length > 0 && <span className="task-meta-item"><MessageSquare size={13} />{task.comments.length}</span>}
     </div>}
   </>
 }
 
-const TaskCard = memo(function TaskCard({ task, workspace, onOpen, onToggle }: { task: Task; workspace: Workspace; onOpen: (task: Task) => void; onToggle: (task: Task) => void }) {
+const TaskCard = memo(function TaskCard({ task, workspace, onOpen, onToggle, onToggleChecklist }: { task: Task; workspace: Workspace; onOpen: (task: Task) => void; onToggle: (task: Task) => void; onToggleChecklist: (taskId: string, itemId: string) => void }) {
+  const [showChecklist, setShowChecklist] = useState(false)
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: task.id, data: { columnId: task.columnId, type: 'task' }, animateLayoutChanges, transition: { duration: 180, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' } })
   return <article ref={setNodeRef} className={`task-card ${isTaskDone(task, workspace) ? 'task-complete' : ''} ${isDragging ? 'is-dragging' : ''}`} data-task-id={task.id} data-priority={task.priority ?? undefined} style={{ transform: CSS.Translate.toString(transform), transition }}>
     <button className="task-open" onClick={() => onOpen(task)} aria-label={`Öppna ${task.title}`}><CardContent task={task} workspace={workspace} /></button>
+    {task.checklist.length > 0 && <div className="task-card-checklist"><button className="task-checklist-toggle" type="button" aria-expanded={showChecklist} onClick={() => setShowChecklist(value => !value)}><ListChecks size={15} />{showChecklist ? 'Dölj checklista' : 'Visa checklista'}<span>{task.checklist.filter(item => item.completed).length}/{task.checklist.length}</span></button>{showChecklist && <div className="task-checklist-items">{task.checklist.map(item => <label key={item.id}><input type="checkbox" checked={item.completed} onChange={() => onToggleChecklist(task.id, item.id)} /><span className={item.completed ? 'completed' : ''}>{item.title}</span></label>)}</div>}</div>}
     <button className="icon-button task-quick-complete" type="button" aria-label={`${isTaskDone(task, workspace) ? 'Återöppna' : 'Klarmarkera'} ${task.title}`} aria-pressed={isTaskDone(task, workspace)} onClick={() => onToggle(task)}><CircleCheck size={18} /></button>
     <button ref={setActivatorNodeRef} className="drag-handle" {...attributes} {...listeners} aria-label={`Dra ${task.title}`} title="Dra för att flytta · mellanslag + piltangenter"><GripVertical size={16} /></button>
   </article>
 })
 
-function BoardColumn({ column, tasks, workspace, onOpen, onAdd, onEdit, onToggleHide, onToggle }: {
-  column: Column; tasks: Task[]; workspace: Workspace; onOpen: (task: Task) => void; onAdd: () => void; onEdit: () => void; onToggleHide: () => void; onToggle: (task: Task) => void;
+function BoardColumn({ column, tasks, workspace, onOpen, onAdd, onEdit, onToggleHide, onToggle, onToggleChecklist }: {
+  column: Column; tasks: Task[]; workspace: Workspace; onOpen: (task: Task) => void; onAdd: () => void; onEdit: () => void; onToggleHide: () => void; onToggle: (task: Task) => void; onToggleChecklist: (taskId: string, itemId: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id, data: { type: 'column' } })
   return <section ref={setNodeRef} className={`column ${isOver ? 'column-over' : ''}`} data-column-id={column.id} aria-label={columnDisplayTitle(column)}>
     <div className="column-header"><div className="column-title"><span className="status-dot" data-status={column.id} /><h2>{columnDisplayTitle(column)}</h2><span className="count-badge">{tasks.length}</span></div><div className="column-actions">{column.id === 'finalized' && <button className="button ghost small" aria-label={column.collapsed ? 'Visa avslutade' : 'Dölj avslutade'} aria-expanded={!column.collapsed} onClick={onToggleHide}>{column.collapsed ? 'Visa' : 'Dölj'}</button>}<button className="icon-button" aria-label={`Redigera kolumn ${column.title}`} onClick={onEdit}><Pencil size={14} /></button></div></div>
     {column.collapsed ? <div className="column-empty"><CircleCheck size={22} strokeWidth={1.25} /><p>{tasks.length} kort dolda.</p><p>Klart = färdig uppgift. Avslutat = avslutad och undanlagd.</p></div> : <><SortableContext items={tasks.map(task => task.id)} strategy={liveLayoutStrategy}>
-      <div className="task-list">{tasks.map(task => <TaskCard key={task.id} task={task} workspace={workspace} onOpen={onOpen} onToggle={onToggle} />)}
+      <div className="task-list">{tasks.map(task => <TaskCard key={task.id} task={task} workspace={workspace} onOpen={onOpen} onToggle={onToggle} onToggleChecklist={onToggleChecklist} />)}
         {tasks.length === 0 && <div className="column-empty"><CircleCheck size={22} strokeWidth={1.25} /><p>Inga uppgifter.</p></div>}
       </div>
     </SortableContext>
@@ -62,10 +62,10 @@ function BoardColumn({ column, tasks, workspace, onOpen, onAdd, onEdit, onToggle
   </section>
 }
 
-export function Board({ workspace, tasks, onOpen, onAdd, onEditColumn, onAddColumn, onMove, onToggleHide, onToggle }: {
+export function Board({ workspace, tasks, onOpen, onAdd, onEditColumn, onAddColumn, onMove, onToggleHide, onToggle, onToggleChecklist }: {
   workspace: Workspace; tasks: Task[]; onOpen: (task: Task) => void; onAdd: (columnId: string) => void;
   onEditColumn: (column: Column) => void; onAddColumn: () => void; onMove: (taskId: string, columnId: string, beforeId?: string) => void;
-  onToggleHide: (columnId: string) => void; onToggle: (task: Task) => void;
+  onToggleHide: (columnId: string) => void; onToggle: (task: Task) => void; onToggleChecklist: (taskId: string, itemId: string) => void;
 }) {
   const boardRef = useRef<HTMLDivElement>(null)
   const keyboardColumn = useRef<string | null>(null)
@@ -249,7 +249,7 @@ export function Board({ workspace, tasks, onOpen, onAdd, onEditColumn, onAddColu
       onDragCancel: () => 'Flytten avbröts.',
     } }}>
       <div className={`board ${workspace.columns.length > 3 ? 'board-many' : ''} ${activeId ? 'board-dragging' : ''}`} ref={boardRef} onScroll={boardScrolled}>
-        {workspace.columns.map(column => <BoardColumn key={column.id} column={column} tasks={(view[column.id] ?? []).map(id => byId.get(id)).filter((task): task is Task => !!task)} workspace={workspace} onOpen={onOpen} onAdd={() => onAdd(column.id)} onEdit={() => onEditColumn(column)} onToggle={onToggle} onToggleHide={() => onToggleHide(column.id)} />)}
+        {workspace.columns.map(column => <BoardColumn key={column.id} column={column} tasks={(view[column.id] ?? []).map(id => byId.get(id)).filter((task): task is Task => !!task)} workspace={workspace} onOpen={onOpen} onAdd={() => onAdd(column.id)} onEdit={() => onEditColumn(column)} onToggle={onToggle} onToggleChecklist={onToggleChecklist} onToggleHide={() => onToggleHide(column.id)} />)}
         <button className="add-column" onClick={onAddColumn}><Plus size={20} /><span>Ny kolumn</span></button>
       </div>
       <DragOverlay dropAnimation={dropAnimation}>{activeTask && <div className="task-card drag-overlay" data-priority={activeTask.priority ?? undefined}><CardContent task={activeTask} workspace={workspace} /></div>}</DragOverlay>

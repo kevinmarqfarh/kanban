@@ -1,0 +1,75 @@
+const assert = require('node:assert/strict');
+const { chromium, webkit } = require('playwright');
+const engine = process.env.BROWSER_ENGINE === 'webkit' ? webkit : chromium;
+const base = process.env.APP_URL || 'http://127.0.0.1:4173';
+const stamp = '2026-10-28T09:00:00.000Z';
+const key = 'forma:workspace:v1:guest';
+const workspace = {
+  columns: [{ id: 'todo', title: 'Att göra', color: 'gray' }, { id: 'done', title: 'Klart', color: 'green' }], tasks: [], projects: [], birthdays: [], birthdayNotifications: [],
+  recipes: [{ id: 'recipe-demo', title: 'Enkel pasta', url: '', steps: 'Koka pastan.', ingredients: '2 tomater, 1 lök\n200 g pasta', labels: [], createdAt: stamp }],
+  shoppingLists: [],
+};
+(async () => {
+  const browser = await engine.launch();
+  const context = await browser.newContext({ viewport: { width: Number(process.env.VIEWPORT_WIDTH || 390), height: 844 }, locale: 'sv-SE' });
+  await context.addInitScript(({ key, workspace }) => { if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ version: 1, workspace, revision: null, dirty: false })); }, { key, workspace });
+  const page = await context.newPage(); page.setDefaultTimeout(8000);
+  const errors = []; page.on('pageerror', error => errors.push(error.message));
+  const saved = () => page.evaluate(key => JSON.parse(localStorage.getItem(key)).workspace, key);
+  const others = async () => { await page.locator('.bottom-nav').getByRole('button', { name: 'Others', exact: true }).click(); };
+  await page.goto(base); await page.getByTestId('home-overview').waitFor();
+  await page.locator('.bottom-nav').getByRole('button', { name: 'Inköp', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Ny inköpslista' }).fill('Veckohandling');
+  await page.getByRole('button', { name: 'Skapa lista' }).click();
+  await page.getByRole('textbox', { name: 'Lägg till vara' }).fill('Mjölk');
+  await page.getByRole('button', { name: 'Lägg till', exact: true }).click();
+  assert.equal((await saved()).shoppingLists[0].items[0].title, 'Mjölk');
+  await page.getByRole('checkbox', { name: 'Mjölk' }).check();
+  assert.equal((await saved()).shoppingLists[0].items[0].checked, true);
+  await others();
+  await page.getByRole('button', { name: /Recept/ }).click();
+  await page.getByRole('button', { name: /Alla recept/ }).click();
+  await page.getByRole('searchbox', { name: 'Sök recept' }).fill('Enkel pasta');
+  await page.getByRole('button', { name: 'Öppna recept Enkel pasta' }).click();
+  await page.getByRole('button', { name: 'Lägg ingredienser i inköpslista' }).click();
+  if (process.env.SHOPPING_SHOTS) { await page.waitForTimeout(300); await page.screenshot({ path: `/tmp/forma-recipe-shopping-${process.env.VIEWPORT_WIDTH || 390}.png` }); }
+  await page.getByLabel('Välj inköpslista').selectOption({ label: 'Veckohandling' });
+  await page.getByRole('button', { name: 'Lägg till', exact: true }).click();
+  assert.deepEqual((await saved()).shoppingLists[0].items.map(item => item.title), ['Mjölk', '2 tomater', '1 lök', '200 g pasta']);
+  await page.getByRole('button', { name: 'Lägg ingredienser i inköpslista' }).click();
+  await page.getByRole('button', { name: 'Ny lista' }).click();
+  await page.getByRole('textbox', { name: 'Ny inköpslista' }).fill('Helgen');
+  await page.getByRole('button', { name: 'Skapa och lägg till' }).click();
+  assert.equal((await saved()).shoppingLists.length, 2);
+  assert.equal((await saved()).shoppingLists[1].items.length, 3);
+  await page.locator('.recipe-reader .modal-footer').getByRole('button', { name: 'Stäng', exact: true }).click();
+  await page.getByRole('searchbox', { name: 'Sök recept' }).fill('Porotos granados – bönor, pumpa och majs');
+  await page.getByRole('button', { name: 'Öppna recept Porotos granados – bönor, pumpa och majs' }).click();
+  await page.getByRole('button', { name: 'Lägg ingredienser i inköpslista' }).click();
+  await page.getByLabel('Välj inköpslista').selectOption({ label: 'Helgen' });
+  await page.getByRole('button', { name: 'Lägg till', exact: true }).click();
+  assert.ok((await saved()).shoppingLists[1].items.some(item => item.sourceRecipeId === 'forma-receptbank-001'));
+  await page.reload(); await page.getByTestId('home-overview').waitFor();
+  await page.locator('.bottom-nav').getByRole('button', { name: 'Inköp', exact: true }).click();
+  await page.getByRole('button', { name: /Veckohandling/ }).click();
+  await page.getByRole('checkbox', { name: '2 tomater' }).waitFor();
+  if (process.env.SHOPPING_SHOTS) await page.screenshot({ path: `/tmp/forma-shopping-list-${process.env.VIEWPORT_WIDTH || 390}.png` });
+  assert.equal(await page.getByRole('checkbox', { name: 'Mjölk' }).isChecked(), true);
+  await page.getByRole('textbox', { name: 'Redigera 2 tomater' }).fill('4 tomater');
+  await page.getByRole('textbox', { name: 'Redigera 2 tomater' }).press('Tab');
+  assert.equal((await saved()).shoppingLists[0].items[1].title, '4 tomater');
+  await page.getByRole('button', { name: 'Byt namn på Veckohandling' }).click();
+  await page.getByRole('textbox', { name: 'Listnamn' }).fill('Veckans mat');
+  await page.getByRole('button', { name: 'Spara', exact: true }).click();
+  assert.equal((await saved()).shoppingLists[0].title, 'Veckans mat');
+  await page.getByRole('button', { name: 'Ta bort lista', exact: true }).click();
+  await page.getByRole('group', { name: 'Ta bort inköpslista' }).getByRole('button', { name: 'Ta bort lista' }).click();
+  assert.equal((await saved()).shoppingLists.length, 1);
+  await page.getByRole('button', { name: 'Ångra', exact: true }).click();
+  assert.equal((await saved()).shoppingLists.length, 2);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
+  assert.equal(overflow, false);
+  assert.deepEqual(errors, []);
+  console.log('PASS shopping lists: create, add, check, recipe export, new list, reload, mobile width');
+  await browser.close();
+})().catch(error => { console.error(error); process.exitCode = 1; });

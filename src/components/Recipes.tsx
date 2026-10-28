@@ -1,6 +1,6 @@
 import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react'
 import { ArrowUpRight, Check, CookingPot, Heart, ImagePlus, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
-import type { Recipe } from '../lib/types'
+import type { Recipe, ShoppingList } from '../lib/types'
 import { newId } from '../lib/helpers'
 import { isRecipeImage, predefinedRecipeLabels, recipeLabelKey, recipeLabelOptions, validateRecipeUrl } from '../lib/others'
 import { prepareImageAssets } from '../lib/imageStorage'
@@ -75,8 +75,10 @@ function RecipeEditor({ recipe, recipes, onSave, onClose }: {
   </Modal>
 }
 
-export function Recipes({ recipes, onSave, onDelete, initialId, libraryHelp = true, headerAction }: {
+export function Recipes({ recipes, shoppingLists, onAddRecipeToShoppingList, onSave, onDelete, initialId, libraryHelp = true, headerAction }: {
   recipes: Recipe[];
+  shoppingLists: ShoppingList[];
+  onAddRecipeToShoppingList: (recipeId: string, listId: string | null, newTitle?: string) => string | null;
   libraryHelp?: boolean;
   initialId?: string;
   onSave: (edited: Recipe, original?: Recipe) => string | null;
@@ -119,7 +121,7 @@ export function Recipes({ recipes, onSave, onDelete, initialId, libraryHelp = tr
     <div className="others-record-list">{ordered.map(recipe => <article className="others-record-row recipe-list-row" key={recipe.id} data-recipe-id={recipe.id}><button className="others-record-open" type="button" aria-label={`Öppna recept ${recipe.title}`} onClick={() => open(recipe)}>{recipe.image && isRecipeImage(recipe.image) ? <img className="recipe-thumb" src={recipe.image} alt="" loading="lazy" decoding="async" /> : <span className="others-record-icon"><CookingPot size={19} strokeWidth={1.5} /></span>}<span className="others-record-copy"><strong>{recipe.title}</strong>{recipe.labels.length > 0 && <span className="recipe-list-labels">{recipe.labels.filter(label => isCuisineLabel(label) || !['middag', 'receptbanken'].includes(recipeLabelKey(label))).map(label => <span className={`label-chip${isCuisineLabel(label) ? ' recipe-cuisine-chip' : ''}`} key={label}>{displayLabel(label)}</span>)}</span>}</span><ArrowUpRight size={16} /></button>{favoriteButton(recipe)}</article>)}</div>
     {recipes.length === 0 && <p className="others-empty">Inga recept ännu.</p>}
     {recipes.length > 0 && ordered.length === 0 && <p className="others-empty">{query.trim() ? 'Inga recept matchar sökningen. Prova en annan råvara eller ändra filtren.' : favoritesOnly ? (activeFilter ? 'Inga favoriter med den etiketten.' : 'Inga favoriter ännu. Tryck på hjärtat vid ett recept för att spara det här.') : 'Inga recept med den etiketten.'}</p>}
-    {selected && editing === undefined && <RecipeReader key={selected.id} recipe={selected} onClose={() => setSelected(null)} error={error} footer={<>{favoriteButton(selected)}{!isCatalogRecipe(selected.id) && <button className="icon-button danger" type="button" aria-label="Ta bort recept" onClick={() => { const failure = onDelete(selected.id); if (failure) setError(failure); else setSelected(null) }}><Trash2 size={18} /></button>}<button className="button secondary" type="button" onClick={() => setSelected(null)}>Stäng</button><button className="button primary" type="button" onClick={() => { setEditing(selected); setSelected(null) }}><Pencil size={15} />Redigera</button></>} />}
+    {selected && editing === undefined && <RecipeReader key={selected.id} recipe={selected} shoppingLists={shoppingLists} onAddRecipeToShoppingList={onAddRecipeToShoppingList} onClose={() => setSelected(null)} error={error} footer={<>{favoriteButton(selected)}{!isCatalogRecipe(selected.id) && <button className="icon-button danger" type="button" aria-label="Ta bort recept" onClick={() => { const failure = onDelete(selected.id); if (failure) setError(failure); else setSelected(null) }}><Trash2 size={18} /></button>}<button className="button secondary" type="button" onClick={() => setSelected(null)}>Stäng</button><button className="button primary" type="button" onClick={() => { setEditing(selected); setSelected(null) }}><Pencil size={15} />Redigera</button></>} />}
     {editing !== undefined && <RecipeEditor key={editing?.id ?? 'new-recipe'} recipe={editing ?? undefined} recipes={recipes} onSave={onSave} onClose={() => setEditing(undefined)} />}
   </div>
 }

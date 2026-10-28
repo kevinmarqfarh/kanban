@@ -15,7 +15,7 @@ import { Overtime } from './Overtime'
 import { formatOvertime, overtimeBalance } from '../lib/overtime'
 
 type Section = 'overtime' | 'workouts' | 'nutrition' | 'recipes' | 'notes'
-export function Others({ workspace, recipeTimerScope, initialSection, initialRecord, initialNoteId, onBirthdays, onSaveOvertime, onDeleteOvertime, onSaveWorkout, onDeleteWorkout, onRestoreWorkout, onSaveHabit, onToggleHabit, onDeleteHabit, onOrganizeCookbooks, onSaveCookbook, onDeleteCookbook, onSaveRecipe, onDeleteRecipe, onSaveNote, onDeleteNote, onRestoreNote, onPurgeNote, onEmptyNoteTrash, onOpenNoteLink }: {
+export function Others({ workspace, recipeTimerScope, initialSection, initialRecord, initialNoteId, onBirthdays, onSaveOvertime, onDeleteOvertime, onSaveWorkout, onDeleteWorkout, onRestoreWorkout, onSaveHabit, onToggleHabit, onDeleteHabit, onOrganizeCookbooks, onSaveCookbook, onDeleteCookbook, onSaveRecipe, onDeleteRecipe, onAddRecipeToShoppingList, onSaveNote, onDeleteNote, onRestoreNote, onPurgeNote, onEmptyNoteTrash, onOpenNoteLink }: {
   workspace: Workspace;
   recipeTimerScope: string;
   initialSection?: Section | null;
@@ -35,6 +35,7 @@ export function Others({ workspace, recipeTimerScope, initialSection, initialRec
   onDeleteCookbook: (id: string) => string | null;
   onSaveRecipe: (edited: Recipe, original?: Recipe, cookbookId?: string) => string | null;
   onDeleteRecipe: (id: string) => string | null;
+  onAddRecipeToShoppingList: (recipeId: string, listId: string | null, newTitle?: string) => string | null;
   onSaveNote: (edited: Note, original?: Note) => string | null;
   onDeleteNote: (id: string) => string | null;
   onRestoreNote: (note: Note) => string | null;
@@ -49,6 +50,7 @@ export function Others({ workspace, recipeTimerScope, initialSection, initialRec
   const habits = workspace.nutritionHabits ?? []
   const completed = habits.filter(habit => isNutritionComplete(workspace, habit.id, today)).length
   const notes = workspace.notes?.filter(note => !note.deletedAt) ?? []
+  const shoppingLists = workspace.shoppingLists ?? []
   const [section, setSection] = useState<Section | null>(initialSection ?? null)
   useEffect(() => { setSection(initialSection ?? null) }, [initialSection])
   if (!section) return <div className="others-module-list">
@@ -64,7 +66,7 @@ export function Others({ workspace, recipeTimerScope, initialSection, initialRec
     {section === 'overtime' && <Overtime entries={workspace.overtime ?? []} onSave={onSaveOvertime} onDelete={onDeleteOvertime} />}
     {section === 'workouts' && <Workouts workouts={workspace.workouts ?? []} initialId={initialRecord?.kind === 'workout' ? initialRecord.id : undefined} onSave={onSaveWorkout} onDelete={onDeleteWorkout} onRestore={onRestoreWorkout} />}
     {section === 'nutrition' && <Nutrition workspace={workspace} initialHabitId={initialRecord?.kind === 'nutrition' ? initialRecord.id : undefined} onSave={onSaveHabit} onDelete={onDeleteHabit} onToggle={onToggleHabit} />}
-    {section === 'recipes' && <RecipeTimersProvider key={recipeTimerScope} scope={recipeTimerScope}><Cookbooks organized={!!workspace.cuisineCookbooksOrganized} onOrganize={onOrganizeCookbooks} books={workspace.cookbooks ?? []} onSaveBook={onSaveCookbook} onDeleteBook={onDeleteCookbook} recipes={recipes} initialId={initialRecord?.kind === 'recipe' ? initialRecord.id : undefined} onSave={onSaveRecipe} onDelete={onDeleteRecipe} /></RecipeTimersProvider>}
+    {section === 'recipes' && <RecipeTimersProvider key={recipeTimerScope} scope={recipeTimerScope}><Cookbooks organized={!!workspace.cuisineCookbooksOrganized} onOrganize={onOrganizeCookbooks} books={workspace.cookbooks ?? []} onSaveBook={onSaveCookbook} onDeleteBook={onDeleteCookbook} recipes={recipes} shoppingLists={shoppingLists} onAddRecipeToShoppingList={onAddRecipeToShoppingList} initialId={initialRecord?.kind === 'recipe' ? initialRecord.id : undefined} onSave={onSaveRecipe} onDelete={onDeleteRecipe} /></RecipeTimersProvider>}
     {section === 'notes' && <Notes workspace={workspace} initialId={initialNoteId} onSave={onSaveNote} onDelete={onDeleteNote} onRestore={onRestoreNote} onPurge={onPurgeNote} onEmptyTrash={onEmptyNoteTrash} onOpenLink={onOpenNoteLink} />}
   </section>
 }

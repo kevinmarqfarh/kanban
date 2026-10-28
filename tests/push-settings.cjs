@@ -16,6 +16,7 @@ const now = new Date('2026-10-28T10:00:00+01:00');
   let current=null;
   const fakeWorker={pushManager:{getSubscription:async()=>current,subscribe:async()=>{current={endpoint,toJSON:()=>({keys:{p256dh:'public-key',auth:'auth-key'}}),unsubscribe:async()=>{current=null;return true}};return current}}};
   Object.defineProperty(navigator.serviceWorker,'ready',{configurable:true,get:()=>Promise.resolve(fakeWorker)});
+  navigator.serviceWorker.getRegistration=async()=>fakeWorker;
   Object.defineProperty(Notification,'permission',{configurable:true,get:()=>current?'granted':'default'});
   Notification.requestPermission=async()=>'granted';
  },{ref,owner,endpoint});

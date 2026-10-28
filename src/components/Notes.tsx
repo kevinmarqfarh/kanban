@@ -42,6 +42,7 @@ function NoteEditor({ note, workspace, onSave, onDelete, onOpenLink, onBack, ini
   const [typing, setTyping] = useState(false)
   const [words, setWords] = useState(() => wordCount(note.content))
   const [marks, setMarks] = useState({ bold: false, italic: false })
+  const [block, setBlock] = useState<'p' | 'h1' | 'h2' | 'h3'>('p')
   const [bubble, setBubble] = useState<{ x: number; top: number; bottom: number } | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const saveRef = useRef(onSave); saveRef.current = onSave
@@ -134,12 +135,23 @@ function NoteEditor({ note, workspace, onSave, onDelete, onOpenLink, onBack, ini
   function format(command: 'bold' | 'italic') {
     restoreRange(); document.execCommand(command); rememberRange(); persist(); readSelection()
   }
+  function formatBlock(next: 'p' | 'h1' | 'h2' | 'h3') {
+    restoreRange(); document.execCommand('formatBlock', false, next); rememberRange(); persist(); readSelection()
+  }
   // Track bold/italic state at the caret and where a non-empty selection sits, for the pop-up format bar.
   function readSelection() {
     const editor = editorRef.current
     const selection = window.getSelection()
     if (!editor || !selection?.rangeCount || !editor.contains(selection.anchorNode)) { setBubble(null); return }
     setMarks({ bold: document.queryCommandState('bold'), italic: document.queryCommandState('italic') })
+    const selectionNode = selection.anchorNode
+    let anchor = selectionNode?.nodeType === Node.ELEMENT_NODE ? selectionNode as Element : selectionNode?.parentElement
+    if (anchor === editor) {
+      const child = editor.childNodes[Math.min(selection.anchorOffset, editor.childNodes.length - 1)]
+      anchor = child?.nodeType === Node.ELEMENT_NODE ? child as Element : child?.parentElement ?? editor
+    }
+    const heading = anchor?.closest('h1,h2,h3')
+    setBlock(heading && editor.contains(heading) ? heading.tagName.toLowerCase() as 'h1' | 'h2' | 'h3' : 'p')
     const range = selection.getRangeAt(0)
     if (selection.isCollapsed || !range.toString().trim()) { setBubble(null); return }
     rangeRef.current = range.cloneRange()
@@ -183,9 +195,20 @@ function NoteEditor({ note, workspace, onSave, onDelete, onOpenLink, onBack, ini
       <button className="icon-button danger note-focus-delete" aria-label="Ta bort anteckning" title="Ta bort anteckning" onClick={() => { const failure = onDelete(note.id); if (failure) setError(failure); else onBack() }}><Trash2 size={17} /></button>
     </div>
     <input className="note-title-input" aria-label="Anteckningens titel" placeholder="Ny anteckning" maxLength={160} value={title} onChange={event => { setTitle(event.target.value); persist({ title: event.target.value }); if (focusMode) setTyping(true) }} />
-    <div className="note-toolbar note-chrome" role="toolbar" aria-label="Textredigerare"><label><span className="sr-only">Typsnitt</span><select aria-label="Typsnitt" value={font} onChange={event => { const next = event.target.value as NoteFont; setFont(next); persist({ font: next }) }}><option value="system">Standard</option><option value="serif">Serif</option><option value="mono">Monospace</option></select></label><button className={`icon-button${marks.bold ? ' is-active' : ''}`} aria-label="Fet" title="Fet (⌘B)" aria-pressed={marks.bold} onPointerDown={event => { rememberRange(); event.preventDefault(); format('bold') }} onClick={event => { if (event.detail === 0) format('bold') }}><Bold size={18} /></button><button className={`icon-button${marks.italic ? ' is-active' : ''}`} aria-label="Kursiv" title="Kursiv (⌘I)" aria-pressed={marks.italic} onPointerDown={event => { rememberRange(); event.preventDefault(); format('italic') }} onClick={event => { if (event.detail === 0) format('italic') }}><Italic size={18} /></button><button className="icon-button" aria-label="Punktlista" title="Punktlista" onPointerDown={event => { rememberRange(); event.preventDefault(); list('insertUnorderedList') }} onClick={event => { if (event.detail === 0) list('insertUnorderedList') }}><List size={19} /></button><button className="icon-button" aria-label="Numrerad lista" title="Numrerad lista" onPointerDown={event => { rememberRange(); event.preventDefault(); list('insertOrderedList') }} onClick={event => { if (event.detail === 0) list('insertOrderedList') }}><ListOrdered size={19} /></button><button className="icon-button note-insert" aria-label="Lägg till länk" title="Lägg till länk" onPointerDown={event => { rememberRange(); event.preventDefault() }} onClick={() => { rememberRange(); setQuery(''); setPicker(true) }}><Plus size={20} /></button></div>
+    <div className="note-toolbar note-chrome" role="toolbar" aria-label="Textredigerare"><label><span className="sr-only">Typsnitt</span><select aria-label="Typsnitt" value={font} onChange={event => { const next = event.target.value as NoteFont; setFont(next); persist({ font: next }) }}><option value="system">Standard</option><option value="serif">Serif</option><option value="mono">Monospace</option></select></label><label><span className="sr-only">Textstil</span><select aria-label="Textstil" value={block} onPointerDown={rememberRange} onChange={event => formatBlock(event.target.value as 'p' | 'h1' | 'h2' | 'h3')}><option value="p">Brödtext</option><option value="h1">H1 · Stor rubrik</option><option value="h2">H2 · Rubrik</option><option value="h3">H3 · Liten rubrik</option></select></label><button className={`icon-button${marks.bold ? ' is-active' : ''}`} aria-label="Fet" title="Fet (⌘B)" aria-pressed={marks.bold} onPointerDown={event => { rememberRange(); event.preventDefault(); format('bold') }} onClick={event => { if (event.detail === 0) format('bold') }}><Bold size={18} /></button><button className={`icon-button${marks.italic ? ' is-active' : ''}`} aria-label="Kursiv" title="Kursiv (⌘I)" aria-pressed={marks.italic} onPointerDown={event => { rememberRange(); event.preventDefault(); format('italic') }} onClick={event => { if (event.detail === 0) format('italic') }}><Italic size={18} /></button><button className="icon-button" aria-label="Punktlista" title="Punktlista" onPointerDown={event => { rememberRange(); event.preventDefault(); list('insertUnorderedList') }} onClick={event => { if (event.detail === 0) list('insertUnorderedList') }}><List size={19} /></button><button className="icon-button" aria-label="Numrerad lista" title="Numrerad lista" onPointerDown={event => { rememberRange(); event.preventDefault(); list('insertOrderedList') }} onClick={event => { if (event.detail === 0) list('insertOrderedList') }}><ListOrdered size={19} /></button><button className="icon-button note-insert" aria-label="Lägg till länk" title="Lägg till länk" onPointerDown={event => { rememberRange(); event.preventDefault() }} onClick={() => { rememberRange(); setQuery(''); setPicker(true) }}><Plus size={20} /></button></div>
     {error && <div className="note-error" role="alert"><p>{error}</p><button className="button secondary" onClick={() => persist()}>Försök igen</button></div>}
-    <div ref={editorRef} className="note-content" data-font={font} contentEditable suppressContentEditableWarning role="textbox" aria-label="Anteckningens text" aria-multiline="true" data-placeholder="Skriv en anteckning…" spellCheck onInput={event => { if (!(event.nativeEvent as InputEvent).isComposing) autoBullet(); rememberRange(); persist(); if (focusMode) setTyping(true) }} onKeyUp={rememberRange} onMouseUp={rememberRange} onBlur={rememberRange} onPaste={event => { event.preventDefault(); document.execCommand('insertText', false, event.clipboardData.getData('text/plain')); rememberRange(); persist() }} onClick={event => { const anchor = (event.target as HTMLElement).closest<HTMLAnchorElement>('a[data-note-kind]'); if (anchor) { event.preventDefault(); setError(onOpenLink(anchor.dataset.noteKind as NoteLinkKind, anchor.dataset.noteTarget!)) } }} />
+    <div ref={editorRef} className="note-content" data-font={font} contentEditable suppressContentEditableWarning role="textbox" aria-label="Anteckningens text" aria-multiline="true" data-placeholder="Skriv en anteckning…" spellCheck onInput={event => { if (!(event.nativeEvent as InputEvent).isComposing) autoBullet(); rememberRange(); persist(); readSelection(); if (focusMode) setTyping(true) }} onKeyUp={() => { rememberRange(); readSelection() }} onMouseUp={() => { rememberRange(); readSelection() }} onBlur={rememberRange} onPaste={event => { event.preventDefault(); document.execCommand('insertText', false, event.clipboardData.getData('text/plain')); rememberRange(); persist() }} onDragOver={event => event.preventDefault()} onDrop={event => {
+      // Browser HTML drops enter the live DOM before onInput sanitizes storage.
+      // Insert text only, matching paste, so dropped markup cannot load resources.
+      event.preventDefault()
+      const text = event.dataTransfer.getData('text/plain') || notePlainText(event.dataTransfer.getData('text/html'))
+      if (!text) return
+      const range = document.caretRangeFromPoint?.(event.clientX, event.clientY)
+      if (range && editorRef.current?.contains(range.startContainer)) {
+        const selection = window.getSelection(); selection?.removeAllRanges(); selection?.addRange(range)
+      }
+      document.execCommand('insertText', false, text); rememberRange(); persist(); readSelection()
+    }} onClick={event => { const anchor = (event.target as HTMLElement).closest<HTMLAnchorElement>('a[data-note-kind]'); if (anchor) { event.preventDefault(); setError(onOpenLink(anchor.dataset.noteKind as NoteLinkKind, anchor.dataset.noteTarget!)) } else readSelection() }} />
     </div>
     {desktop && bubble && !picker && createPortal(<div className="note-format-bubble" role="toolbar" aria-label="Formatera markerad text"
       style={{ left: Math.min(Math.max(bubble.x, 110), window.innerWidth - 110), top: matchMedia('(pointer: coarse)').matches ? bubble.bottom + 12 : Math.max(bubble.top - 52, 8) }}

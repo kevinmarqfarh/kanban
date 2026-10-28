@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { ArrowLeft, ArrowRight, BookOpen, Check, Heart, ImagePlus, Library, Pencil, Plus, Trash2 } from 'lucide-react'
-import type { Cookbook, Recipe } from '../lib/types'
+import type { Cookbook, Recipe, ShoppingList } from '../lib/types'
 import { newId } from '../lib/helpers'
 import { isRecipeImage } from '../lib/others'
 import { prepareImageAssets } from '../lib/imageStorage'
@@ -64,9 +64,9 @@ function RecipePicker({ book, recipes, onSave, onClose }: { book: Cookbook; reci
   </Modal>
 }
 
-export function Cookbooks({ organized, onOrganize, books, recipes, initialId, onSaveBook, onDeleteBook, onSave, onDelete }: {
+export function Cookbooks({ organized, onOrganize, books, recipes, shoppingLists, onAddRecipeToShoppingList, initialId, onSaveBook, onDeleteBook, onSave, onDelete }: {
   organized: boolean; onOrganize: () => string | null;
-  books: Cookbook[]; recipes: Recipe[]; initialId?: string; onSaveBook: SaveBook; onDeleteBook: (id: string) => string | null;
+  books: Cookbook[]; recipes: Recipe[]; shoppingLists: ShoppingList[]; onAddRecipeToShoppingList: (recipeId: string, listId: string | null, newTitle?: string) => string | null; initialId?: string; onSaveBook: SaveBook; onDeleteBook: (id: string) => string | null;
   onSave: (recipe: Recipe, original?: Recipe, cookbookId?: string) => string | null; onDelete: (id: string) => string | null;
 }) {
   const [organizeError, setOrganizeError] = useState<string | null>(null)
@@ -98,7 +98,7 @@ export function Cookbooks({ organized, onOrganize, books, recipes, initialId, on
     </> : <>
       <button className="button ghost cookbook-back" type="button" onClick={() => setScope(null)}><ArrowLeft size={16} />Alla kokböcker</button>
       <header className="cookbook-heading">{book && <div className="cookbook-mini-cover">{cover(book)}</div>}<div><p className="eyebrow">{book ? 'Min kokbok' : 'Receptbibliotek'}</p><h3>{title}</h3><p className="others-help">{filtered.length} recept</p></div>{book && <button className="icon-button" type="button" aria-label={`Redigera kokbok ${book.title}`} onClick={() => setEditing(book)}><Pencil size={18} /></button>}</header>
-      <Recipes key={scope} headerAction={book ? <button className="button secondary cookbook-add-existing" type="button" aria-label="Välj från befintliga recept" onClick={() => setPicking(book)}><Plus size={16} /><span>Välj recept</span></button> : undefined} recipes={filtered} libraryHelp={scope === 'all'} initialId={initialId} onSave={(recipe, original) => onSave(scope === 'favorites' && !original ? { ...recipe, favorite: true } : recipe, original, book?.id)} onDelete={onDelete} />
+      <Recipes key={scope} headerAction={book ? <button className="button secondary cookbook-add-existing" type="button" aria-label="Välj från befintliga recept" onClick={() => setPicking(book)}><Plus size={16} /><span>Välj recept</span></button> : undefined} recipes={filtered} shoppingLists={shoppingLists} onAddRecipeToShoppingList={onAddRecipeToShoppingList} libraryHelp={scope === 'all'} initialId={initialId} onSave={(recipe, original) => onSave(scope === 'favorites' && !original ? { ...recipe, favorite: true } : recipe, original, book?.id)} onDelete={onDelete} />
     </>}
     {editing !== undefined && <BookEditor key={editing?.id ?? 'new-book'} book={editing ?? undefined} onSave={onSaveBook} onDelete={onDeleteBook} onClose={() => setEditing(undefined)} />}
     {picking && <RecipePicker key={picking.id} book={picking} recipes={recipes} onSave={onSaveBook} onClose={() => setPicking(null)} />}

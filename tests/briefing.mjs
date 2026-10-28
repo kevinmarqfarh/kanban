@@ -66,7 +66,7 @@ assert.match(weekdayLabel('2026-10-10', TODAY), /^Lördag 10 okt/)
   const result = buildDailyBriefing(workspace([task('Klar sak', { columnId: 'done' }), task('Arkiverad', { columnId: 'finalized' })]), TODAY, at('12:00'))
   assert.equal(result.stats.open, 0)
   assert.equal(result.tips[0].title, 'Allt i Planner är klart')
-  assert.equal(result.greeting, 'Hej')
+  assert.equal(result.greeting, 'God dag')
 }
 
 // --- A busy day: ordering of focus, reasons, stats and tips ---

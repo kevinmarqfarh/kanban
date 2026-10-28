@@ -36,6 +36,11 @@
 .note-toolbar .icon-button { flex-shrink: 0; min-width: 44px; min-height: 44px; border-radius: 9px; }
 .note-toolbar .icon-button.is-active { background: var(--accent-soft); color: var(--ink); }
 .note-content b, .note-content strong { font-weight: 650; }
+.note-content h1, .note-content h2, .note-content h3 { font-family: inherit; color: inherit; letter-spacing: -0.025em; overflow-wrap: anywhere; }
+.note-content h1 { margin: .9em 0 .3em; font-size: 1.8em; font-weight: 700; line-height: 1.25; }
+.note-content h2 { margin: .85em 0 .3em; font-size: 1.45em; font-weight: 680; line-height: 1.3; }
+.note-content h3 { margin: .8em 0 .25em; font-size: 1.2em; font-weight: 650; line-height: 1.4; }
+.note-content > :is(h1, h2, h3):first-child { margin-top: 0; }
 .note-format-bubble { position: fixed; z-index: 90; display: flex; align-items: center; gap: 2px; padding: 4px; border-radius: 13px; background: var(--accent); color: var(--accent-ink); box-shadow: var(--shadow-popover); transform: translateX(-50%); animation: fade-in 120ms ease-out; }
 .note-format-bubble button { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 40px; border-radius: 9px; color: inherit; opacity: 0.8; }
 .note-format-bubble button:hover, .note-format-bubble button.is-active { opacity: 1; background: color-mix(in srgb, var(--accent-ink) 16%, transparent); }
@@ -91,6 +96,10 @@ html.note-focus-open :is(.topbar, .bottom-nav, .page-heading, .others-section-he
   .note-editor-heading > .note-focus-toggle { margin-left: 0; }
   .note-title-input { font-size: 24px; }
   .notes-search input, .note-toolbar select { font-size: 16px; }
+  .note-toolbar, .note-editor.is-focus .note-toolbar { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; width: 100%; }
+  .note-toolbar label:first-of-type { grid-column: span 2; }
+  .note-toolbar label:nth-of-type(2) { grid-column: span 3; }
+  .note-toolbar .icon-button { width: 100%; }
   .note-link-picker > button { grid-template-columns: 70px minmax(0, 1fr) 18px; gap: 7px; }
 }
 

@@ -22,6 +22,10 @@ const { isWorkspace, separateProjectTasks } = await readModule('../src/lib/works
 const seed = createSeedWorkspace()
 assert.ok(isWorkspace(seed), 'The example board must be valid and every task must reference an existing column/project.')
 assert.ok(isWorkspace(createEmptyWorkspace()), 'A new account has a valid empty board.')
+const diaryEntry = { id: 'diary-1', date: '2026-10-28', mood: 'good', answers: [{ id: 'question-1', prompt: 'Vad var bra?', answer: 'En promenad' }], createdAt: '2026-10-28T10:00:00.000Z', updatedAt: '2026-10-28T10:00:00.000Z' }
+assert.ok(isWorkspace({ ...createEmptyWorkspace(), diaryTemplate: [{ id: 'question-1', prompt: 'Vad var bra?' }], diaryEntries: [diaryEntry] }))
+assert.equal(isWorkspace({ ...createEmptyWorkspace(), diaryEntries: [diaryEntry, { ...diaryEntry, id: 'diary-2' }] }), false, 'Only one journal entry per day is valid.')
+assert.equal(isWorkspace({ ...createEmptyWorkspace(), diaryEntries: [{ ...diaryEntry, mood: 'unknown' }] }), false)
 assert.equal(seed.tasks.length, 9)
 const legacy = createSeedWorkspace()
 delete legacy.birthdays

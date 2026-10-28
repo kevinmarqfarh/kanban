@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { assertPublicBuildKey } from './src/lib/publicKey.ts'
 
 // The deployed commit, shown in crash reports so an error can be traced to the exact build.
 // `process` exists when Vite loads this file in Node; declared here so the app's tsconfig needs no Node types.
@@ -8,13 +9,18 @@ const version = (process.env.VERCEL_GIT_COMMIT_SHA ?? '').slice(0, 7) || 'local'
 
 export default defineConfig({
   define: { __FORMA_VERSION__: JSON.stringify(version) },
-  plugins: [react(), {
+  plugins: [{
+    name: 'forma-public-config',
+    configResolved(config) {
+      assertPublicBuildKey(config.env.VITE_SUPABASE_PUBLISHABLE_KEY)
+    },
+  }, react(), {
     name: 'forma-offline-shell',
     apply: 'build',
     generateBundle(_options, bundle) {
       const assets = Object.keys(bundle).filter(name => /\.(js|css|woff2?|png|svg)$/.test(name)).sort()
       const version = Date.now().toString(36)
-      const paths = ['/index.html', '/manifest.webmanifest', '/icon.svg', '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png', ...assets.map(name => '/' + name)]
+      const paths = ['/index.html', '/boot.js', '/manifest.webmanifest', '/icon.svg', '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png', ...assets.map(name => '/' + name)]
       this.emitFile({ type: 'asset', fileName: 'sw.js', source: `
 const CACHE = 'forma-shell-${version}';
 const ASSETS = ${JSON.stringify(paths)};

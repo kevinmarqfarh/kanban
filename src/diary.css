@@ -1,0 +1,40 @@
+.diary-page { width: min(780px, 100%); display: grid; gap: 24px; padding-bottom: 36px; }
+.diary-datebar { display: flex; align-items: center; gap: 8px; }
+.diary-datebar > label { display: flex; align-items: center; gap: 10px; color: var(--ink-muted); font-size: 12px; }
+.diary-datebar input { min-height: 40px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; }
+.diary-datebar .icon-button { border: 1px solid var(--line); border-radius: 10px; }
+.diary-empty { display: grid; justify-items: start; gap: 16px; padding: 38px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.diary-empty p, .diary-template > p { margin: 0; color: var(--ink-muted); }
+.diary-editor, .diary-template, .diary-history { padding-top: 20px; border-top: 1px solid var(--line); }
+.diary-section-head { display: flex; justify-content: space-between; align-items: start; gap: 16px; margin-bottom: 22px; }
+.diary-section-head h2, .diary-history h2 { margin: 4px 0 0; color: var(--ink); font-size: clamp(18px, 2vw, 24px); font-weight: 550; text-transform: capitalize; }
+.diary-section-head .eyebrow { margin: 0; }
+.diary-saved { display: inline-flex; align-items: center; gap: 5px; color: var(--ink-muted); font-size: 12px; }
+.diary-moods { margin: 0 0 24px; padding: 0; border: 0; }
+.diary-moods legend { margin-bottom: 12px; font-size: 13px; color: var(--ink); }
+.diary-moods > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.diary-moods button { display: flex; align-items: center; gap: 7px; min-height: 42px; padding: 8px 13px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink-secondary); font-size: 12px; }
+.diary-moods button.active { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+.diary-moods button span { font-size: 18px; line-height: 1; }
+.diary-answers { display: grid; gap: 20px; }
+.diary-answers label { display: grid; gap: 9px; font-size: 14px; color: var(--ink); }
+.diary-answers textarea { width: 100%; min-height: 100px; padding: 14px 16px; resize: vertical; border: 1px solid var(--line); border-radius: 14px; outline: none; background: var(--surface); color: var(--ink); font: inherit; line-height: 1.5; }
+.diary-answers textarea:focus, .diary-template-edit input:focus { border-color: var(--accent); }
+.diary-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+.diary-auto-save { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-muted); font-size: 12px; }
+.diary-template-edit { display: grid; gap: 10px; }
+.diary-template-edit > div, .diary-template-edit form { display: flex; align-items: center; gap: 8px; }
+.diary-template-edit .input { flex: 1; min-width: 0; }
+.diary-template-edit > .button { justify-self: start; margin-top: 6px; }
+.diary-history > div { display: grid; gap: 4px; margin-top: 14px; }
+.diary-history button { display: flex; justify-content: space-between; padding: 10px 4px; border-bottom: 1px solid var(--line); color: var(--ink-secondary); text-align: left; }
+.diary-history button.active { color: var(--ink); font-weight: 600; }
+.task-card-checklist { margin: 8px 0 0; border-top: 1px solid var(--line); }
+.task-checklist-toggle { display: flex; align-items: center; gap: 7px; width: 100%; min-height: 34px; padding: 7px 0; color: var(--ink-secondary); font-size: 11px; text-align: left; }
+.task-checklist-toggle span { margin-left: auto; color: var(--ink-muted); }
+.task-checklist-items { display: grid; gap: 2px; padding: 3px 0 6px; }
+.task-checklist-items label { display: flex; align-items: start; gap: 9px; padding: 6px 0; color: var(--ink); font-size: 12px; line-height: 1.4; cursor: pointer; }
+.task-checklist-items input { width: 17px; height: 17px; flex: 0 0 auto; margin: 0; accent-color: var(--accent); }
+.task-checklist-items .completed { color: var(--ink-muted); text-decoration: line-through; }
+@media (max-width: 600px) { .diary-page { gap: 20px; } .diary-datebar { flex-wrap: wrap; } .diary-moods > div { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; } .diary-moods button { flex-direction: column; gap: 3px; padding: 8px 3px; font-size: 10px; } .diary-section-head { align-items: center; } }
+@media (min-width: 601px) and (max-width: 1100px) { .app-shell:not(.is-desktop) .bottom-nav { width: min(840px, calc(100% - 32px)); } .app-shell:not(.is-desktop) .bottom-nav .nav-item { flex: 1; min-width: 0; padding-inline: 9px; } }

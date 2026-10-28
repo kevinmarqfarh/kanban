@@ -62,6 +62,9 @@ export function mergeWorkspaceChanges(base: Workspace, edited: Workspace, latest
     ...((base.nutritionHabits || edited.nutritionHabits || latest.nutritionHabits) ? { nutritionHabits: mergeList(base.nutritionHabits ?? [], edited.nutritionHabits ?? [], latest.nutritionHabits ?? []) } : {}),
     ...((base.nutritionCompletions || edited.nutritionCompletions || latest.nutritionCompletions) ? { nutritionCompletions: mergeList(base.nutritionCompletions ?? [], edited.nutritionCompletions ?? [], latest.nutritionCompletions ?? []) } : {}),
     ...((base.recipes || edited.recipes || latest.recipes) ? { recipes: mergeList(base.recipes ?? [], edited.recipes ?? [], latest.recipes ?? []) } : {}),
+    ...((base.shoppingLists || edited.shoppingLists || latest.shoppingLists) ? { shoppingLists: mergeList(base.shoppingLists ?? [], edited.shoppingLists ?? [], latest.shoppingLists ?? []) } : {}),
+    ...((base.diaryEntries || edited.diaryEntries || latest.diaryEntries) ? { diaryEntries: mergeList(base.diaryEntries ?? [], edited.diaryEntries ?? [], latest.diaryEntries ?? []) } : {}),
+    ...(same(base.diaryTemplate, edited.diaryTemplate) ? {} : { diaryTemplate: edited.diaryTemplate }),
     ...((base.notes || edited.notes || latest.notes) ? { notes: mergeList(base.notes ?? [], edited.notes ?? [], latest.notes ?? []) } : {}),
   }
 }

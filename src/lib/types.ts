@@ -154,6 +154,21 @@ export interface Recipe {
   image?: string
 }
 
+export interface ShoppingItem {
+  id: string
+  title: string
+  checked: boolean
+  sourceRecipeId?: string
+}
+
+export interface ShoppingList {
+  id: string
+  title: string
+  items: ShoppingItem[]
+  createdAt: string
+  updatedAt: string
+}
+
 export type NoteFont = 'system' | 'serif' | 'mono'
 export type NoteLinkKind = 'task' | 'project' | 'workout' | 'nutrition' | 'recipe' | 'birthday'
 export interface Note {
@@ -179,6 +194,18 @@ export interface DailyDebrief {
   dismissedAt: string | null
 }
 
+export type DiaryMood = 'great' | 'good' | 'okay' | 'low' | 'hard'
+export interface DiaryQuestion { id: string; prompt: string }
+export interface DiaryAnswer extends DiaryQuestion { answer: string }
+export interface DiaryEntry {
+  id: string
+  date: string
+  mood: DiaryMood | null
+  answers: DiaryAnswer[]
+  createdAt: string
+  updatedAt: string
+}
+
 export interface DebriefPayload {
   date: string
   title: string
@@ -201,6 +228,9 @@ export interface Workspace {
   cuisineCookbooksOrganized?: boolean
   cookbooks?: Cookbook[]
   recipes?: Recipe[]
+  shoppingLists?: ShoppingList[]
+  diaryTemplate?: DiaryQuestion[]
+  diaryEntries?: DiaryEntry[]
   notes?: Note[]
 }
 

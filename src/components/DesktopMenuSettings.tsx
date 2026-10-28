@@ -1,22 +1,24 @@
 import { useState } from 'react'
-import { House, Columns3, CalendarDays, Folder, LayoutList, NotebookText, BookOpen, Utensils, Dumbbell, Cake, Pencil, ArrowUp, ArrowDown } from 'lucide-react'
+import { House, Columns3, CalendarDays, Folder, LayoutList, NotebookText, BookOpen, Utensils, Dumbbell, Cake, Pencil, ArrowUp, ArrowDown, ShoppingBasket, BookHeart } from 'lucide-react'
 
 export const menuOptions = [
   { id: 'home', label: 'Home', Icon: House }, { id: 'planner', label: 'Planner', Icon: Columns3 },
   { id: 'schedule', label: 'Schema', Icon: CalendarDays }, { id: 'projects', label: 'Projects', Icon: Folder },
+  { id: 'shopping', label: 'Inköp', Icon: ShoppingBasket }, { id: 'diary', label: 'Dagbok', Icon: BookHeart },
   { id: 'others', label: 'Others', Icon: LayoutList }, { id: 'notes', label: 'Anteckningar', Icon: NotebookText },
   { id: 'recipes', label: 'Recept', Icon: BookOpen }, { id: 'nutrition', label: 'Kost', Icon: Utensils },
   { id: 'workouts', label: 'Träning', Icon: Dumbbell }, { id: 'birthdays', label: 'Födelsedagar', Icon: Cake },
 ] as const
 export type MenuId = typeof menuOptions[number]['id']
-export const defaultMenu: MenuId[] = ['home', 'planner', 'schedule', 'projects', 'others']
-const key = 'forma-desktop-menu-v1'
+export const defaultMenu: MenuId[] = ['home', 'planner', 'schedule', 'projects', 'shopping', 'diary', 'others']
+const key = 'forma-desktop-menu-v2'
 export function readDesktopMenu(): MenuId[] {
   try {
-    const value: unknown = JSON.parse(localStorage.getItem(key) || 'null')
+    const value: unknown = JSON.parse(localStorage.getItem(key) || localStorage.getItem('forma-desktop-menu-v1') || 'null')
     if (Array.isArray(value)) {
       const valid = [...new Set(value.filter((id): id is MenuId => menuOptions.some(item => item.id === id)))]
-      return valid.includes('home') ? valid : ['home', ...valid]
+      const migrated = localStorage.getItem(key) ? valid : [...valid, 'shopping', 'diary'] as MenuId[]
+      return migrated.includes('home') ? migrated : ['home', ...migrated]
     }
   } catch { /* Use the standard menu when a preference cannot be read. */ }
   return defaultMenu

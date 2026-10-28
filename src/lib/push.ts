@@ -7,8 +7,10 @@ export function pushAvailable() {
 }
 export async function currentPushSubscription(): Promise<PushSubscription | null> {
   if (!pushAvailable()) return null
-  const worker = await navigator.serviceWorker.ready
-  return worker.pushManager.getSubscription()
+  // `ready` never settles when registration is blocked or failed. Reading an
+  // existing subscription must not prevent the user from signing out.
+  const worker = await navigator.serviceWorker.getRegistration()
+  return worker ? worker.pushManager.getSubscription() : null
 }
 export async function removeCurrentPushSubscription(userId: string): Promise<string | null> {
   if (!supabase) return null

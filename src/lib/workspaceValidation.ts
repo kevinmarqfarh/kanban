@@ -65,6 +65,20 @@ export function isWorkspace(value: unknown): value is Workspace {
     && (entry.catalogEdited === undefined || typeof entry.catalogEdited === 'boolean')
     && (entry.ingredients === undefined || typeof entry.ingredients === 'string')
     && (entry.notes === undefined || typeof entry.notes === 'string'))) return false
+  if (!optional('shoppingLists', entry => object(entry) && filled(entry.id) && filled(entry.title) && entry.title.length <= 80
+    && timestamp(entry.createdAt) && timestamp(entry.updatedAt) && Array.isArray(entry.items) && entry.items.length <= 1000
+    && entry.items.every(item => object(item) && filled(item.id) && filled(item.title) && item.title.length <= 500
+      && typeof item.checked === 'boolean' && (item.sourceRecipeId === undefined || (filled(item.sourceRecipeId) && item.sourceRecipeId.length <= 200)))
+    && new Set(entry.items.map(item => item.id)).size === entry.items.length)) return false
+  if (value.diaryTemplate !== undefined && (!Array.isArray(value.diaryTemplate) || value.diaryTemplate.length > 20
+    || !value.diaryTemplate.every(question => object(question) && filled(question.id) && filled(question.prompt) && question.prompt.length <= 200)
+    || new Set(value.diaryTemplate.map(question => question.id)).size !== value.diaryTemplate.length)) return false
+  if (!optional('diaryEntries', entry => object(entry) && filled(entry.id) && date(entry.date)
+    && (entry.mood === null || ['great', 'good', 'okay', 'low', 'hard'].includes(String(entry.mood)))
+    && timestamp(entry.createdAt) && timestamp(entry.updatedAt) && Array.isArray(entry.answers) && entry.answers.length <= 20
+    && entry.answers.every(answer => object(answer) && filled(answer.id) && filled(answer.prompt) && answer.prompt.length <= 200
+      && typeof answer.answer === 'string' && answer.answer.length <= 5000)
+    && new Set(entry.answers.map(answer => answer.id)).size === entry.answers.length)) return false
   if (!optional('notes', entry => object(entry) && filled(entry.id) && filled(entry.title) && entry.title.length <= 160
     && typeof entry.content === 'string' && entry.content.length <= 200_000
     && (entry.pinned === undefined || typeof entry.pinned === 'boolean')
@@ -83,7 +97,8 @@ export function isWorkspace(value: unknown): value is Workspace {
     && unique(workspace.birthdays ?? [])
     && unique(workspace.birthdayNotifications ?? []) && unique(workspace.workouts ?? []) && unique(workspace.nutritionHabits ?? [])
     && unique(workspace.nutritionCompletions ?? []) && unique(workspace.recipes ?? [])
-    && unique(workspace.cookbooks ?? []) && unique(workspace.notes ?? []) && unique(workspace.overtime ?? [])
+    && unique(workspace.cookbooks ?? []) && unique(workspace.shoppingLists ?? []) && unique(workspace.diaryEntries ?? []) && unique(workspace.notes ?? []) && unique(workspace.overtime ?? [])
+    && new Set((workspace.diaryEntries ?? []).map(entry => entry.date)).size === (workspace.diaryEntries ?? []).length
     && (workspace.workouts ?? []).every(workout => unique(workout.rows))
     && (workspace.nutritionCompletions ?? []).every(entry => workspace.nutritionHabits?.some(habit => habit.id === entry.habitId))
     && workspace.tasks.every(task => workspace.columns.some(column => column.id === task.columnId)

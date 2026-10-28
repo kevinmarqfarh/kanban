@@ -383,6 +383,10 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
+# The handler verifies user bearer tokens with getUser and checks cron's own token.
+[functions.forma-push]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

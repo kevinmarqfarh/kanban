@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { ArrowUpRight, Check, Minus, MonitorCheck, Plus } from 'lucide-react'
-import type { Recipe } from '../lib/types'
+import { ArrowUpRight, Check, Minus, MonitorCheck, Plus, ShoppingBasket } from 'lucide-react'
+import type { Recipe, ShoppingList } from '../lib/types'
 import { isRecipeImage, safeRecipeUrl } from '../lib/others'
 import { isCuisineLabel, recipeContent, recipeIngredientLines, recipeMethodSteps, recipeSummary } from '../lib/recipeContent'
 import { recipeStepTimers } from '../lib/recipeTimers'
@@ -29,10 +29,15 @@ function useCookingScreen() {
   return awake
 }
 
-export function RecipeReader({ recipe, footer, error, onClose }: { recipe: Recipe; footer: ReactNode; error?: string | null; onClose: () => void }) {
+export function RecipeReader({ recipe, shoppingLists, onAddRecipeToShoppingList, footer, error, onClose }: { recipe: Recipe; shoppingLists: ShoppingList[]; onAddRecipeToShoppingList: (recipeId: string, listId: string | null, newTitle?: string) => string | null; footer: ReactNode; error?: string | null; onClose: () => void }) {
   const [ingredientsDone, setIngredientsDone] = useState<number[]>([])
   const [stepsDone, setStepsDone] = useState<number[]>([])
   const [fontSize, setFontSize] = useState(() => window.matchMedia('(max-width: 699px), (pointer: coarse) and (max-height: 599px)').matches ? 18 : 20)
+  const [showShopping, setShowShopping] = useState(false)
+  const [createShoppingList, setCreateShoppingList] = useState(false)
+  const [shoppingListId, setShoppingListId] = useState(shoppingLists[0]?.id ?? '')
+  const [newShoppingTitle, setNewShoppingTitle] = useState('')
+  const [shoppingMessage, setShoppingMessage] = useState<{ text: string; error: boolean } | null>(null)
   const awake = useCookingScreen()
   const ingredientPane = useRef<HTMLElement>(null), methodPane = useRef<HTMLElement>(null)
   const content = recipeContent(recipe), ingredients = recipeIngredientLines(content.ingredients), steps = recipeMethodSteps(content.method)
@@ -41,6 +46,14 @@ export function RecipeReader({ recipe, footer, error, onClose }: { recipe: Recip
   const link = safeRecipeUrl(recipe.url)
   const hasImage = !!recipe.image && isRecipeImage(recipe.image)
   const toggle = (current: number[], index: number) => current.includes(index) ? current.filter(value => value !== index) : [...current, index]
+  function addToShopping() {
+    const targetId = shoppingLists.some(list => list.id === shoppingListId) ? shoppingListId : shoppingLists[0]?.id
+    const title = newShoppingTitle.trim()
+    if (createShoppingList && !title) return
+    const failure = onAddRecipeToShoppingList(recipe.id, createShoppingList || !targetId ? null : targetId, createShoppingList || !targetId ? title : undefined)
+    setShoppingMessage({ text: failure ?? `Ingredienserna har lagts till i ${createShoppingList || !targetId ? title : shoppingLists.find(list => list.id === targetId)?.title}.`, error: !!failure })
+    if (!failure) { setShowShopping(false); setNewShoppingTitle('') }
+  }
   return <Modal className={`recipe-reader${hasImage ? ' recipe-reader-has-image' : ''}`} phoneFullscreen focusForm={false} title={recipe.title} subtitle="Matlagning" onClose={onClose} footer={<><RecipeTimerDock /><div className="recipe-reader-actions">{footer}</div></>} error={error}>
     {hasImage && <figure className="recipe-reader-hero"><img src={recipe.image} alt={`Bild till ${recipe.title}`} /></figure>}
     <div className="recipe-reader-info">
@@ -48,6 +61,10 @@ export function RecipeReader({ recipe, footer, error, onClose }: { recipe: Recip
         <div className="recipe-detail-labels">{recipe.labels.filter(isCuisineLabel).map(label => <span className="label-chip recipe-cuisine-chip" key={label}>{label}</span>)}{awake && <span className="recipe-screen-awake"><MonitorCheck size={15} aria-hidden="true" />Skärm vaken</span>}</div>
       </div>
       <div className="recipe-reading-tools" role="group" aria-label="Textstorlek"><button className="icon-button" type="button" aria-label="Minska textstorlek" disabled={fontSize <= 16} onClick={() => setFontSize(size => Math.max(16, size - 2))}><Minus size={18} /></button><span aria-hidden="true">Aa</span><button className="icon-button" type="button" aria-label="Öka textstorlek" disabled={fontSize >= 28} onClick={() => setFontSize(size => Math.min(28, size + 2))}><Plus size={18} /></button></div>
+      <div className="recipe-shopping"><button className="button secondary" type="button" disabled={!ingredients.length} aria-expanded={showShopping} onClick={() => { setShowShopping(value => !value); setShoppingMessage(null); setCreateShoppingList(!shoppingLists.length) }}><ShoppingBasket size={16} />Lägg ingredienser i inköpslista</button>
+        {showShopping && <div className="recipe-shopping-picker">{!createShoppingList && shoppingLists.length > 0 ? <><label>Välj inköpslista<select className="select" value={shoppingLists.some(list => list.id === shoppingListId) ? shoppingListId : shoppingLists[0].id} onChange={event => setShoppingListId(event.target.value)}>{shoppingLists.map(list => <option value={list.id} key={list.id}>{list.title}</option>)}</select></label><button className="button primary" type="button" onClick={addToShopping}>Lägg till</button><button className="button ghost" type="button" onClick={() => setCreateShoppingList(true)}>Ny lista</button></> : <><label>Ny inköpslista<input className="input" autoFocus maxLength={80} value={newShoppingTitle} placeholder="T.ex. Veckohandling" onChange={event => setNewShoppingTitle(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); addToShopping() } }} /></label><button className="button primary" type="button" disabled={!newShoppingTitle.trim()} onClick={addToShopping}>Skapa och lägg till</button>{shoppingLists.length > 0 && <button className="button ghost" type="button" onClick={() => setCreateShoppingList(false)}>Välj lista</button>}</>}</div>}
+        {shoppingMessage && <p className={`recipe-shopping-status${shoppingMessage.error ? ' is-error' : ''}`} role="status">{shoppingMessage.text}</p>}
+      </div>
     </div>
     <nav className="recipe-reader-jump" aria-label="Läs receptet"><button type="button" onClick={() => ingredientPane.current?.scrollIntoView({ block: 'start' })}>Ingredienser</button><button type="button" onClick={() => methodPane.current?.scrollIntoView({ block: 'start' })}>Gör så här</button></nav>
     <div className="recipe-content-sections" style={{ '--recipe-font-size': `${fontSize}px` } as CSSProperties}>

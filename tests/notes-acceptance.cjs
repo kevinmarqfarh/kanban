@@ -75,6 +75,25 @@ const insert = async (page, title) => {
       await page.reload(); await openNote(page, 'Listor'); assert.equal(await page.getByLabel('Typsnitt').inputValue(), 'mono'); await text(page).locator('ol li').waitFor();
     } finally { await context.close(); }
   });
+  await check('H1, H2 and H3 format the current block, track the caret and survive reload', async () => {
+    const { page, context } = await fresh();
+    try {
+      await newNote(page, 'Rubriker', 'En rubrik');
+      const style = page.getByRole('combobox', { name: 'Textstil' });
+      for (const level of ['h1', 'h2', 'h3']) {
+        await style.selectOption(level);
+        await text(page).locator(level).waitFor();
+        assert.match((await cache(page)).notes[0].content, new RegExp(`<${level}>En rubrik</${level}>`));
+        await text(page).locator(level).click();
+        assert.equal(await style.inputValue(), level);
+      }
+      await page.reload(); await openNote(page, 'Rubriker');
+      await text(page).locator('h3').click(); assert.equal(await style.inputValue(), 'h3');
+      await style.selectOption('p');
+      await text(page).locator('p').waitFor();
+      assert.doesNotMatch((await cache(page)).notes[0].content, /<h[123]>/);
+    } finally { await context.close(); }
+  });
   await check('Text links open the correct Planner card, project, workout and recipe and return to the note', async () => {
     const { page, context } = await fresh();
     try {
@@ -126,6 +145,7 @@ const insert = async (page, title) => {
         await newNote(page,'Snabba anteckningar','En idé att spara.');
         const size=await page.evaluate(() => ({ width:innerWidth,scroll:document.documentElement.scrollWidth })); assert.ok(size.scroll<=size.width+1);
         for (const name of ['Punktlista','Numrerad lista','Lägg till länk']) { const box=await page.getByRole('button',{name,exact:true}).boundingBox(); assert.ok(box.width>=44 && box.height>=44, `${name} is ${box.width}x${box.height} at ${width}px`) }
+        const style = await page.getByRole('combobox',{name:'Textstil'}).boundingBox(); assert.ok(style.width>=100 && style.x+style.width<=width, `Text style fits at ${width}px`);
         await page.screenshot({path:path.join(out,`notes-${width}.png`),fullPage:false});
         await page.getByRole('button',{name:'Anteckningar',exact:true}).click(); await page.getByRole('button',{name:'Öppna anteckning Snabba anteckningar',exact:true}).click(); assert.match(await text(page).innerText(),/idé att spara/);
       } finally { await context.close(); }
