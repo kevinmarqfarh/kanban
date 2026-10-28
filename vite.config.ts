@@ -32,6 +32,26 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('forma-shell-') && key !== CACHE).map(key => caches.delete(key)))).catch(() => {}).then(() => self.clients.claim()));
 });
+self.addEventListener('push', event => {
+  event.waitUntil((async () => {
+    let payload = {};
+    try { payload = event.data?.json() || {}; } catch { payload = {}; }
+    const title = String(payload.title || 'Forma').slice(0, 100);
+    const body = String(payload.body || '').slice(0, 240);
+    const url = typeof payload.url === 'string' && (payload.url === '/' || /^[/][?]view=(home|planner|schedule)$/.test(payload.url)) ? payload.url : '/';
+    await self.registration.showNotification(title, { body, icon: '/icon-192.png', badge: '/icon-192.png', tag: String(payload.tag || 'forma'), data: { url } });
+  })());
+});
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const url = new URL(event.notification.data?.url || '/', self.location.origin).href;
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const existing = windows.find(client => new URL(client.url).origin === self.location.origin);
+    if (existing) { await existing.navigate(url); return existing.focus(); }
+    return self.clients.openWindow(url);
+  })());
+});
 self.addEventListener('fetch', event => {
   const request = event.request;
   const url = new URL(request.url);

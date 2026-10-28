@@ -88,7 +88,7 @@ export default function App() {
   const [noteReturn, setNoteReturn] = useState<string | null>(null)
   const [initialNoteId, setInitialNoteId] = useState<string | undefined>()
   const [desktopMenu, setDesktopMenu] = useState(readDesktopMenu)
-  const [page, setPage] = useState<Page>('home')
+  const [page, setPage] = useState<Page>(() => { const view = new URLSearchParams(location.search).get('view'); return view === 'planner' || view === 'schedule' ? view : 'home' })
   const weekView = desktop && page === 'schedule' && plannerView === 'week'
   const [homeVisit, setHomeVisit] = useState(0)
   const [editor, setEditor] = useState<Editor>(null)

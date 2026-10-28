@@ -5,6 +5,8 @@ import { WeatherPlacePicker } from './WeatherPlacePicker'
 import { KeyboardShortcuts } from './KeyboardShortcuts'
 import { useWorkspace } from '../hooks/useWorkspace'
 import { supabaseConfigured } from '../lib/supabase'
+import { PushSettingsPanel } from './PushSettings'
+import { removeCurrentPushSubscription } from '../lib/push'
 
 export type ThemePreference = 'light' | 'dark' | 'system' | 'bento' | 'bento-aurora' | 'bento-space-gray'
 export function Profile({ data, theme, onTheme, onExport, syncText, homeScreen, desktop = false, menuSettings }: {
@@ -28,6 +30,8 @@ export function Profile({ data, theme, onTheme, onExport, syncText, homeScreen, 
   }
   async function signOut() {
     setBusy(true)
+    const pushError = data.user ? await removeCurrentPushSubscription(data.user.id) : null
+    if (pushError) { setBusy(false); setMessage({ text: pushError, error: true }); return }
     const result = await data.signOut()
     setBusy(false)
     if (result.error) setMessage({ text: result.error, error: true })
@@ -46,8 +50,9 @@ export function Profile({ data, theme, onTheme, onExport, syncText, homeScreen, 
       {message && <div className={`form-message ${message.error ? 'error' : ''}`} role={message.error ? 'alert' : 'status'}>{!message.error && <Check size={17} />}<p>{message.text}</p></div>}
     </section>
 
+    <PushSettingsPanel userId={data.user?.id ?? null} />
     {menuSettings}
-    <section className="profile-card"><div className="profile-section-heading"><Sun size={18} /><h2>Tema</h2></div><div className="theme-picker" aria-label="Välj tema">{([{ id: 'light', label: 'Ljust', Icon: Sun }, { id: 'dark', label: 'Mörkt', Icon: Moon }, { id: 'system', label: 'System', Icon: Monitor }, { id: 'bento', label: 'Bento blå', Icon: PanelsTopLeft }, { id: 'bento-aurora', label: 'Bento Aurora', Icon: PanelsTopLeft }, { id: 'bento-space-gray', label: 'Bento Space Gray', Icon: PanelsTopLeft }] as const).map(({ id, label, Icon }) => <button key={id} className={`theme-option ${theme === id ? 'active' : ''}`} aria-pressed={theme === id} onClick={() => onTheme(id)}><Icon size={19} strokeWidth={1.5} /><span>{label}</span></button>)}</div><p className="profile-description theme-bento-note">Bento blå · ljusblå papperstoner. Bento Aurora · mörkt glas, blått dis och varm glöd. Bento Space Gray · grafitgrå gradient, silver och matt papperstextur.</p>{homeScreen?.active && theme === 'system' && <p className="profile-description theme-sun-note">På hemskärmen följer System solen: mörkt från solnedgång till soluppgång.</p>}</section>
+    <section className="profile-card"><div className="profile-section-heading"><Sun size={18} /><h2>Tema</h2></div><div className="theme-picker" aria-label="Välj tema">{([{ id: 'light', label: 'Ljust', Icon: Sun }, { id: 'dark', label: 'Mörkt', Icon: Moon }, { id: 'system', label: 'System', Icon: Monitor }, { id: 'bento', label: 'Bento blå', Icon: PanelsTopLeft }, { id: 'bento-aurora', label: 'Bento Aurora', Icon: PanelsTopLeft }, { id: 'bento-space-gray', label: 'Bento Space Gray', Icon: PanelsTopLeft }] as const).map(({ id, label, Icon }) => <button key={id} className={`theme-option ${theme === id ? 'active' : ''}`} aria-pressed={theme === id} onClick={() => onTheme(id)}><span className="theme-preview" data-preview={id} aria-hidden="true" /><span className="theme-preview-caption"><Icon size={19} strokeWidth={1.5} /><span>{label}</span></span></button>)}</div><p className="profile-description theme-bento-note">Bento blå · ljusblå papperstoner. Bento Aurora · mörkt glas, blått dis och varm glöd. Bento Space Gray · grafitgrå gradient, silver och matt papperstextur.</p>{homeScreen?.active && theme === 'system' && <p className="profile-description theme-sun-note">På hemskärmen följer System solen: mörkt från solnedgång till soluppgång.</p>}</section>
     <section className="profile-card profile-weather" aria-labelledby="weather-settings-title"><div className="profile-section-heading"><CloudSun size={18} /><h2 id="weather-settings-title">Väder</h2></div>
       <p className="profile-description">Veckans väder visas överst på Home. Valet av ort gäller bara den här enheten.</p>
       <WeatherPlacePicker />

@@ -667,3 +667,21 @@ input[type='checkbox']:checked { border-color: var(--accent); background: var(--
 .project-task-heading .project-task-row { flex: 1; min-width: 0; }
 
 .cloud-save-status{display:inline-flex;align-items:center;gap:5px;max-width:110px;font-size:10px;line-height:1.3;color:var(--ink-secondary)}.cloud-save-status svg{flex-shrink:0}.cloud-save-status[data-sync-status='synced']{color:var(--status-complete-ink)}
+
+/* Theme samples keep their own canvas regardless of the currently selected theme. */
+.theme-picker .theme-option { position: relative; isolation: isolate; overflow: hidden; min-height: 112px; justify-content: flex-end; padding: 8px; }
+.theme-option .theme-preview { position: absolute; inset: 0; z-index: -1; display: block; border-radius: inherit; pointer-events: none; }
+.theme-option .theme-preview-caption { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 34px; padding: 6px; border-radius: 8px; background: rgba(13,22,29,.84); color: #fff; font-size: 11px; line-height: 1.4; }
+.theme-picker .theme-option.active { box-shadow: inset 0 0 0 3px var(--ink-secondary); }
+.theme-option.active .theme-preview-caption { font-weight: 650; }
+.theme-preview[data-preview='light'] { background: #f6f6f6; }
+.theme-preview[data-preview='dark'] { background: #191919; }
+.theme-preview[data-preview='system'] { background: linear-gradient(120deg,#f6f6f6 49.5%,#191919 50.5%); }
+.theme-preview[data-preview='bento'] { background: #acd8e9 url('/bento-paper.png') center / 240px; }
+.theme-preview[data-preview='bento-aurora'] { background: #142a34 url('/bento-aurora.png') center / cover; }
+.theme-preview[data-preview='bento-space-gray'] { background-color: #303238; background-image: url('./assets/space-gray-paper.svg'), radial-gradient(ellipse at 76% 0%,rgba(174,182,198,.24),transparent 62%),radial-gradient(ellipse at 8% 90%,rgba(155,144,128,.14),transparent 60%),linear-gradient(145deg,#45484f 0%,#30333a 46%,#1d1f24 100%); background-size: 120px 120px,cover,cover,cover; }
+.push-setting { display:flex; align-items:center; gap:10px; min-height:44px; font-size:13px; }
+.push-setting input[type='checkbox'] { width:18px; height:18px; flex:none; accent-color:var(--accent); }
+.push-setting .select { margin-left:auto; max-width:170px; }
+.push-quiet { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:8px 0 16px; font-size:13px; }
+.push-quiet .input { width:125px; min-height:44px; }
