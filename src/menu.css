@@ -1,0 +1,11 @@
+.menu-settings-options { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; }
+.menu-settings-option { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.menu-settings-option label { display: flex; flex: 1; align-items: center; gap: 10px; min-width: 0; min-height: 44px; }
+.menu-settings-option input { flex-shrink: 0; }
+.menu-settings-option small { color: var(--ink-muted); font-size: 10px; }
+.menu-settings-option .icon-button { flex-shrink: 0; min-width: 44px; min-height: 44px; }
+.menu-settings-actions { margin-top: 16px; }
+.app-shell:not(.is-desktop) .bottom-nav { max-width: calc(100% - 24px); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+.app-shell:not(.is-desktop) .bottom-nav::-webkit-scrollbar { display: none; }
+.app-shell:not(.is-desktop) .bottom-nav .nav-item { flex: 1 0 auto; min-width: 44px; }
+.app-shell:not(.is-desktop) .bottom-nav .nav-label { white-space: nowrap; }

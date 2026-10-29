@@ -1,0 +1,74 @@
+const assert = require('node:assert/strict');
+const { chromium, webkit } = require('playwright');
+const engine = process.env.BROWSER_ENGINE === 'webkit' ? webkit : chromium;
+const base = process.env.APP_URL || 'http://127.0.0.1:5173';
+const defaults = ['Home', 'Planner', 'Schema', 'Projects', 'Inköp', 'Dagbok', 'Others'];
+const desktopKey = 'forma-desktop-menu-v2';
+const mobileKey = 'forma-mobile-menu-v1';
+(async () => {
+  const browser = await engine.launch();
+  try {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+    await context.addInitScript(key => { if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(['home', 'planner', 'others'])); }, desktopKey);
+    const page = await context.newPage(); page.setDefaultTimeout(8000);
+    const errors = []; page.on('pageerror', error => errors.push(error.message));
+    const nav = page.getByRole('navigation', { name: 'Huvudnavigation' });
+    const labels = () => nav.locator('.nav-item').evaluateAll(items => items.map(item => item.getAttribute('aria-label')));
+    const open = async () => { await page.getByRole('button', { name: 'Öppna inställningar' }).click(); return page.locator('.menu-settings'); };
+    const close = () => page.getByRole('dialog').locator('.modal-footer').getByRole('button', { name: 'Stäng', exact: true }).click();
+    await page.goto(base); await page.locator('.app-shell[aria-busy="false"]').waitFor();
+    assert.deepEqual(await labels(), defaults);
+    let menu = await open();
+    assert.match(await menu.innerText(), /menyraden på den här enheten/);
+    await menu.getByRole('button', { name: 'Redigera meny' }).click();
+    assert.equal(await menu.getByRole('checkbox', { name: /Home/ }).isDisabled(), true);
+    await menu.getByRole('checkbox', { name: 'Projects', exact: true }).uncheck();
+    await menu.getByRole('checkbox', { name: 'Anteckningar', exact: true }).check();
+    for (let i = 0; i < 5; i++) await menu.getByRole('button', { name: 'Flytta Anteckningar uppåt', exact: true }).click();
+    assert.deepEqual(await labels(), defaults, 'Changes only apply after saving.');
+    await menu.getByRole('button', { name: 'Spara meny' }).click(); await close();
+    const customized = ['Home', 'Anteckningar', 'Planner', 'Schema', 'Inköp', 'Dagbok', 'Others'];
+    assert.deepEqual(await labels(), customized);
+    await nav.getByRole('button', { name: 'Anteckningar', exact: true }).click();
+    await page.getByRole('searchbox', { name: 'Sök anteckningar' }).waitFor();
+    await page.reload(); await page.locator('.app-shell[aria-busy="false"]').waitFor();
+    assert.deepEqual(await labels(), customized, 'Mobile selection and order survive reload.');
+    assert.deepEqual(await page.evaluate(key => JSON.parse(localStorage.getItem(key)), desktopKey), ['home', 'planner', 'others']);
+    menu = await open(); await menu.getByRole('button', { name: 'Redigera meny' }).click();
+    await menu.getByRole('button', { name: 'Standardmeny', exact: true }).click();
+    await menu.getByRole('button', { name: 'Avbryt', exact: true }).click(); await close();
+    assert.deepEqual(await labels(), customized, 'Cancel preserves the saved menu.');
+    menu = await open(); await menu.getByRole('button', { name: 'Redigera meny' }).click();
+    for (const checkbox of await menu.getByRole('checkbox').all()) if (!await checkbox.isDisabled()) await checkbox.check();
+    await menu.getByRole('button', { name: 'Spara meny' }).click(); await close();
+    assert.equal((await labels()).length, 12);
+    for (const width of [320, 390, 768]) {
+      await page.setViewportSize({ width, height: 844 });
+      await page.evaluate(() => { document.documentElement.dataset.theme = 'bento'; document.documentElement.dataset.bentoVariant = 'aurora'; });
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false, `Page fits ${width}px.`);
+      const bounds = await nav.boundingBox(); assert.ok(bounds.x >= -1 && bounds.x + bounds.width <= width + 1);
+      menu = await open(); await menu.getByRole('button', { name: 'Redigera meny' }).click();
+      assert.equal(await page.getByRole('dialog').evaluate(element => element.scrollWidth > element.clientWidth + 1), false, `Settings fit ${width}px.`);
+      if (process.env.MENU_SCREENSHOT && width === 320) { await menu.getByRole('heading', { name: 'Meny', exact: true }).scrollIntoViewIfNeeded(); await page.screenshot({ path: '/tmp/forma-mobile-menu-settings.png' }); }
+      await page.getByRole('dialog').locator('.modal-header').getByRole('button', { name: 'Stäng', exact: true }).click();
+      await nav.getByRole('button', { name: 'Födelsedagar', exact: true }).click();
+      await page.getByRole('dialog', { name: /Födelsedagar/ }).waitFor();
+      await page.getByRole('dialog').locator('.modal-header').getByRole('button', { name: 'Stäng', exact: true }).click();
+      assert.ok(await nav.evaluate(element => element.scrollWidth > element.clientWidth));
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
+    menu = await open(); await menu.getByRole('button', { name: 'Redigera meny' }).click();
+    await menu.getByRole('button', { name: 'Standardmeny', exact: true }).click();
+    await menu.getByRole('button', { name: 'Spara meny' }).click(); await close();
+    assert.deepEqual(await labels(), defaults);
+    const desktop = await browser.newContext({ viewport: { width: 1280, height: 900 }, storageState: await context.storageState() });
+    const desktopPage = await desktop.newPage(); await desktopPage.goto(base);
+    await desktopPage.locator('.app-shell.is-desktop[aria-busy="false"]').waitFor();
+    assert.deepEqual(await desktopPage.locator('.bottom-nav .nav-item').evaluateAll(items => items.map(item => item.getAttribute('aria-label'))), ['Home', 'Planner', 'Others']);
+    await desktopPage.getByRole('button', { name: 'Öppna inställningar' }).click();
+    assert.match(await desktopPage.locator('.menu-settings').innerText(), /sidomenyn på den här datorn/);
+    assert.deepEqual(errors, []);
+    await desktop.close(); await context.close();
+    console.log('PASS mobile menu: show/hide, reorder, direct navigation, reload, cancel/reset, many items at phone/tablet widths, and desktop isolation');
+  } finally { await browser.close(); }
+})().catch(error => { console.error(error); process.exitCode = 1; });

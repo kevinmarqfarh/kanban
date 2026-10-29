@@ -26,6 +26,7 @@
     "test:notes": "node tests/notes.mjs && node tests/notes-acceptance.cjs",
     "test:shopping": "node tests/shopping.mjs && node tests/shopping-acceptance.cjs && BROWSER_ENGINE=webkit node tests/shopping-acceptance.cjs",
     "test:diary": "node tests/diary-planner-acceptance.cjs && BROWSER_ENGINE=webkit node tests/diary-planner-acceptance.cjs",
+    "test:menu": "node tests/menu-settings-acceptance.cjs && BROWSER_ENGINE=webkit node tests/menu-settings-acceptance.cjs",
     "test:organize": "node tests/organize-acceptance.cjs",
     "test:weather": "node tests/weather-day-acceptance.cjs && BROWSER_ENGINE=chromium node tests/weather-day-acceptance.cjs",
     "test:improvements": "node tests/improvements-acceptance.cjs && BROWSER_ENGINE=chromium node tests/improvements-acceptance.cjs",
