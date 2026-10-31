@@ -34,6 +34,7 @@
     "test:desktop": "node tests/desktop-acceptance.cjs && BROWSER_ENGINE=webkit node tests/desktop-acceptance.cjs",
     "test:schedule": "node tests/schedule.mjs && node tests/schedule-acceptance.cjs && node tests/schedule-touch.cjs",
     "test:desktop-craft": "node tests/desktop-craft-acceptance.cjs && BROWSER_ENGINE=webkit node tests/desktop-craft-acceptance.cjs",
+    "test:schedule-editing": "node tests/schedule-event-editing.cjs && BROWSER_ENGINE=webkit node tests/schedule-event-editing.cjs",
     "test:schedule-desktop": "node tests/schedule-desktop.cjs && BROWSER_ENGINE=webkit node tests/schedule-desktop.cjs",
     "test:home-layout": "node tests/home-layout-gestures.cjs && BROWSER_ENGINE=webkit node tests/home-layout-gestures.cjs",
     "test:recipe-editing": "node tests/recipe-editing.cjs && BROWSER_ENGINE=webkit node tests/recipe-editing.cjs",

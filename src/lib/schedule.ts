@@ -1,6 +1,13 @@
-import type { Task, TaskSchedule } from './types'
+import type { Task, TaskSchedule, ScheduleColor } from './types'
 import { isValidBirthDate } from './birthdays'
 import { addLocalDays, parseLocalDate } from './others'
+
+export const SCHEDULE_COLORS: { value: ScheduleColor; label: string }[] = [
+  { value: 'sage', label: 'Grön' }, { value: 'blue', label: 'Blå' }, { value: 'violet', label: 'Lila' },
+  { value: 'rose', label: 'Rosa' }, { value: 'amber', label: 'Gul' }, { value: 'gray', label: 'Grå' },
+]
+
+export const sameSchedule = (a: TaskSchedule | null | undefined, b: TaskSchedule) => a?.date === b.date && a?.scope === b.scope && a?.startTime === b.startTime && a?.endTime === b.endTime && a?.color === b.color && a?.label === b.label
 
 export function weekStart(date: string): string {
   return addLocalDays(date, -((parseLocalDate(date).getDay() + 6) % 7))
@@ -10,6 +17,8 @@ export function validSchedule(value: unknown): value is TaskSchedule | null | un
   if (typeof value !== 'object' || Array.isArray(value)) return false
   const s = value as TaskSchedule
   if (typeof s.date !== 'string' || !isValidBirthDate(s.date) || (s.scope !== undefined && s.scope !== 'day' && s.scope !== 'week')) return false
+  if (s.color !== undefined && !SCHEDULE_COLORS.some(color => color.value === s.color)) return false
+  if (s.label !== undefined && (typeof s.label !== 'string' || s.label.length > 60)) return false
   if (s.scope === 'week' && (s.date !== weekStart(s.date) || s.startTime || s.endTime)) return false
   if (s.startTime === undefined && s.endTime === undefined) return true
   return typeof s.startTime === 'string' && typeof s.endTime === 'string'
@@ -18,6 +27,17 @@ export function validSchedule(value: unknown): value is TaskSchedule | null | un
 }
 export const minutes = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3))
 export const clock = (minute: number) => `${String(Math.floor(minute / 60)).padStart(2, '0')}:${String(minute % 60).padStart(2, '0')}`
+export type ScheduleEditMode = 'move' | 'resize'
+
+/** Snap edited times while keeping a moved event's duration and the visible day's bounds. */
+export function editScheduleRange(start: number, end: number, delta: number, mode: ScheduleEditMode, first = 0, last = 1440): [number, number] {
+  if (mode === 'move') {
+    const nextStart = Math.max(first, Math.min(last - (end - start), Math.round((start + delta) / 30) * 30))
+    return [nextStart, nextStart + end - start]
+  }
+  return [start, Math.max(start + Math.min(30, end - start), Math.min(last, Math.round((end + delta) / 30) * 30))]
+}
+
 export function calendarFile(tasks: Task[]): string {
   const escape = (text: string) => text.replace(/\\/g, '\\\\').replace(/\r?\n/g, '\\n').replace(/;/g, '\\;').replace(/,/g, '\\,')
   const stamp = (date: string, time: string) => `${(time === '24:00' ? addLocalDays(date, 1) : date).replace(/-/g, '')}T${(time === '24:00' ? '00:00' : time).replace(':', '')}00`

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, ArrowRight, Cake, CookingPot, Dumbbell, Utensils, FileText, Clock } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Cake, CookingPot, Dumbbell, Utensils, FileText, Clock, ShoppingBasket } from 'lucide-react'
 import type { Cookbook, OvertimeEntry, Note, NoteLinkKind, NutritionHabit, Recipe, Workout, Workspace } from '../lib/types'
 import { Workouts } from './WorkoutEditor'
 import { Nutrition } from './Nutrition'
@@ -15,13 +15,14 @@ import { Overtime } from './Overtime'
 import { formatOvertime, overtimeBalance } from '../lib/overtime'
 
 type Section = 'overtime' | 'workouts' | 'nutrition' | 'recipes' | 'notes'
-export function Others({ workspace, recipeTimerScope, initialSection, initialRecord, initialNoteId, onBirthdays, onSaveOvertime, onDeleteOvertime, onSaveWorkout, onDeleteWorkout, onRestoreWorkout, onSaveHabit, onToggleHabit, onDeleteHabit, onOrganizeCookbooks, onSaveCookbook, onDeleteCookbook, onSaveRecipe, onDeleteRecipe, onAddRecipeToShoppingList, onSaveNote, onDeleteNote, onRestoreNote, onPurgeNote, onEmptyNoteTrash, onOpenNoteLink }: {
+export function Others({ workspace, recipeTimerScope, initialSection, initialRecord, initialNoteId, onBirthdays, onOpenShopping, onSaveOvertime, onDeleteOvertime, onSaveWorkout, onDeleteWorkout, onRestoreWorkout, onSaveHabit, onToggleHabit, onDeleteHabit, onOrganizeCookbooks, onSaveCookbook, onDeleteCookbook, onSaveRecipe, onDeleteRecipe, onAddRecipeToShoppingList, onSaveNote, onDeleteNote, onRestoreNote, onPurgeNote, onEmptyNoteTrash, onOpenNoteLink }: {
   workspace: Workspace;
   recipeTimerScope: string;
   initialSection?: Section | null;
   initialRecord?: { kind: NoteLinkKind; id: string } | null;
   initialNoteId?: string;
   onBirthdays: () => void;
+  onOpenShopping: () => void;
   onSaveOvertime: (edited: OvertimeEntry, original?: OvertimeEntry) => string | null;
   onDeleteOvertime: (id: string) => string | null;
   onSaveWorkout: (edited: Workout, original?: Workout) => string | null;
@@ -54,6 +55,7 @@ export function Others({ workspace, recipeTimerScope, initialSection, initialRec
   const [section, setSection] = useState<Section | null>(initialSection ?? null)
   useEffect(() => { setSection(initialSection ?? null) }, [initialSection])
   if (!section) return <div className="others-module-list">
+    <button className="others-module-row" type="button" aria-label="Öppna Inköp" onClick={onOpenShopping}><span className="others-module-icon"><ShoppingBasket size={21} strokeWidth={1.5} /></span><span className="others-module-copy"><strong>Inköp</strong><small>{shoppingLists.length ? `${shoppingLists.length} ${shoppingLists.length === 1 ? 'inköpslista' : 'inköpslistor'}` : 'Skapa listor och lägg till ingredienser från Recept'}</small></span><span className="count-badge">{shoppingLists.length}</span><ArrowRight size={17} /></button>
     <button className="others-module-row" type="button" onClick={() => setSection('overtime')}><span className="others-module-icon"><Clock size={21} strokeWidth={1.5} /></span><span className="others-module-copy"><strong>Övertid</strong><small>Saldo: {formatOvertime(overtimeBalance(workspace.overtime ?? []))}</small></span><ArrowRight size={17} /></button>
     <button className="others-module-row" type="button" onClick={() => setSection('notes')}><span className="others-module-icon"><FileText size={21} strokeWidth={1.5} /></span><span className="others-module-copy"><strong>Anteckningar</strong><small>{notes.filter(note => note.pinned).length} {notes.filter(note => note.pinned).length === 1 ? 'fäst' : 'fästa'} · {notes.length} {notes.length === 1 ? 'anteckning' : 'anteckningar'}</small></span><span className="count-badge">{workspace.notes?.filter(note => !note.deletedAt).length ?? 0}</span><ArrowRight size={17} /></button>
     <button className="others-module-row" type="button" onClick={onBirthdays}><span className="others-module-icon"><Cake size={21} strokeWidth={1.5} /></span><span className="others-module-copy"><strong>Födelsedagar</strong><small>{nextPerson ? `Nästa: ${nextPerson.name} · ${new Date(`${nextBirthday(nextPerson.birthDate).date}T12:00:00`).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' })}` : 'Lägg till någon du vill komma ihåg'}</small></span><span className="count-badge">{workspace.birthdays?.length ?? 0}</span><ArrowRight size={17} /></button>

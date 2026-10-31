@@ -7,6 +7,7 @@ import { isValidBirthDate } from '../lib/birthdays'
 import { addLocalDays, isoWeek, parseLocalDate } from '../lib/others'
 import { getPlanningFeedback } from '../lib/planningFeedback'
 import { Modal } from './Modal'
+import { ScheduleAppearanceFields } from './ScheduleAppearanceFields'
 import '../schedule-editor.css'
 
 export interface ScheduleDraft { schedule: TaskSchedule; taskId?: string }
@@ -75,13 +76,14 @@ export function ScheduleEditor({ initial, workspace, onSave, onClose }: {
       {missing && <p className="form-message" role="alert">Uppgiften har tagits bort eller är redan klar. Ditt utkast finns kvar.</p>}
       {!taskId && <label className="field">Titel<input ref={titleRef} className="input" required maxLength={160} value={title} onChange={event => setTitle(event.target.value)} /></label>}
       <div className="schedule-editor-scope-row">
-        <label className="field">Planering<select className="select" value={schedule.scope ?? 'day'} onChange={event => setSchedule({ date: event.target.value === 'week' && isValidBirthDate(schedule.date) ? weekStart(schedule.date) : schedule.date, scope: event.target.value as 'day' | 'week' })}><option value="day">Bestämd dag</option><option value="week">Veckan · utan bestämd dag</option></select></label>
+        <label className="field">Planering<select className="select" value={schedule.scope ?? 'day'} onChange={event => setSchedule({ ...schedule, startTime: undefined, endTime: undefined, date: event.target.value === 'week' && isValidBirthDate(schedule.date) ? weekStart(schedule.date) : schedule.date, scope: event.target.value as 'day' | 'week' })}><option value="day">Bestämd dag</option><option value="week">Veckan · utan bestämd dag</option></select></label>
         <label className="field">{schedule.scope === 'week' ? 'Veckans måndag' : 'Datum'}<input ref={dateRef} className="input" type="date" required value={schedule.date} onChange={event => setSchedule({ ...schedule, date: event.target.value && schedule.scope === 'week' ? weekStart(event.target.value) : event.target.value })} /></label>
       </div>
       {schedule.scope !== 'week' && <div className="schedule-editor-time-group">
-        <label className="schedule-editor-time-toggle"><input type="checkbox" checked={!!schedule.startTime} onChange={event => setSchedule(event.target.checked ? { ...schedule, startTime: '08:00', endTime: '09:00' } : { date: schedule.date, scope: 'day' })} /><span>Ange tid</span></label>
+        <label className="schedule-editor-time-toggle"><input type="checkbox" checked={!!schedule.startTime} onChange={event => setSchedule(event.target.checked ? { ...schedule, startTime: '08:00', endTime: '09:00' } : { ...schedule, startTime: undefined, endTime: undefined, scope: 'day' })} /><span>Ange tid</span></label>
         {schedule.startTime && <div className="field-row"><label className="field">Från<input className="input" type="time" required value={schedule.startTime} onChange={event => setSchedule({ ...schedule, startTime: event.target.value })} /></label><label className="field">Till<input className="input" type="text" inputMode="text" required pattern="([01][0-9]|2[0-3]):[0-5][0-9]|24:00" placeholder="09:00" value={schedule.endTime ?? ''} onChange={event => setSchedule({ ...schedule, endTime: event.target.value })} /><span className="field-help">HH:MM · 24:00 avslutar dagen.</span></label></div>}
       </div>}
+      <ScheduleAppearanceFields schedule={schedule} onChange={setSchedule} />
       {feedback.conflicts.length > 0 && <div className="schedule-editor-conflicts" role="status" aria-live="polite"><TriangleAlert size={17} aria-hidden="true" /><div><strong>Överlappar {feedback.conflicts.length} {feedback.conflicts.length === 1 ? 'annan uppgift' : 'andra uppgifter'}</strong><ul>{feedback.conflicts.map(conflict => <li key={conflict.id}><span>{conflict.schedule!.startTime}–{conflict.schedule!.endTime}</span> {conflict.title}</li>)}</ul><p>Du kan spara ändå eller välja en annan tid.</p></div></div>}
       <p className="field-help schedule-editor-help">Planeringen anger när du vill arbeta med uppgiften. Dess deadline ändras inte.</p>
     </form>

@@ -24,12 +24,13 @@ function PlanningCard({ task, fallbackDate, conflict, onPlan, onOpen, onToggleTa
   const [error, setError] = useState<string | null>(null)
   const schedule = task.schedule
   const priority = priorityLabel(task.priority)
-  return <article className={`wp-task${conflict ? ' wp-task-conflict' : ''}`} data-task-id={task.id} data-priority={task.priority ?? undefined}>
+  return <article className={`wp-task${conflict ? ' wp-task-conflict' : ''}`} data-task-id={task.id} data-color={schedule?.color} data-priority={task.priority ?? undefined}>
     <div className="wp-task-top"><span className="wp-task-time">{schedule?.startTime ? <>{schedule.startTime}–{schedule.endTime}</> : schedule?.scope === 'week' ? 'Välj en dag' : schedule ? 'Utan tid' : 'Inte planerad'}</span>
       {onToggleTask && <button type="button" className="wp-complete" aria-label={`Markera ${task.title} som klar`} title="Markera som klar" onClick={() => setError(onToggleTask(task))}><Check size={14} aria-hidden="true" /></button>}
     </div>
     <button className="wp-task-title" type="button" aria-label={`Öppna ${task.title}`} onClick={() => onOpen(task.id)}>{task.title}</button>
     <div className="wp-task-meta">
+      {schedule?.label && <span>{schedule.label}</span>}
       {priority && <span className="wp-priority" data-priority={task.priority}>{priority} prioritet</span>}
       {task.deadline && <span className="wp-task-deadline">Deadline {shortDate(task.deadline)}{task.deadlineTime ? ` · ${task.deadlineTime}` : ''}</span>}
       {task.checklist.length > 0 && <span>{task.checklist.filter(item => item.completed).length}/{task.checklist.length} deluppgifter</span>}

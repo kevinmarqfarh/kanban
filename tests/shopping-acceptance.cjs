@@ -12,13 +12,14 @@ const workspace = {
 (async () => {
   const browser = await engine.launch();
   const context = await browser.newContext({ viewport: { width: Number(process.env.VIEWPORT_WIDTH || 390), height: 844 }, locale: 'sv-SE' });
-  await context.addInitScript(({ key, workspace }) => { if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ version: 1, workspace, revision: null, dirty: false })); }, { key, workspace });
+  await context.addInitScript(({ key, workspace }) => { if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ version: 1, workspace, revision: null, dirty: false })); localStorage.setItem('forma-mobile-menu-v1', JSON.stringify(['home', 'planner', 'schedule', 'others'])); }, { key, workspace });
   const page = await context.newPage(); page.setDefaultTimeout(8000);
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   const saved = () => page.evaluate(key => JSON.parse(localStorage.getItem(key)).workspace, key);
   const others = async () => { await page.locator('.bottom-nav').getByRole('button', { name: 'Others', exact: true }).click(); };
   await page.goto(base); await page.getByTestId('home-overview').waitFor();
-  await page.locator('.bottom-nav').getByRole('button', { name: 'Inköp', exact: true }).click();
+  await others();
+  await page.getByRole('button', { name: 'Öppna Inköp', exact: true }).click();
   await page.getByRole('textbox', { name: 'Ny inköpslista' }).fill('Veckohandling');
   await page.getByRole('button', { name: 'Skapa lista' }).click();
   await page.getByRole('textbox', { name: 'Lägg till vara' }).fill('Mjölk');
@@ -50,7 +51,8 @@ const workspace = {
   await page.getByRole('button', { name: 'Lägg till', exact: true }).click();
   assert.ok((await saved()).shoppingLists[1].items.some(item => item.sourceRecipeId === 'forma-receptbank-001'));
   await page.reload(); await page.getByTestId('home-overview').waitFor();
-  await page.locator('.bottom-nav').getByRole('button', { name: 'Inköp', exact: true }).click();
+  await others();
+  await page.getByRole('button', { name: 'Öppna Inköp', exact: true }).click();
   await page.getByRole('button', { name: /Veckohandling/ }).click();
   await page.getByRole('checkbox', { name: '2 tomater' }).waitFor();
   if (process.env.SHOPPING_SHOTS) await page.screenshot({ path: `/tmp/forma-shopping-list-${process.env.VIEWPORT_WIDTH || 390}.png` });

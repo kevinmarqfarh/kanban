@@ -4,6 +4,7 @@ import type { Task, Workspace } from '../lib/types'
 import { TASK_PRIORITIES, columnDisplayTitle, newId } from '../lib/helpers'
 import { validSchedule } from '../lib/schedule'
 import { Modal } from './Modal'
+import { ScheduleAppearanceFields } from './ScheduleAppearanceFields'
 
 export function TaskEditor({ task, columnId, workspace, onSave, onDelete, onClose }: {
   task?: Task; columnId?: string; workspace: Workspace;
@@ -58,6 +59,7 @@ export function TaskEditor({ task, columnId, workspace, onSave, onDelete, onClos
       </div></fieldset>
       <div className="field-row"><label className="field">Deadline<input className="input" type="date" value={draft.deadline ?? ''} onChange={event => setDraft({ ...draft, deadline: event.target.value || null, deadlineTime: event.target.value ? draft.deadlineTime : null })} /></label><label className="field">Tid (valfri)<input className="input" type="time" disabled={!draft.deadline} value={draft.deadlineTime ?? ''} onChange={event => setDraft({ ...draft, deadlineTime: event.target.value || null })} /></label></div>
       {draft.schedule && <div className="field"><span>Planering · {draft.schedule.scope === 'week' ? 'Veckan från ' : ''}{draft.schedule.date} {draft.schedule.startTime && `${draft.schedule.startTime}–${draft.schedule.endTime}`}</span><span className="field-help">Ändra tiden med + Planera i schemat och välj denna uppgift.</span><button className="button ghost small" type="button" onClick={() => setDraft({ ...draft, schedule: null })}>Ta bort planering</button></div>}
+      {draft.schedule && <ScheduleAppearanceFields schedule={draft.schedule} onChange={schedule => setDraft({ ...draft, schedule })} />}
       <label className="field">Etiketter<input className="input" placeholder="Privat, Idé" value={labels} onChange={event => setLabels(event.target.value)} /><span className="field-help">Separera med kommatecken</span></label>
       <div className="section-label"><span>Checklista</span><span>{completed}/{draft.checklist.length}</span></div>
       <div className="checklist">{draft.checklist.map(item => <div className="checklist-row" key={item.id}><label><input type="checkbox" aria-label={`Markera ${item.title} som klar`} checked={item.completed} onChange={() => setDraft({ ...draft, checklist: draft.checklist.map(current => current.id === item.id ? { ...current, completed: !current.completed } : current) })} /><input className="input" aria-label={`Ändra deluppgift ${item.title}`} required maxLength={160} value={item.title} onChange={event => setDraft(current => ({ ...current, checklist: current.checklist.map(entry => entry.id === item.id ? { ...entry, title: event.target.value } : entry) }))} /></label><button className="icon-button" type="button" aria-label={`Ta bort ${item.title}`} onClick={() => setDraft({ ...draft, checklist: draft.checklist.filter(current => current.id !== item.id) })}><Trash2 size={15} /></button></div>)}</div>

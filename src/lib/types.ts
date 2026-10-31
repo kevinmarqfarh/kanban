@@ -19,7 +19,11 @@ export interface Comment {
 
 export type TaskPriority = 'high' | 'medium' | 'low'
 
+export type ScheduleColor = 'sage' | 'blue' | 'violet' | 'rose' | 'amber' | 'gray'
+
 export interface TaskSchedule {
+  color?: ScheduleColor
+  label?: string
   date: string
   scope?: 'day' | 'week'
   startTime?: string

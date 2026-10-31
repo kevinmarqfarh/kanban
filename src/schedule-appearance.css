@@ -1,0 +1,20 @@
+[data-color='sage'] { --event-fill: #e3f0e9; --event-ink: #204b3c; }
+[data-color='blue'] { --event-fill: #dceafb; --event-ink: #193d65; }
+[data-color='violet'] { --event-fill: #eae2f7; --event-ink: #4b326e; }
+[data-color='rose'] { --event-fill: #f7e1e7; --event-ink: #6d3047; }
+[data-color='amber'] { --event-fill: #f8eccf; --event-ink: #624913; }
+[data-color='gray'] { --event-fill: #e6e9ed; --event-ink: #35414f; }
+.schedule-appearance { margin: 18px 0; padding: 0; border: 0; }
+.schedule-appearance legend { margin-bottom: 12px; color: var(--ink-secondary); font-size: 13px; }
+.schedule-color-options { display: flex; flex-wrap: wrap; gap: 6px; }
+.schedule-color-option { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 4px; border: 1px solid transparent; border-radius: 50%; }
+.schedule-color-option[aria-pressed='true'] { border-color: var(--ink-secondary); }
+.schedule-color-option > span { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 1px solid #0002; border-radius: 50%; background: var(--event-fill); color: var(--event-ink); }
+.day-schedule .schedule-block[data-color], .wp-task[data-color] { background: var(--event-fill); color: var(--event-ink); }
+.schedule-block[data-priority='high'], .wp-task[data-priority='high'] { --schedule-priority: #cf4e4e; }
+.schedule-block[data-priority='medium'], .wp-task[data-priority='medium'] { --schedule-priority: #d87922; }
+.schedule-block[data-priority='low'], .wp-task[data-priority='low'] { --schedule-priority: #3d9866; }
+.day-schedule .schedule-block[data-priority], .is-schedule .schedule-page .schedule-block[data-priority], .wp-task[data-priority] { border-left: 4px solid var(--schedule-priority); }
+.schedule-block-open .schedule-event-label { padding: 1px 4px; border-radius: 4px; background: #ffffff65; font-size: 9px; }
+.wp-task[data-color] :is(.wp-task-title,.wp-task-time,.wp-task-meta,.wp-task-plan,.wp-complete) { color: var(--event-ink); }
+@media (max-width: 480px) { .schedule-block-open .schedule-event-label { display: none; } }

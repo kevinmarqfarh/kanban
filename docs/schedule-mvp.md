@@ -20,3 +20,14 @@ Escape avbryter en pågående markering, och högerklick skapar inget. Befintlig
 Med server på port 4173: `npm run test:schedule-desktop`. Webbläsartesterna kontrollerar snabbt klick, omedelbar dragning åt båda håll, sparning/omladdning, Escape, befintliga uppgifter, tangentbord och midnatt i Chromium och WebKit. `APP_URL=http://127.0.0.1:4173 node tests/schedule-touch.cjs` verifierar fortsatt touchval och scrollning.
 
 One-pager verifieras med APP_URL=http://127.0.0.1:4189 npm run test:schedule-onepage. Testet omfattar mobil stående/liggande, surfplatta, dator, midnatt, många uppgifter utan tid och korrekta tider vid drag.
+
+
+## Flytta, ändra längd och färgetiketter
+
+Dra ett befintligt tidsblock med musen för att flytta det. På pekskärm håller du först i 350 ms. Dra handtaget i nederkanten för att ändra sluttiden. Förhandsvisningen visar intervallet; ändringen sparas genom samma task-flöde som Planner när du släpper. Flyttning behåller längden. Tider följer 30-minuterssteg inom det synliga dagsintervallet, även 24:00. Klick eller långtryck utan förflyttning ändrar inte befintliga klockslag. Escape, avbruten pekgest, sidbyte och tappat fönsterfokus avbryter ändringen. En inkommande ändring av samma planering avbryter en pågående dragning.
+
+Alt + pil upp/ned flyttar ett fokuserat kort 30 minuter. Nederkantens fokuserbara reglage justerar sluttiden med pil upp/ned. Vanliga klick öppnar fortfarande uppgiften.
+
+Färgetikett i Schema har ett valfritt namn och sex kortfärger. Den finns vid ny planering, i veckoplaneringens editor och i uppgiftseditorn för planerade uppgifter. `Task.schedule.color` och `Task.schedule.label` är valfria för äldre data och följer med vid tidsändringar. Vänsterkanten visar befintlig task-prioritet: hög röd, medel orange, låg grön. Färgen och prioriteten kan ändras oberoende.
+
+Verifiering: `npm run test:schedule-editing`, `npm run test:schedule-desktop`, `npm run test:schedule-onepage`, `node tests/schedule-touch.cjs`, `npm test` och `npm run build`. Chromium kör riktig emulerad touch för flyttning och nederkant. WebKit kör pekar-, tangentbords- och layoutfallen; fysisk iPhone/iPad-verifiering återstår.
